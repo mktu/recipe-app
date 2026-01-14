@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // ファイルサイズ・複雑度のルール（肥大化防止）
+  {
+    rules: {
+      // ファイルの最大行数（コメント・空行除く）
+      "max-lines": ["warn", { max: 200, skipBlankLines: true, skipComments: true }],
+      // 関数の最大行数
+      "max-lines-per-function": ["warn", { max: 50, skipBlankLines: true, skipComments: true }],
+      // 循環的複雑度（if/for のネスト制限）
+      "complexity": ["warn", 10],
+    },
+  },
 ]);
 
 export default eslintConfig;
