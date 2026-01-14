@@ -6,7 +6,7 @@
 
 **ビジョン:** 「献立の意思決定コストをゼロにする」
 
-詳細な要件は `idea.md` を参照。
+詳細な要件は `requirements.md` を参照。
 
 ## 技術スタック
 
@@ -34,7 +34,7 @@ recipe-app/
 │   └── types/            # 型定義
 ├── seed/                 # シードデータ
 │   └── ingredients.json  # 食材マスター初期データ (152件)
-├── idea.md               # プロジェクト要件定義書
+├── requirements.md       # プロジェクト要件定義書
 └── CLAUDE.md             # このファイル
 ```
 
@@ -68,7 +68,7 @@ LIFF 環境に依存せず開発できるよう、認証レイヤーを抽象化
 - 食材は `ingredients` テーブルで正規化管理
 - AI が出力した食材は `ingredient_aliases` で名寄せ
 - レシピと食材の紐づけは `recipe_ingredients` 中間テーブル
-- 詳細は `idea.md` の「6. データベース設計」を参照
+- 詳細は `requirements.md` の「6. データベース設計」を参照
 
 ### LLM 連携のポイント
 
