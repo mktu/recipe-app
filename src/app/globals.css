@@ -47,30 +47,54 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* RecipeHub Design Tokens */
+  --radius: 0.75rem;
+
+  /* Background: Warm white */
+  --background: oklch(0.98 0.005 80);
+  --foreground: oklch(0.25 0.02 50);
+
+  /* Cards */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.25 0.02 50);
+
+  /* Popover */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.25 0.02 50);
+
+  /* Primary: Amber/Gold (#f59e0b) */
+  --primary: oklch(0.75 0.16 75);
+  --primary-foreground: oklch(0.2 0.02 50);
+
+  /* Secondary */
+  --secondary: oklch(0.95 0.01 80);
+  --secondary-foreground: oklch(0.25 0.02 50);
+
+  /* Muted */
+  --muted: oklch(0.95 0.01 80);
+  --muted-foreground: oklch(0.5 0.02 50);
+
+  /* Accent: Green (#22c55e) */
+  --accent: oklch(0.65 0.2 145);
+  --accent-foreground: oklch(1 0 0);
+
+  /* Destructive */
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+
+  /* Borders & Inputs */
+  --border: oklch(0.9 0.01 80);
+  --input: oklch(0.92 0.01 80);
+  --ring: oklch(0.75 0.16 75);
+
+  /* Charts */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -121,5 +145,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Safe area padding for mobile browsers (iPhone notch, etc.) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
