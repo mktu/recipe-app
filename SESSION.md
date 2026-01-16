@@ -1,10 +1,10 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2025-01-15 (デザイントークン定義完了)
+2025-01-16 (Supabase 設定完了)
 
 ## 現在のフェーズ
-フェーズ 1：Web/LIFF 基盤と DB 連携（準備段階）
+フェーズ 1：Web/LIFF 基盤と DB 連携
 
 ## 直近の完了タスク
 - [x] プロジェクトセットアップ（Next.js, Tailwind, shadcn/ui）
@@ -15,21 +15,37 @@
 - [x] husky + lint-staged 設定（コミット前 lint）
 - [x] 食材マスター初期データ作成（seed/ingredients.json, 152件）
 - [x] セッション引き継ぎ機構の構築（SESSION.md）
-- [x] **デザイントークン定義（v0 でデザイン検討 → globals.css に反映）**
-- [x] **フォント設定（Noto Sans JP）**
+- [x] デザイントークン定義（v0 でデザイン検討 → globals.css に反映）
+- [x] フォント設定（Noto Sans JP）
+- [x] **Supabase プロジェクト作成（recipehub-dev）**
+- [x] **DB スキーマ作成・RLS 設定**
+- [x] **食材マスターのシード投入（151件）**
+- [x] **Supabase クライアント設定**
 
 ## 進行中のタスク
 なし
 
 ## 次にやること
-- [ ] Supabase プロジェクト作成・設定
 - [ ] 認証レイヤー実装（DevAuthProvider / LIFFAuthProvider）
-- [ ] DB スキーマ作成（users, recipes, ingredients 等）
-- [ ] 食材マスターのシード投入
 - [ ] ホーム画面の実装（v0 デザインを参考に）
 
 ## ブロッカー・注意点
 - 特になし
+
+## Supabase 設定（確定）
+
+| 項目 | 値 |
+|------|-----|
+| 開発プロジェクト | recipehub-dev |
+| 本番プロジェクト | 未作成（recipehub-prod 予定） |
+| API キー形式 | 新形式（sb_publishable / sb_secret） |
+
+**テーブル構成:**
+- `users` - ユーザー情報
+- `recipes` - レシピ情報
+- `ingredients` - 食材マスター（151件）
+- `ingredient_aliases` - 同義語辞書
+- `recipe_ingredients` - 中間テーブル
 
 ## デザイン方針（確定）
 
@@ -58,18 +74,22 @@ v0 を使ってデザインの方向性を策定済み。以下の画面モッ�
 - `seed/ingredients.json` - 食材マスター初期データ
 - `src/app/globals.css` - デザイントークン（CSS変数）
 - `src/app/layout.tsx` - フォント・メタデータ設定
+- `src/lib/db/client.ts` - Supabase クライアント
+- `src/types/database.ts` - DB 型定義
+- `supabase/schema.sql` - DB スキーマ・RLS ポリシー
+- `supabase/seed.sql` - 食材シードデータ
 
 ## コミット履歴（直近）
 ```
+136d6c7 Add Supabase client and database schema
+145809d Add design tokens and update font to Noto Sans JP
 64a0be5 Update SESSION.md for handoff
 7cf0dbc Add session handoff mechanism
 2547fae Add TODO comment to homepage
 8f99c17 Add pre-commit hook with husky + lint-staged
-9abcc78 Add code complexity rules to prevent file bloat
-ee641fc Rename idea.md to requirements.md
-8798d1f Initial commit: RecipeHub project setup
 ```
 
 ## 備考
 - v0 で作成したモックは削除済み（デザイントークンは globals.css に統合）
 - 2列グリッド vs リスト形式は実装時に検討予定
+- Supabase の新 API キー形式（sb_publishable / sb_secret）を使用
