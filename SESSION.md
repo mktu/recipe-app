@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2025-01-17 (認証レイヤー実装完了)
+2025-01-17 (ホーム画面実装完了)
 
 ## 現在のフェーズ
 フェーズ 1：Web/LIFF 基盤と DB 連携
@@ -24,18 +24,58 @@
 - [x] Supabase CLI + Docker ローカル開発環境構築
 - [x] マイグレーションファイル作成（supabase/migrations/）
 - [x] 環境変数の切り替え設定（.env.local / .env.production）
-- [x] **認証レイヤー実装（DevAuthProvider / LIFFAuthProvider）**
-- [x] **ユーザー登録 API 実装（/api/auth/ensure-user）**
+- [x] 認証レイヤー実装（DevAuthProvider / LIFFAuthProvider）
+- [x] ユーザー登録 API 実装（/api/auth/ensure-user）
+- [x] **ホーム画面実装**
 
 ## 進行中のタスク
 なし
 
 ## 次にやること
-- [ ] ホーム画面の実装（v0 デザインを参考に）
+- [ ] レシピ追加画面の実装（/recipes/add）
+- [ ] レシピ詳細画面の実装（/recipes/[id]）
+- [ ] ESLint 警告の解消（コンポーネント分割）
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
 - Docker が必要（約 2GB のディスク使用）
+- ESLint 警告あり（home-page.tsx, ingredient-filter.tsx, recipes.ts が行数/複雑度超過）
+
+## ホーム画面実装内容
+
+### 新規作成ファイル
+```
+src/
+├── types/recipe.ts                           # 型定義
+├── lib/db/queries/
+│   ├── recipes.ts                            # レシピクエリ
+│   └── ingredients.ts                        # 食材クエリ
+├── hooks/
+│   ├── use-recipes.ts                        # レシピ取得フック
+│   └── use-ingredients.ts                    # 食材取得フック
+├── components/features/home/
+│   ├── home-page.tsx                         # メインコンポーネント
+│   ├── recipe-list.tsx                       # レシピリスト
+│   ├── recipe-card.tsx                       # レシピカード
+│   ├── search-bar.tsx                        # 検索バー
+│   ├── sort-select.tsx                       # ソート選択
+│   ├── ingredient-filter.tsx                 # 食材フィルター
+│   ├── empty-state.tsx                       # 空状態
+│   └── add-recipe-fab.tsx                    # FABボタン
+└── components/ui/
+    ├── sheet.tsx                             # shadcn/ui Sheet
+    ├── select.tsx                            # shadcn/ui Select
+    └── skeleton.tsx                          # shadcn/ui Skeleton
+```
+
+### 機能
+- レシピ一覧表示（リスト形式・1列）
+- 検索バー（タイトル・メモ・ソース名で検索、300msデバウンス）
+- 食材フィルター（ボトムシート、複数選択、ANDロジック）
+- ソート（新しい順/古い順/よく見た順/最近見た順）
+- FABボタン（レシピ追加画面へ遷移）
+- 空状態表示（レシピなし/検索結果なし）
+- ローディングスケルトン
 
 ## Supabase 設定（確定）
 
@@ -61,45 +101,16 @@
 
 ## デザイン方針（確定）
 
-v0 を使ってデザインの方向性を策定済み。以下の画面モックを作成：
-- ホーム画面（レシピ一覧）
-- レシピ詳細画面
-- レシピ追加画面（URL入力）
-
 | 項目 | 確定値 |
 |------|--------|
-| Primary | アンバー/ゴールド - oklch(0.75 0.16 75) ≒ #f59e0b |
-| Accent | グリーン - oklch(0.65 0.2 145) ≒ #22c55e |
+| Primary | アンバー/ゴールド - oklch(0.75 0.16 75) |
+| Accent | グリーン - oklch(0.65 0.2 145) |
 | Background | 温かいホワイト - oklch(0.98 0.005 80) |
 | フォント | Noto Sans JP |
 | 角丸 | 0.75rem |
 | レイアウト | モバイルファースト、リスト形式カード |
 
-**デザインの特徴:**
-- 食べログ等との差別化のためオレンジ → アンバー/ゴールドに変更
-- タグは控えめなグレーアウトライン（写真とタイトルが主役）
-- FABボタン（レシピ追加）は下部固定で片手操作対応
-
 ## 認証レイヤー（実装済み）
-
-**ファイル構成:**
-```
-src/lib/auth/
-├── index.ts              # 公開 API エクスポート
-├── types.ts              # 型定義（AuthUser, AuthContextValue 等）
-├── constants.ts          # 定数（開発用ダミーユーザー）
-├── context.tsx           # AuthContext と AuthProvider
-├── use-auth.ts           # useAuth() フック
-└── providers/
-    ├── dev-provider.ts   # 開発用モックプロバイダー
-    └── liff-provider.ts  # 本番用 LIFF プロバイダー
-
-src/components/providers/
-└── auth-wrapper.tsx      # 環境に応じたプロバイダー選択
-
-src/app/api/auth/
-└── ensure-user/route.ts  # ユーザー登録 API
-```
 
 **使い方:**
 ```tsx
@@ -107,11 +118,7 @@ import { useAuth } from '@/lib/auth'
 
 function MyComponent() {
   const { user, isLoading, isAuthenticated } = useAuth()
-
-  if (isLoading) return <Loading />
-  if (!isAuthenticated) return <LoginPrompt />
-
-  return <div>こんにちは、{user.displayName}さん</div>
+  // ...
 }
 ```
 
@@ -121,16 +128,17 @@ function MyComponent() {
 
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
-- `CLAUDE.md` - 開発ルール・ガイド（ローカル開発手順追記済み）
+- `CLAUDE.md` - 開発ルール・ガイド
 - `seed/ingredients.json` - 食材マスター初期データ
 - `src/app/globals.css` - デザイントークン（CSS変数）
 - `src/app/layout.tsx` - フォント・メタデータ・AuthWrapper 設定
 - `src/lib/auth/` - 認証レイヤー（DevAuth / LIFFAuth）
 - `src/lib/db/client.ts` - Supabase クライアント
+- `src/lib/db/queries/` - DBクエリ関数
 - `src/types/database.ts` - DB 型定義
-- `supabase/migrations/20250116000000_init.sql` - 初期マイグレーション
-- `supabase/seed.sql` - 食材シードデータ
-- `supabase/config.toml` - Supabase CLI 設定
+- `src/types/recipe.ts` - レシピ関連型定義
+- `src/hooks/` - カスタムフック
+- `src/components/features/home/` - ホーム画面コンポーネント
 
 ## コミット履歴（直近）
 ```
@@ -142,6 +150,5 @@ a535a51 Add authentication layer with DevAuth and LIFF providers
 ```
 
 ## 備考
-- v0 で作成したモックは削除済み（デザイントークンは globals.css に統合）
-- 2列グリッド vs リスト形式は実装時に検討予定
-- Supabase の新 API キー形式（sb_publishable / sb_secret）を使用
+- レシピ詳細画面の recordRecipeView は未実装（TODO）
+- ESLint 警告は将来のリファクタリングで対応予定
