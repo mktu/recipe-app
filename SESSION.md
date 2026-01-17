@@ -134,11 +134,11 @@ function MyComponent() {
 
 ## コミット履歴（直近）
 ```
+a535a51 Add authentication layer with DevAuth and LIFF providers
+8e64aff Update SESSION.md for handoff
 9339cd0 Add Supabase CLI local development environment
 3587280 Update SESSION.md for Supabase setup completion
 136d6c7 Add Supabase client and database schema
-145809d Add design tokens and update font to Noto Sans JP
-64a0be5 Update SESSION.md for handoff
 ```
 
 ## 備考
