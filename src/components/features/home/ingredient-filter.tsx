@@ -51,7 +51,7 @@ export function IngredientFilter({ selectedIds, onSelectionChange }: IngredientF
             )}
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-4 overflow-y-auto pb-safe">
+        <div className="mt-4 overflow-y-auto px-4 pb-4">
           <IngredientCategoryList
             categories={ingredientsByCategory}
             selectedIds={selectedIds}
