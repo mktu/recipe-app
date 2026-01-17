@@ -93,11 +93,11 @@ v0 を使ってデザインの方向性を策定済み。以下の画面モッ�
 
 ## コミット履歴（直近）
 ```
+9339cd0 Add Supabase CLI local development environment
 3587280 Update SESSION.md for Supabase setup completion
 136d6c7 Add Supabase client and database schema
 145809d Add design tokens and update font to Noto Sans JP
 64a0be5 Update SESSION.md for handoff
-7cf0dbc Add session handoff mechanism
 ```
 
 ## 備考
