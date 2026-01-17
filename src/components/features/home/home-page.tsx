@@ -38,7 +38,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header sortOrder={filters.sortOrder} onSortChange={filters.setSortOrder} />
-      <main className="container space-y-4 p-4">
+      <main className="container mx-auto max-w-2xl space-y-4 p-4">
         <SearchBar value={filters.searchQuery} onChange={filters.setSearchQuery} />
         <div className="flex flex-wrap items-center gap-2">
           <IngredientFilter
@@ -81,7 +81,7 @@ interface HeaderProps {
 function Header({ sortOrder, onSortChange }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-      <div className="container flex items-center justify-between p-4">
+      <div className="container mx-auto flex max-w-2xl items-center justify-between p-4">
         <h1 className="text-xl font-bold text-primary">RecipeHub</h1>
         <SortSelect value={sortOrder} onChange={onSortChange} />
       </div>
