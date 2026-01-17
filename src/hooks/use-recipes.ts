@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useTransition } from 'react'
 import { useAuth } from '@/lib/auth'
 import { fetchRecipes } from '@/lib/db/queries/recipes'
 import type { SortOrder, RecipeWithIngredients } from '@/types/recipe'
@@ -13,7 +13,8 @@ interface UseRecipesOptions {
 
 interface UseRecipesReturn {
   recipes: RecipeWithIngredients[]
-  isLoading: boolean
+  isLoading: boolean   // 初回ロード中
+  isPending: boolean   // リフェッチ中（useTransition）
   error: Error | null
   refetch: () => void
 }
@@ -25,8 +26,9 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const { user } = useAuth()
 
   const [recipes, setRecipes] = useState<RecipeWithIngredients[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isMountedRef = useRef(true)
@@ -34,11 +36,10 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const loadRecipes = useCallback(async () => {
     if (!user) {
       setRecipes([])
-      setIsLoading(false)
+      setIsInitialLoad(false)
       return
     }
 
-    setIsLoading(true)
     setError(null)
 
     const { data, error: fetchError } = await fetchRecipes({
@@ -49,9 +50,12 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
     })
 
     if (isMountedRef.current) {
-      setRecipes(data)
-      setError(fetchError)
-      setIsLoading(false)
+      // startTransitionで状態更新をラップし、UIのブロックを防ぐ
+      startTransition(() => {
+        setRecipes(data)
+        setError(fetchError)
+        setIsInitialLoad(false)
+      })
     }
   }, [user, searchQuery, ingredientIds, sortOrder])
 
@@ -75,5 +79,7 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
     }
   }, [loadRecipes, searchQuery])
 
-  return { recipes, isLoading, error, refetch: loadRecipes }
+  // isLoading: 初回ロード中のみtrue（スケルトン表示用）
+  // isPending: リフェッチ中（控えめなインジケーター用、または無視）
+  return { recipes, isLoading: isInitialLoad, isPending, error, refetch: loadRecipes }
 }
