@@ -1,88 +1,96 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2025-01-17 (ホーム画面実装・UI改善完了)
+2025-01-18 (レシピ追加画面実装完了)
 
 ## 現在のフェーズ
 フェーズ 1：Web/LIFF 基盤と DB 連携
 
 ## 直近の完了タスク
-- [x] プロジェクトセットアップ（Next.js, Tailwind, shadcn/ui）
-- [x] Supabase 設定（ローカル開発環境、マイグレーション）
-- [x] 認証レイヤー実装（DevAuthProvider / LIFFAuthProvider）
-- [x] ユーザー登録 API 実装（/api/auth/ensure-user）
-- [x] **ホーム画面実装**
-  - レシピ一覧（リスト形式・1列）
-  - 検索バー（300msデバウンス）
-  - 食材フィルター（ボトムシート、ANDロジック）
-  - ソート（4種類）
-  - FABボタン、空状態表示
-- [x] **UI改善**
-  - レイアウト中央揃え（mx-auto max-w-2xl）
-  - 食材フィルターシートのパディング修正
-  - useTransitionでローディングちらつき防止
+- [x] **レシピ追加画面実装**
+  - URL入力画面（/recipes/add）
+  - 確認・編集画面（/recipes/add/confirm）
+  - AI解析スタブAPI（後でJina Reader + Geminiに置換）
+  - レシピ作成API
+  - 食材セレクター（最大5つ選択）
+- [x] **App Router ベストプラクティス対応**
+  - confirm page をサーバーコンポーネント化
+  - loading.tsx でストリーミングSSR対応
+  - parseRecipe をサーバーサイドで実行
+- [x] **バグ修正・改善**
+  - RLS問題回避のためレシピ一覧APIを作成
+  - 開発用ユーザーをseed.sqlに追加
+  - レシピカードのデザイン改善
+  - ESLint複雑度ルール対応リファクタリング
 
 ## 進行中のタスク
 なし
 
 ## 次にやること
-- [ ] レシピ追加画面の実装（/recipes/add）
 - [ ] レシピ詳細画面の実装（/recipes/[id]）
+- [ ] AI解析の本実装（Jina Reader + Gemini）
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
 - Docker が必要（約 2GB のディスク使用）
+- 外部画像URLは next/image ではなく通常の img タグを使用
 
-## ホーム画面ファイル構成
+## レシピ追加画面ファイル構成
 
 ```
 src/
-├── types/recipe.ts                           # 型定義
-├── lib/db/queries/
-│   ├── recipes.ts                            # レシピクエリ
-│   └── ingredients.ts                        # 食材クエリ
+├── lib/recipe/
+│   └── parse-recipe.ts                    # レシピ解析（サーバーサイド）
+├── app/
+│   ├── api/recipes/
+│   │   ├── route.ts                       # POST: レシピ作成
+│   │   ├── list/route.ts                  # POST: レシピ一覧取得
+│   │   └── parse/route.ts                 # POST: レシピ解析API
+│   └── recipes/add/
+│       ├── page.tsx                       # URL入力画面
+│       └── confirm/
+│           ├── page.tsx                   # サーバーコンポーネント
+│           └── loading.tsx                # ストリーミングSSR用
 ├── hooks/
-│   ├── use-recipes.ts                        # レシピ取得（useTransition使用）
-│   ├── use-ingredients.ts                    # 食材取得
-│   └── use-recipe-filters.ts                 # フィルター状態管理
-├── components/features/home/
-│   ├── home-page.tsx                         # メイン
-│   ├── recipe-list.tsx                       # リスト
-│   ├── recipe-card.tsx                       # カード
-│   ├── search-bar.tsx                        # 検索
-│   ├── sort-select.tsx                       # ソート
-│   ├── ingredient-filter.tsx                 # フィルター
-│   ├── ingredient-category-list.tsx          # カテゴリ別食材
-│   ├── selected-ingredients.tsx              # 選択中チップ
-│   ├── empty-state.tsx                       # 空状態
-│   └── add-recipe-fab.tsx                    # FAB
-└── components/ui/ (shadcn)
-    ├── sheet.tsx
-    ├── select.tsx
-    └── skeleton.tsx
+│   └── use-create-recipe.ts               # レシピ作成フック
+└── components/features/add-recipe/
+    ├── url-input-page.tsx                 # URL入力メイン
+    ├── url-input-form.tsx                 # URL入力フォーム
+    ├── recipe-confirm-form.tsx            # 確認・編集フォーム
+    ├── recipe-form.tsx                    # フォームUI
+    ├── use-recipe-form.ts                 # フォーム状態管理
+    ├── ingredient-selector.tsx            # 食材選択
+    ├── ingredient-list.tsx                # 食材リスト
+    └── ui-parts.tsx                       # 共通UI部品
 ```
 
 ## 技術的なポイント
 
-### useTransition によるローディング改善
-```typescript
-const [isPending, startTransition] = useTransition()
-
-// 状態更新をトランジションでラップ
-startTransition(() => {
-  setRecipes(data)
-})
+### サーバーコンポーネント + Suspense
+```tsx
+// page.tsx (Server Component)
+export default async function ConfirmRecipePage({ searchParams }) {
+  const { url } = await searchParams
+  const parsedData = await parseRecipe(url) // サーバーで実行
+  return <RecipeConfirmForm url={url} initialValues={parsedData} />
+}
 ```
-- `isLoading`: 初回ロード時のみtrue（スケルトン表示）
-- `isPending`: リフェッチ中（前のデータを維持）
+- `loading.tsx` があると Next.js が自動で Suspense boundary を追加
+- 重い処理中もローディングUIが即座に表示される
+
+### RLS 回避パターン
+```typescript
+// createServerClient() は Service Role Key を使用
+// → RLS をバイパスしてサーバーサイドでクエリ実行
+```
 
 ## コミット履歴（直近）
 ```
+617cb45 Add loading.tsx for streaming SSR on confirm page
+d66c9d0 Refactor confirm page to use server component
+eeb3a6b Add recipe creation screen with URL input and form editing
+24c3b98 Update SESSION.md for handoff
 a751339 Use useTransition to prevent loading flicker on refetch
-24e8cc1 Add consistent padding to ingredient filter sheet content
-8a09d8b Fix layout centering for home screen
-a185aa5 Add home screen with recipe list, search, and ingredient filter
-a535a51 Add authentication layer with DevAuth and LIFF providers
 ```
 
 ## 参照すべきファイル
@@ -90,5 +98,5 @@ a535a51 Add authentication layer with DevAuth and LIFF providers
 - `CLAUDE.md` - 開発ルール・ガイド
 - `src/lib/auth/` - 認証レイヤー
 - `src/lib/db/` - Supabase クライアント・クエリ
-- `src/hooks/` - カスタムフック
-- `src/components/features/home/` - ホーム画面コンポーネント
+- `src/lib/recipe/` - レシピ解析ロジック
+- `src/components/features/add-recipe/` - レシピ追加コンポーネント
