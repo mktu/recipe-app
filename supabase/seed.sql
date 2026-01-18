@@ -1,3 +1,8 @@
+-- 開発用ユーザー
+INSERT INTO users (line_user_id, display_name) VALUES
+  ('dev-user-001', '開発ユーザー')
+ON CONFLICT (line_user_id) DO NOTHING;
+
 -- 食材マスターのシードデータ
 -- seed/ingredients.json から生成
 

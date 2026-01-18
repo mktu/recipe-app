@@ -27,3 +27,23 @@ export interface RecipeFilters {
   ingredientIds: string[]
   sortOrder: SortOrder
 }
+
+/** AI解析結果 */
+export interface ParsedRecipe {
+  title: string
+  sourceName: string
+  imageUrl: string
+  ingredientIds: string[]
+  memo: string
+}
+
+/** レシピ作成入力 */
+export interface CreateRecipeInput {
+  lineUserId: string
+  url: string
+  title: string
+  sourceName?: string
+  imageUrl?: string
+  ingredientIds: string[]
+  memo?: string
+}

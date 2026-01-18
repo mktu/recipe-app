@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { RecipeWithIngredients } from '@/types/recipe'
@@ -10,49 +9,45 @@ interface RecipeCardProps {
   onClick: () => void
 }
 
-export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
-  return (
-    <Card
-      className="flex cursor-pointer gap-3 p-3 transition-colors hover:bg-muted/50"
-      onClick={onClick}
-    >
-      {/* サムネイル画像 */}
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-        {recipe.image_url ? (
-          <Image
-            src={recipe.image_url}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            sizes="64px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">
-            🍳
-          </div>
-        )}
-      </div>
+const badgeClass = 'rounded-full px-2.5 py-0.5 text-xs font-normal'
 
-      {/* コンテンツ */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h3 className="truncate font-semibold leading-tight">{recipe.title}</h3>
-        {recipe.source_name && (
-          <p className="truncate text-sm text-muted-foreground">{recipe.source_name}</p>
-        )}
-        {recipe.mainIngredients.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {recipe.mainIngredients.slice(0, 3).map((ing) => (
-              <Badge key={ing.id} variant="outline" className="text-xs">
-                {ing.name}
-              </Badge>
-            ))}
-            {recipe.mainIngredients.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{recipe.mainIngredients.length - 3}
-              </Badge>
+export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
+  const displayIngredients = recipe.mainIngredients.slice(0, 3)
+  const extraCount = recipe.mainIngredients.length - 3
+
+  return (
+    <Card className="cursor-pointer p-4 transition-colors hover:bg-muted/50" onClick={onClick}>
+      <div className="flex gap-4">
+        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
+          {recipe.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={recipe.image_url} alt={recipe.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-3xl">🍳</div>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
+          <div>
+            <h3 className="font-semibold leading-tight">{recipe.title}</h3>
+            {recipe.source_name && (
+              <p className="mt-1 text-sm text-muted-foreground">{recipe.source_name}</p>
             )}
           </div>
-        )}
+          {displayIngredients.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {displayIngredients.map((ing) => (
+                <Badge key={ing.id} variant="secondary" className={badgeClass}>
+                  {ing.name}
+                </Badge>
+              ))}
+              {extraCount > 0 && (
+                <Badge variant="secondary" className={badgeClass}>
+                  +{extraCount}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   )

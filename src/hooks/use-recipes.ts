@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef, useTransition } from 'react'
 import { useAuth } from '@/lib/auth'
-import { fetchRecipes } from '@/lib/db/queries/recipes'
 import type { SortOrder, RecipeWithIngredients } from '@/types/recipe'
 
 interface UseRecipesOptions {
@@ -13,13 +12,31 @@ interface UseRecipesOptions {
 
 interface UseRecipesReturn {
   recipes: RecipeWithIngredients[]
-  isLoading: boolean   // 初回ロード中
-  isPending: boolean   // リフェッチ中（useTransition）
+  isLoading: boolean
+  isPending: boolean
   error: Error | null
   refetch: () => void
 }
 
+interface FetchParams {
+  lineUserId: string
+  searchQuery: string
+  ingredientIds: string[]
+  sortOrder: SortOrder
+}
+
 const DEBOUNCE_MS = 300
+
+async function fetchRecipesApi(params: FetchParams): Promise<RecipeWithIngredients[]> {
+  const response = await fetch('/api/recipes/list', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+  const result = await response.json()
+  if (!response.ok) throw new Error(result.error || 'レシピの取得に失敗しました')
+  return result.data || []
+}
 
 export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const { searchQuery = '', ingredientIds = [], sortOrder = 'newest' } = options
@@ -29,7 +46,6 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [isPending, startTransition] = useTransition()
-
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isMountedRef = useRef(true)
 
@@ -39,47 +55,21 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
       setIsInitialLoad(false)
       return
     }
-
     setError(null)
-
-    const { data, error: fetchError } = await fetchRecipes({
-      userId: user.lineUserId,
-      searchQuery,
-      ingredientIds,
-      sortOrder,
-    })
-
-    if (isMountedRef.current) {
-      // startTransitionで状態更新をラップし、UIのブロックを防ぐ
-      startTransition(() => {
-        setRecipes(data)
-        setError(fetchError)
-        setIsInitialLoad(false)
-      })
+    try {
+      const data = await fetchRecipesApi({ lineUserId: user.lineUserId, searchQuery, ingredientIds, sortOrder })
+      if (isMountedRef.current) startTransition(() => { setRecipes(data); setIsInitialLoad(false) })
+    } catch (err) {
+      if (isMountedRef.current) startTransition(() => { setError(err instanceof Error ? err : new Error('Unknown error')); setIsInitialLoad(false) })
     }
   }, [user, searchQuery, ingredientIds, sortOrder])
 
-  // デバウンス付きで再読み込み
   useEffect(() => {
     isMountedRef.current = true
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      loadRecipes()
-    }, searchQuery ? DEBOUNCE_MS : 0)
-
-    return () => {
-      isMountedRef.current = false
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(loadRecipes, searchQuery ? DEBOUNCE_MS : 0)
+    return () => { isMountedRef.current = false; if (timeoutRef.current) clearTimeout(timeoutRef.current) }
   }, [loadRecipes, searchQuery])
 
-  // isLoading: 初回ロード中のみtrue（スケルトン表示用）
-  // isPending: リフェッチ中（控えめなインジケーター用、または無視）
   return { recipes, isLoading: isInitialLoad, isPending, error, refetch: loadRecipes }
 }
