@@ -47,16 +47,13 @@ export async function fetchRecipes(
   const { userId: lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } = params
 
   try {
-    // line_user_id から user_id (UUID) を取得
     const { data: user } = await supabase
       .from('users')
       .select('id')
       .eq('line_user_id', lineUserId)
       .single()
 
-    if (!user) {
-      return { data: [], error: null }
-    }
+    if (!user) return { data: [], error: null }
 
     const userId = (user as { id: string }).id
     const recipes = await fetchRecipesFromDb(userId, searchQuery, sortOrder)
@@ -112,12 +109,6 @@ async function fetchIngredientMap(recipeIds: string[]): Promise<Map<string, Reci
   return buildIngredientMap((data ?? []) as RecipeIngredientRow[])
 }
 
-/** 閲覧数をカウントアップ（TODO: レシピ詳細画面実装時に使用） */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function recordRecipeView(recipeId: string): Promise<void> {
-  // TODO: レシピ詳細画面実装時に実装
-}
-
 export interface CreateRecipeResult {
   id: string
 }
@@ -168,3 +159,6 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
+
+// 詳細関連のクエリは recipe-detail.ts から re-export
+export { fetchRecipeById, deleteRecipe, updateRecipeMemo, recordRecipeView } from './recipe-detail'

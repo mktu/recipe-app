@@ -47,3 +47,14 @@ export interface CreateRecipeInput {
   ingredientIds: string[]
   memo?: string
 }
+
+/** 材料（分量付き） */
+export interface IngredientRaw {
+  name: string
+  amount: string
+}
+
+/** レシピ詳細（詳細画面用） */
+export interface RecipeDetail extends RecipeWithIngredients {
+  ingredientsRaw: IngredientRaw[]
+}

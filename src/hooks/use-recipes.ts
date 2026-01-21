@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useTransition } from 'react'
+import useSWR from 'swr'
 import { useAuth } from '@/lib/auth'
 import type { SortOrder, RecipeWithIngredients } from '@/types/recipe'
 
@@ -25,8 +25,6 @@ interface FetchParams {
   sortOrder: SortOrder
 }
 
-const DEBOUNCE_MS = 300
-
 async function fetchRecipesApi(params: FetchParams): Promise<RecipeWithIngredients[]> {
   const response = await fetch('/api/recipes/list', {
     method: 'POST',
@@ -42,34 +40,30 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const { searchQuery = '', ingredientIds = [], sortOrder = 'newest' } = options
   const { user } = useAuth()
 
-  const [recipes, setRecipes] = useState<RecipeWithIngredients[]>([])
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const [isPending, startTransition] = useTransition()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const isMountedRef = useRef(true)
+  // SWRのキーを生成（userがいない場合はnullでフェッチをスキップ）
+  const swrKey = user
+    ? ['recipes', user.lineUserId, searchQuery, ingredientIds.join(','), sortOrder]
+    : null
 
-  const loadRecipes = useCallback(async () => {
-    if (!user) {
-      setRecipes([])
-      setIsInitialLoad(false)
-      return
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    swrKey,
+    () => fetchRecipesApi({
+      lineUserId: user!.lineUserId,
+      searchQuery,
+      ingredientIds,
+      sortOrder,
+    }),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 300, // 300ms以内の同一リクエストは重複排除
     }
-    setError(null)
-    try {
-      const data = await fetchRecipesApi({ lineUserId: user.lineUserId, searchQuery, ingredientIds, sortOrder })
-      if (isMountedRef.current) startTransition(() => { setRecipes(data); setIsInitialLoad(false) })
-    } catch (err) {
-      if (isMountedRef.current) startTransition(() => { setError(err instanceof Error ? err : new Error('Unknown error')); setIsInitialLoad(false) })
-    }
-  }, [user, searchQuery, ingredientIds, sortOrder])
+  )
 
-  useEffect(() => {
-    isMountedRef.current = true
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(loadRecipes, searchQuery ? DEBOUNCE_MS : 0)
-    return () => { isMountedRef.current = false; if (timeoutRef.current) clearTimeout(timeoutRef.current) }
-  }, [loadRecipes, searchQuery])
-
-  return { recipes, isLoading: isInitialLoad, isPending, error, refetch: loadRecipes }
+  return {
+    recipes: data ?? [],
+    isLoading,
+    isPending: isValidating,
+    error: error ?? null,
+    refetch: () => mutate(),
+  }
 }
