@@ -15,5 +15,5 @@ export function createServerClient(): SupabaseClient<Database> {
   if (!serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
   }
-  return createClient(supabaseUrl, serviceRoleKey)
+  return createClient<Database>(supabaseUrl, serviceRoleKey)
 }
