@@ -1,97 +1,117 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2025-01-21 (レシピ詳細画面実装完了)
+2026-01-23 (AI解析機能の本実装完了)
 
 ## 現在のフェーズ
-フェーズ 1：Web/LIFF 基盤と DB 連携
+フェーズ 2：AI パース (Jina Reader + Gemini)
 
 ## 直近の完了タスク
-- [x] **レシピ詳細画面実装**
-  - 詳細表示（/recipes/[id]）
-  - メモのインライン編集
-  - 削除機能（確認ダイアログ付き）
-  - 閲覧数記録
-  - SWR導入でキャッシュ管理（戻る時のちらつき解消）
-- [x] **レシピ追加画面実装**
-  - URL入力画面（/recipes/add）
-  - 確認・編集画面（/recipes/add/confirm）
-  - AI解析スタブAPI（後でJina Reader + Geminiに置換）
+- [x] **AI解析機能の本実装**
+  - Jina Reader でWebページからテキスト取得
+  - Gemini 2.5 Flash で構造化データ抽出
+  - 食材マッチングロジック（alias検索 → 完全一致 → 新規作成）
+  - `ai`, `@ai-sdk/google`, `zod` パッケージ追加
 
 ## 進行中のタスク
 なし
 
-## 次にやること
-- [ ] AI解析の本実装（Jina Reader + Gemini）
+## 次にやること（要計画）
+
+### 優先度高：UX改善（バックグラウンド解析）
+
+**現在の問題:**
+1. delishkitchenなどメジャーサイトでJina Readerがブロックされる（HTTP 451）
+2. 解析に約20秒かかり、ユーザーが待たされる
+
+**提案された解決策:**
+
+**課題1: スクレイピング問題**
+- OGP情報をフォールバックとして取得（タイトル・画像のみ）
+- 取得できない場合は手動入力を促す
+
+**課題2: 解析時間問題 → フロー変更**
+
+現在のフロー:
+```
+URL入力 → 解析中（20秒待機） → 確認・編集画面 → 保存 → 一覧
+```
+
+提案フロー:
+```
+URL入力 → 即座に仮保存 → 一覧画面（解析中表示）
+           ↓
+      バックグラウンドで解析 → 完了したら更新
+```
+
+**実装に必要な変更:**
+1. `recipes`テーブルに `parsing_status` カラム追加（`pending` / `completed` / `failed`）
+2. URL入力後、即座にDBに仮保存してバックグラウンド解析開始
+3. 一覧画面で「解析中」カードの表示
+4. SWRのポーリングで解析完了を検知
+5. 確認・編集画面は不要になる可能性（詳細画面で編集）
+
+### その他
 - [ ] 全項目編集機能（将来対応として保留中）
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
 - Docker が必要（約 2GB のディスク使用）
 - 外部画像URLは next/image ではなく通常の img タグを使用
-- 認証はLIFF SDKベースでクライアントサイド取得（サーバーコンポーネントでの直接データ取得は不可）
+- 認証はLIFF SDKベースでクライアントサイド取得
+- **Gemini API無料枠:** `gemini-2.5-flash` を使用（20 requests/day程度）
+- **Jina Reader制限:** 一部サイト（delishkitchen等）はHTTP 451でブロックされる
 
-## レシピ詳細画面ファイル構成
+## AI解析関連ファイル構成
 
 ```
 src/
-├── app/
-│   ├── api/recipes/[id]/
-│   │   └── route.ts                       # GET/PATCH/DELETE
-│   └── recipes/[id]/
-│       ├── page.tsx                       # 詳細ページ
-│       ├── loading.tsx                    # ローディングUI
-│       └── not-found.tsx                  # 404ページ
-├── lib/db/queries/
-│   ├── recipes.ts                         # 一覧・作成クエリ
-│   └── recipe-detail.ts                   # 詳細・削除・更新クエリ
-├── hooks/
-│   └── use-recipes.ts                     # SWRでレシピ一覧取得
-└── components/features/recipe-detail/
-    ├── recipe-detail-page.tsx             # メインコンポーネント
-    ├── recipe-detail-wrapper.tsx          # データ取得ラッパー
-    ├── recipe-header.tsx                  # 画像・タイトル・食材
-    ├── recipe-ingredients.tsx             # 材料リスト
-    ├── recipe-memo.tsx                    # メモ（インライン編集）
-    ├── memo-display.tsx                   # メモ表示
-    ├── memo-editor.tsx                    # メモ編集フォーム
-    ├── recipe-actions.tsx                 # 削除・外部リンク
-    └── use-recipe-actions.ts              # API呼び出しhook
+├── lib/
+│   ├── llm/
+│   │   ├── gemini-client.ts        # Gemini 2.5 Flash クライアント
+│   │   ├── recipe-schema.ts        # Zodスキーマ定義
+│   │   └── extract-recipe.ts       # LLM抽出ロジック（プロンプト含む）
+│   ├── scraper/
+│   │   └── jina-reader.ts          # Jina Reader APIラッパー
+│   └── recipe/
+│       ├── parse-recipe.ts         # オーケストレータ（Jina→Gemini→マッチング）
+│       └── match-ingredients.ts    # 食材マッチングロジック
 ```
 
 ## 技術的なポイント
 
-### SWRによるキャッシュ管理
-```typescript
-// use-recipes.ts
-const { data, error, isLoading } = useSWR(swrKey, fetcher, {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-})
+### AI解析フロー
 ```
-- ページ遷移後もキャッシュが効く
-- stale-while-revalidate パターンで最新データを取得
+URL → Jina Reader（テキスト取得） → Gemini（構造化抽出） → 食材マッチング → ParsedRecipe
+```
 
-### 認証情報の受け渡し
+### 食材マッチングロジック
+1. `ingredient_aliases` でエイリアス検索
+2. `ingredients` で完全一致検索
+3. 見つからなければ新規作成（`needs_review: true`）
+
+### Geminiモデル設定
 ```typescript
-// クライアントからAPIへヘッダーで送信
-fetch(`/api/recipes/${id}`, {
-  headers: { 'x-line-user-id': user.lineUserId },
-})
+// src/lib/llm/gemini-client.ts
+export const geminiFlash = google('gemini-2.5-flash')
 ```
+※ 無料枠があるモデルは限られている。`gemini-2.0-flash`等は無料枠なし。
 
 ## コミット履歴（直近）
 ```
+5a7a996 Implement AI recipe parsing with Jina Reader and Gemini
+f338849 Update SESSION.md for handoff
 c9ed3db Improve memo UI with inline editing
 7b0701e Add recipe detail page with SWR for data fetching
-c09d819 Update SESSION.md for handoff
-617cb45 Add loading.tsx for streaming SSR on confirm page
 ```
+
+## GitHubリポジトリ
+https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
-- `src/lib/auth/` - 認証レイヤー
+- `src/lib/llm/` - LLM関連（Gemini）
+- `src/lib/scraper/` - スクレイピング（Jina Reader）
+- `src/lib/recipe/` - レシピ解析・食材マッチング
 - `src/lib/db/queries/` - Supabase クエリ
-- `src/components/features/recipe-detail/` - 詳細画面コンポーネント
-- `src/hooks/use-recipes.ts` - SWRによるレシピ取得
