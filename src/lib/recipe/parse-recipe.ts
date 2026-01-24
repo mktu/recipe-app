@@ -1,4 +1,6 @@
 import type { ParsedRecipe } from '@/types/recipe'
+import { fetchHtml, HtmlFetchError } from '@/lib/scraper/html-fetcher'
+import { extractRecipeFromJsonLd } from '@/lib/scraper/json-ld-extractor'
 import { fetchPageContent, JinaReaderError } from '@/lib/scraper/jina-reader'
 import { extractRecipeInfo } from '@/lib/llm/extract-recipe'
 import { matchIngredients } from './match-ingredients'
@@ -31,43 +33,90 @@ function createEmptyResult(url: string): ParsedRecipe {
 }
 
 /**
- * URLからレシピ情報を解析する
- *
- * 処理フロー:
- * 1. Jina Reader でURLからコンテンツ取得
- * 2. Gemini で構造化データ抽出
- * 3. 食材名を ingredients/ingredient_aliases で正規化
+ * JSON-LD (schema.org/Recipe) を使用してレシピを解析
+ * @returns 解析結果、または失敗時はnull
  */
-export async function parseRecipe(url: string): Promise<ParsedRecipe> {
+async function parseWithJsonLd(url: string): Promise<ParsedRecipe | null> {
   try {
-    // Step 1: コンテンツ取得
-    const { content, title: pageTitle, isVideo } = await fetchPageContent(url)
+    const { html } = await fetchHtml(url)
+    const extraction = extractRecipeFromJsonLd(html, url)
 
-    // 動画系URLは空の結果を返す（手動入力を促す）
-    if (isVideo) {
-      return createEmptyResult(url)
+    if (!extraction) {
+      console.log('No valid JSON-LD Recipe found, falling back to Jina+Gemini')
+      return null
     }
 
-    // コンテンツが取得できなかった場合
-    if (!content) {
-      return createEmptyResult(url)
-    }
-
-    // Step 2: LLM で抽出
-    const extraction = await extractRecipeInfo(content, url)
-
-    // Step 3: 食材マッチング
-    const matchedIngredients = await matchIngredients(extraction.mainIngredients)
+    // JSON-LD抽出成功 - 食材マッチング
+    const matchedIngredients = await matchIngredients(extraction.ingredients)
 
     return {
-      title: extraction.title || pageTitle,
-      sourceName: extraction.sourceName || extractDomainName(url),
-      imageUrl: extraction.imageUrl || '',
+      title: extraction.title,
+      sourceName: extraction.sourceName,
+      imageUrl: extraction.imageUrl,
       ingredientIds: matchedIngredients.map((m) => m.ingredientId),
       memo: '',
     }
   } catch (error) {
-    // エラー時は空の結果を返す（ユーザーに手動入力を促す）
+    if (error instanceof HtmlFetchError) {
+      console.log(`HTML fetch failed (${error.statusCode}), trying Jina Reader`)
+    } else {
+      console.error('JSON-LD extraction failed:', error)
+    }
+    return null
+  }
+}
+
+/**
+ * Jina Reader + Gemini を使用してレシピを解析（フォールバック）
+ * @returns 解析結果、または失敗時はnull
+ */
+async function parseWithJinaGemini(url: string): Promise<ParsedRecipe | null> {
+  const { content, title: pageTitle, isVideo } = await fetchPageContent(url)
+
+  // 動画系URLは解析不可
+  if (isVideo || !content) {
+    return null
+  }
+
+  const extraction = await extractRecipeInfo(content, url)
+  const matchedIngredients = await matchIngredients(extraction.mainIngredients)
+
+  return {
+    title: extraction.title || pageTitle,
+    sourceName: extraction.sourceName || extractDomainName(url),
+    imageUrl: extraction.imageUrl || '',
+    ingredientIds: matchedIngredients.map((m) => m.ingredientId),
+    memo: '',
+  }
+}
+
+/**
+ * URLからレシピ情報を解析する
+ *
+ * 処理フロー:
+ * 1. まず JSON-LD (schema.org/Recipe) での抽出を試みる
+ * 2. 失敗した場合は Jina Reader + Gemini にフォールバック
+ * 3. 食材名を ingredients/ingredient_aliases で正規化
+ */
+export async function parseRecipe(url: string): Promise<ParsedRecipe> {
+  try {
+    // Strategy 1: JSON-LD抽出（高速・Jinaブロック回避）
+    const jsonLdResult = await parseWithJsonLd(url)
+    if (jsonLdResult) {
+      console.log('Successfully parsed with JSON-LD')
+      return jsonLdResult
+    }
+
+    // Strategy 2: Jina Reader + Gemini（フォールバック）
+    const jinaResult = await parseWithJinaGemini(url)
+    if (jinaResult) {
+      console.log('Successfully parsed with Jina+Gemini')
+      return jinaResult
+    }
+
+    // 両方失敗
+    return createEmptyResult(url)
+  } catch (error) {
     console.error('Recipe parsing failed:', error)
 
     if (error instanceof JinaReaderError) {
