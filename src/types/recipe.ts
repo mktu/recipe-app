@@ -3,6 +3,13 @@ import type { Tables } from '@/types/database'
 /** ソート順 */
 export type SortOrder = 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed'
 
+/** 食材 */
+export interface Ingredient {
+  id: string
+  name: string
+  category: string
+}
+
 /** 食材情報（レシピに紐づく） */
 export interface RecipeIngredient {
   id: string

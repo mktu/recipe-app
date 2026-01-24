@@ -1,6 +1,29 @@
 import { supabase } from '@/lib/db/client'
-import type { IngredientsByCategory } from '@/types/recipe'
+import type { IngredientsByCategory, Ingredient } from '@/types/recipe'
 import type { Tables } from '@/types/database'
+
+/**
+ * IDから食材情報を取得（needs_review関係なく取得）
+ */
+export async function fetchIngredientsByIds(ids: string[]): Promise<{
+  data: Ingredient[]
+  error: Error | null
+}> {
+  if (ids.length === 0) return { data: [], error: null }
+
+  try {
+    const { data, error } = await supabase
+      .from('ingredients')
+      .select('id, name, category')
+      .in('id', ids)
+
+    if (error) throw error
+
+    return { data: (data ?? []) as Ingredient[], error: null }
+  } catch (err) {
+    return { data: [], error: err instanceof Error ? err : new Error('Unknown error') }
+  }
+}
 
 /**
  * カテゴリ別に食材一覧を取得
