@@ -1,4 +1,4 @@
-import { generateObject } from 'ai'
+import { generateText, Output } from 'ai'
 import { geminiFlash } from './gemini-client'
 import { recipeExtractionSchema, RecipeExtraction } from './recipe-schema'
 
@@ -186,10 +186,15 @@ export async function extractRecipeInfo(
   content: string,
   sourceUrl: string
 ): Promise<RecipeExtraction> {
-  const { object } = await generateObject({
+  const { output } = await generateText({
     model: geminiFlash,
-    schema: recipeExtractionSchema,
+    output: Output.object({ schema: recipeExtractionSchema }),
     prompt: buildPrompt(content, sourceUrl),
   })
-  return object
+
+  if (!output) {
+    throw new Error('Failed to extract recipe info: no output')
+  }
+
+  return output
 }
