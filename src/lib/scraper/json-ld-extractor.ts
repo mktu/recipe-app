@@ -57,11 +57,42 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 /**
+ * @graph配列内からRecipeを検索
+ */
+function findRecipeInGraph(graph: unknown[]): ParsedRecipeJsonLd | null {
+  for (const item of graph) {
+    if (item && typeof item === 'object') {
+      const itemObj = item as Record<string, unknown>
+      if (isRecipeType(itemObj['@type'])) {
+        return parseRecipeObject(itemObj)
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * 配列内からRecipeを再帰検索
+ */
+function findRecipeInArray(arr: unknown[]): ParsedRecipeJsonLd | null {
+  for (const item of arr) {
+    const result = findRecipeSchema(item)
+    if (result) return result
+  }
+  return null
+}
+
+/**
  * JSON-LDデータからRecipeスキーマを検索・パース
  * 直接Recipe、@graph配列、ルート配列に対応
  */
 function findRecipeSchema(data: unknown): ParsedRecipeJsonLd | null {
   if (!data || typeof data !== 'object') return null
+
+  // ルートが配列の場合
+  if (Array.isArray(data)) {
+    return findRecipeInArray(data)
+  }
 
   const obj = data as Record<string, unknown>
 
@@ -72,22 +103,7 @@ function findRecipeSchema(data: unknown): ParsedRecipeJsonLd | null {
 
   // @graph配列内を検索
   if (Array.isArray(obj['@graph'])) {
-    for (const item of obj['@graph']) {
-      if (item && typeof item === 'object') {
-        const itemObj = item as Record<string, unknown>
-        if (isRecipeType(itemObj['@type'])) {
-          return parseRecipeObject(itemObj)
-        }
-      }
-    }
-  }
-
-  // ルートが配列の場合
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      const result = findRecipeSchema(item)
-      if (result) return result
-    }
+    return findRecipeInGraph(obj['@graph'])
   }
 
   return null
@@ -111,24 +127,33 @@ function parseRecipeObject(obj: Record<string, unknown>): ParsedRecipeJsonLd | n
 }
 
 /**
+ * オブジェクトからurl プロパティを抽出
+ */
+function extractUrlFromObject(obj: unknown): string {
+  if (obj && typeof obj === 'object' && 'url' in obj) {
+    const url = (obj as Record<string, unknown>)['url']
+    if (typeof url === 'string') return url
+  }
+  return ''
+}
+
+/**
+ * 配列から画像URLを抽出
+ */
+function extractImageFromArray(arr: unknown[]): string {
+  const first = arr[0]
+  if (typeof first === 'string') return first
+  return extractUrlFromObject(first)
+}
+
+/**
  * 画像URLを抽出（様々な形式に対応）
  */
 function extractImageUrl(image: unknown): string {
   if (!image) return ''
   if (typeof image === 'string') return image
-  if (Array.isArray(image)) {
-    const first = image[0]
-    if (typeof first === 'string') return first
-    if (first && typeof first === 'object' && 'url' in first) {
-      const url = (first as Record<string, unknown>)['url']
-      if (typeof url === 'string') return url
-    }
-  }
-  if (typeof image === 'object' && 'url' in image) {
-    const url = (image as Record<string, unknown>)['url']
-    if (typeof url === 'string') return url
-  }
-  return ''
+  if (Array.isArray(image)) return extractImageFromArray(image)
+  return extractUrlFromObject(image)
 }
 
 /**
