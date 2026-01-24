@@ -14,7 +14,7 @@ interface ParsedRecipeJsonLd {
   name: string
   image?: unknown
   recipeIngredient?: string[]
-  author?: unknown
+  publisher?: unknown
 }
 
 /**
@@ -122,7 +122,7 @@ function parseRecipeObject(obj: Record<string, unknown>): ParsedRecipeJsonLd | n
     name,
     image: obj['image'],
     recipeIngredient: isStringArray(recipeIngredient) ? recipeIngredient : undefined,
-    author: obj['author'],
+    publisher: obj['publisher'],
   }
 }
 
@@ -171,13 +171,13 @@ function extractDomainName(url: string): string {
 }
 
 /**
- * authorフィールドからソース名を抽出
+ * publisherフィールドからソース名（サイト名）を抽出
  */
-function extractSourceName(author: unknown, url: string): string {
-  if (!author) return extractDomainName(url)
-  if (typeof author === 'string') return author
-  if (author && typeof author === 'object' && 'name' in author) {
-    const name = (author as Record<string, unknown>)['name']
+function extractSourceName(publisher: unknown, url: string): string {
+  if (!publisher) return extractDomainName(url)
+  if (typeof publisher === 'string') return publisher
+  if (publisher && typeof publisher === 'object' && 'name' in publisher) {
+    const name = (publisher as Record<string, unknown>)['name']
     if (typeof name === 'string') return name
   }
   return extractDomainName(url)
@@ -223,7 +223,7 @@ export function extractRecipeFromJsonLd(
     if (recipe && recipe.recipeIngredient?.length) {
       return {
         title: recipe.name,
-        sourceName: extractSourceName(recipe.author, sourceUrl),
+        sourceName: extractSourceName(recipe.publisher, sourceUrl),
         imageUrl: extractImageUrl(recipe.image),
         ingredients: normalizeIngredients(recipe.recipeIngredient),
       }
