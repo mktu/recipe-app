@@ -1,12 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-26 (食材マッチング・親子展開検索完了)
+2026-01-26 (食材フィルターUI改善)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 食材マッチング改善完了
 
 ## 直近の完了タスク
+- [x] **食材フィルターUI改善**
+  - 152件の食材を全表示 → 検索入力 + 履歴表示に変更
+  - `useIngredientHistory` フック: localStorage で使用履歴を保存（最大10件）
+  - `useIngredientFilter` フック: 検索・フィルタロジックを集約
+  - 検索入力で部分一致フィルタリング
+  - 選択済み食材を常に表示（検索中も）
+  - 選択時に検索クエリを自動クリア
+  - コンポーネント分割でlint警告解消
 - [x] **親子展開検索のバグ修正**
   - 原因: `src/app/api/recipes/list/route.ts` が独自の `filterByIngredients` 関数を持ち、親子展開ロジックが含まれていなかった
   - 修正: API ルートに `getIngredientAndChildIds` 関数を追加し、親子展開対応の `filterByIngredients` を実装
@@ -99,7 +107,9 @@ src/
 │   ├── database.ts                 # DB型定義（parent_id, ingredients_linked追加）
 │   └── json-ld.ts                  # JSON-LD型定義（schema-dts使用）
 └── hooks/
-    └── use-selected-ingredients.ts # 選択済み食材取得フック
+    ├── use-selected-ingredients.ts # 選択済み食材取得フック
+    ├── use-ingredient-history.ts   # 食材使用履歴（localStorage）
+    └── use-ingredient-filter.ts    # 食材フィルターロジック
 ```
 
 ## コミット履歴（直近）
@@ -121,4 +131,6 @@ https://github.com/mktu/recipe-app
 - `src/lib/recipe/match-ingredients.ts` - 食材マッチングロジック
 - `src/lib/recipe/normalize-ingredient.ts` - 食材名正規化
 - `src/lib/db/queries/recipes.ts` - レシピクエリ
+- `src/components/features/home/ingredient-filter.tsx` - 食材フィルターUI
+- `src/hooks/use-ingredient-filter.ts` - 食材フィルターロジック
 - `supabase/migrations/20250125000000_ingredient_improvements.sql` - DBマイグレーション
