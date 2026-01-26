@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CC_TOOL_INPUT\" | grep -qE 'git commit'; then echo ''; echo '⚠️  REMINDER: requirements.md の更新は必要ですか？'; echo '   実装した機能が要件定義に反映されているか確認してください。'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
