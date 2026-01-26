@@ -1,10 +1,10 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-25 (親子展開検索バグ修正)
+2026-01-26 (食材マッチング・親子展開検索完了)
 
 ## 現在のフェーズ
-フェーズ 2：AI パース (Jina Reader + Gemini) - 親子展開検索修正完了
+フェーズ 2：AI パース (Jina Reader + Gemini) - 食材マッチング改善完了
 
 ## 直近の完了タスク
 - [x] **親子展開検索のバグ修正**
@@ -30,8 +30,12 @@
 ## 次にやること（優先度順）
 
 ### 動作確認
-- [x] 親子関係での検索が正しく動作するか確認（修正完了）
 - [ ] 実際にレシピを登録して食材マッチングの動作確認
+
+### リファクタリング
+- [ ] `eslint-disable-next-line @typescript-eslint/no-explicit-any` の解消
+  - `src/app/api/recipes/list/route.ts` 等で `SupabaseClient<Database>` 型を使用
+  - 関連ファイル: `src/lib/db/queries/recipes.ts`, `src/lib/recipe/match-ingredients.ts`
 
 ### 将来の改善（必要に応じて）
 - [ ] LLMフォールバック（ルールベースでマッチしない場合）
@@ -100,11 +104,11 @@ src/
 
 ## コミット履歴（直近）
 ```
+c99f0c9 Add ingredient matching improvements and parent-child search expansion
 99f6fbd Update SESSION.md for handoff
 f2bed62 Fix ingredient name display in selector
 e9c6d24 Fix sourceName to use publisher instead of author
 8c3aa2e Replace deprecated generateObject with generateText
-eefb1fa Refactor json-ld-extractor to reduce complexity
 ```
 
 ## GitHubリポジトリ
