@@ -44,6 +44,7 @@ export interface Database {
           last_viewed_at: string | null
           created_at: string
           updated_at: string
+          ingredients_linked: boolean
         }
         Insert: {
           id?: string
@@ -59,6 +60,7 @@ export interface Database {
           last_viewed_at?: string | null
           created_at?: string
           updated_at?: string
+          ingredients_linked?: boolean
         }
         Update: {
           id?: string
@@ -74,6 +76,7 @@ export interface Database {
           last_viewed_at?: string | null
           created_at?: string
           updated_at?: string
+          ingredients_linked?: boolean
         }
       }
       ingredients: {
@@ -83,6 +86,7 @@ export interface Database {
           category: string
           needs_review: boolean
           created_at: string
+          parent_id: string | null
         }
         Insert: {
           id?: string
@@ -90,6 +94,7 @@ export interface Database {
           category: string
           needs_review?: boolean
           created_at?: string
+          parent_id?: string | null
         }
         Update: {
           id?: string
@@ -97,6 +102,7 @@ export interface Database {
           category?: string
           needs_review?: boolean
           created_at?: string
+          parent_id?: string | null
         }
       }
       ingredient_aliases: {

@@ -189,3 +189,28 @@ INSERT INTO ingredients (name, category) VALUES
   ('春巻きの皮', 'その他'),
   ('ワンタンの皮', 'その他')
 ON CONFLICT (name) DO NOTHING;
+
+-- ===========================================
+-- 親子関係の設定
+-- 親食材で検索すると子食材もヒットするようにする
+-- ===========================================
+
+-- 鶏肉の子食材
+UPDATE ingredients SET parent_id = (SELECT id FROM ingredients WHERE name = '鶏肉')
+WHERE name IN ('鶏むね肉', '鶏もも肉', '鶏ささみ', '鶏手羽先', '鶏手羽元', '鶏ひき肉');
+
+-- 豚肉の子食材
+UPDATE ingredients SET parent_id = (SELECT id FROM ingredients WHERE name = '豚肉')
+WHERE name IN ('豚バラ肉', '豚ロース', '豚こま切れ肉', '豚ひき肉');
+
+-- 牛肉の子食材
+UPDATE ingredients SET parent_id = (SELECT id FROM ingredients WHERE name = '牛肉')
+WHERE name IN ('牛薄切り肉', '牛こま切れ肉', '牛ひき肉');
+
+-- 豆腐の子食材
+UPDATE ingredients SET parent_id = (SELECT id FROM ingredients WHERE name = '豆腐')
+WHERE name IN ('木綿豆腐', '絹ごし豆腐', '高野豆腐');
+
+-- トマトの子食材
+UPDATE ingredients SET parent_id = (SELECT id FROM ingredients WHERE name = 'トマト')
+WHERE name = 'ミニトマト';

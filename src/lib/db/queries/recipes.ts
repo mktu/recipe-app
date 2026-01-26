@@ -28,15 +28,63 @@ function buildIngredientMap(rows: RecipeIngredientRow[]): Map<string, RecipeIngr
   return map
 }
 
-/** 食材IDでフィルタリング（AND ロジック） */
-function filterByIngredients(
+type IngredientWithParent = {
+  id: string
+  parent_id: string | null
+}
+
+/**
+ * 食材IDとその子食材IDを取得（親子展開）
+ * 例: 「豚肉」のIDを渡すと、「豚肉」「豚バラ肉」「豚こま切れ肉」等のIDを返す
+ */
+async function getIngredientAndChildIds(ingredientIds: string[]): Promise<Map<string, string[]>> {
+  if (ingredientIds.length === 0) return new Map()
+
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('id, parent_id')
+    .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
+
+  if (error) {
+    console.error('[getIngredientAndChildIds] Error:', error)
+    return new Map(ingredientIds.map((id) => [id, [id]]))
+  }
+
+  const rows = (data ?? []) as IngredientWithParent[]
+
+  // 各検索食材IDに対して、マッチするID一覧を構築
+  const result = new Map<string, string[]>()
+  for (const searchId of ingredientIds) {
+    const matchingIds = rows
+      .filter((row) => row.id === searchId || row.parent_id === searchId)
+      .map((row) => row.id)
+    // 自分自身も含める
+    if (!matchingIds.includes(searchId)) {
+      matchingIds.push(searchId)
+    }
+    result.set(searchId, matchingIds)
+  }
+  return result
+}
+
+/** 食材IDでフィルタリング（AND ロジック + 親子展開） */
+async function filterByIngredients(
   recipes: RecipeWithIngredients[],
   ingredientIds: string[]
-): RecipeWithIngredients[] {
+): Promise<RecipeWithIngredients[]> {
   if (ingredientIds.length === 0) return recipes
+
+  // 各検索食材について、その食材+子食材のIDを取得
+  const expandedIdsMap = await getIngredientAndChildIds(ingredientIds)
+
   return recipes.filter((recipe) => {
-    const ids = recipe.mainIngredients.map((i) => i.id)
-    return ingredientIds.every((id) => ids.includes(id))
+    const recipeIngredientIds = recipe.mainIngredients.map((i) => i.id)
+
+    // 全ての検索食材について、その食材か子食材がレシピに含まれているか
+    return ingredientIds.every((searchId) => {
+      const expandedIds = expandedIdsMap.get(searchId) || [searchId]
+      return expandedIds.some((id) => recipeIngredientIds.includes(id))
+    })
   })
 }
 
@@ -62,7 +110,7 @@ export async function fetchRecipes(
     const ingredientMap = await fetchIngredientMap(recipes.map((r) => r.id))
     const result = recipes.map((r) => ({ ...r, mainIngredients: ingredientMap.get(r.id) || [] }))
 
-    return { data: filterByIngredients(result, ingredientIds), error: null }
+    return { data: await filterByIngredients(result, ingredientIds), error: null }
   } catch (err) {
     return { data: [], error: err instanceof Error ? err : new Error('Unknown error') }
   }
@@ -128,6 +176,8 @@ async function insertRecipe(supabase: any, userId: string, input: CreateRecipeIn
     source_name: input.sourceName || null,
     image_url: input.imageUrl || null,
     memo: input.memo || null,
+    // 食材マッチングが完了している場合は true
+    ingredients_linked: input.ingredientIds.length > 0,
   }).select('id').single()
   if (error) throw error
   return data

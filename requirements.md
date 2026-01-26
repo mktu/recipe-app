@@ -47,6 +47,7 @@
 
 - **食材タグ検索:** 登録された食材タグによるフィルタリング。
   - 複数食材の AND 検索に対応（例：「なす」AND「鶏肉」で両方使うレシピを絞り込み）。
+  - 親子展開対応（「豚肉」で検索 → 「豚バラ肉」等もヒット）。
 - **全文検索:** レシピ名やメモからのキーワード検索。
 - **ソート:** 登録順、閲覧順など。
 
@@ -68,25 +69,44 @@
 - **Frontend:** Next.js (App Router), TypeScript
 - **Styling:** Tailwind CSS, shadcn/ui
 - **Backend/DB:** Supabase (Auth, PostgreSQL)
-- **LLM API:** Gemini 1.5 Flash (無料枠活用)
+- **LLM API:** Gemini 2.5 Flash (無料枠活用)
 - **LLM 抽象化:** Vercel AI SDK (将来的なプロバイダー切り替えに対応)
-- **Scraper:** Jina Reader API (`https://r.jina.ai/{URL}`) ※LLM への入力用
+- **Scraper:**
+  - JSON-LD 抽出（schema.org/Recipe 対応サイト向け、高速）
+  - Jina Reader API（フォールバック用）
 - **Platform:** LINE LIFF (LINE 内アプリ)
 
 ---
 
-## 5. LLM 解析ロジック（詳細）
+## 5. レシピ解析ロジック（詳細）
 
-Gemini API (Vercel AI SDK 経由) に以下の役割を担わせる：
+### 解析フロー（2段階）
 
-1. **入力:** Jina Reader 等で取得したレシピページのテキストデータ。
-2. **処理:**
+```
+URL → HTML取得 → JSON-LD抽出 → [成功?]
+                                ├─ Yes → 食材マッチング → 完了（高速）
+                                └─ No  → Jina Reader → Gemini → 食材マッチング → 完了
+```
 
-- 膨大なテキストから「材料」セクションを特定。
-- 調味料（塩、醤油等）を除外し、メインの食材のみを抽出。
-- 「中華」「時短」などの属性を付与。
+### Strategy 1: JSON-LD 抽出（優先）
 
-3. **出力:** 構造化された JSON データ。
+多くのレシピサイト（DELISH KITCHEN, クラシル等）は schema.org/Recipe の JSON-LD を埋め込んでいる。
+
+1. **入力:** HTML ページ
+2. **処理:** `<script type="application/ld+json">` から Recipe オブジェクトを抽出
+3. **出力:** タイトル、材料リスト、画像URL、サイト名
+
+**メリット:** LLM 不要で高速（1-2秒）
+
+### Strategy 2: Jina Reader + Gemini（フォールバック）
+
+JSON-LD がないサイト向け。
+
+1. **入力:** Jina Reader で取得したテキストデータ
+2. **処理（Gemini）:**
+   - 膨大なテキストから「材料」セクションを特定
+   - 調味料（塩、醤油等）を除外し、メインの食材のみを抽出
+3. **出力:** 構造化された JSON データ
 
 ---
 
@@ -112,6 +132,7 @@ Gemini API (Vercel AI SDK 経由) に以下の役割を担わせる：
 - `memo`: String (ユーザーメモ)
 - `view_count`: Integer (閲覧回数、デフォルト 0)
 - `last_viewed_at`: Timestamp (最終閲覧日時)
+- `ingredients_linked`: Boolean (食材マッチング完了フラグ、デフォルト false)
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
 
@@ -121,6 +142,7 @@ Gemini API (Vercel AI SDK 経由) に以下の役割を担わせる：
 - `name`: String (Unique) -- "なす"
 - `category`: String -- "野菜", "肉", "魚介" 等
 - `needs_review`: Boolean (デフォルト false、AI が自動追加した場合は true)
+- `parent_id`: UUID (Foreign Key → ingredients.id) -- 親食材（例: 豚バラ肉 → 豚肉）
 - `created_at`: Timestamp
 
 ### `ingredient_aliases` テーブル（同義語辞書）
@@ -143,13 +165,44 @@ users ─────< recipes >───── recipe_ingredients >────
                                               ingredient_aliases
 ```
 
-#### 食材の正規化フロー
+#### 食材のマッチングフロー
 
-1. AI がレシピから食材を抽出（例：「茄子」）
-2. `ingredient_aliases` で検索 → 「なす」の ID を取得
-3. なければ `ingredients` で完全一致検索
-4. それでもなければ新規作成（要レビューフラグ付き）
-5. `recipe_ingredients` に紐づけを保存
+```
+入力: "豚肉細切れ 200g"
+  ↓
+正規化: "豚肉細切れ"（分量・単位を除去）
+  ↓
+マッチング（優先順）:
+  1. エイリアス検索 → なければ次へ
+  2. 完全一致検索 → なければ次へ
+  3. 部分一致検索（マスター食材が入力に含まれるか、最長優先）
+     例: "豚肉細切れ".includes("豚肉") → マッチ！
+  4. マッチなし → 新規作成（needs_review=true）
+  ↓
+recipe_ingredients に紐づけを保存
+```
+
+#### 検索時の親子展開
+
+「豚肉」で検索すると、子食材（豚バラ肉、豚こま切れ肉等）を含むレシピもヒットする。
+
+```
+検索: "豚肉"
+  ↓
+展開: "豚肉" + 子食材（"豚バラ肉", "豚こま切れ肉", "豚ロース", "豚ひき肉"）
+  ↓
+結果: いずれかを含むレシピがヒット
+```
+
+#### 親子関係の設定
+
+| 親食材 | 子食材 |
+|--------|--------|
+| 鶏肉 | 鶏むね肉, 鶏もも肉, 鶏ささみ, 鶏手羽先, 鶏手羽元, 鶏ひき肉 |
+| 豚肉 | 豚バラ肉, 豚ロース, 豚こま切れ肉, 豚ひき肉 |
+| 牛肉 | 牛薄切り肉, 牛こま切れ肉, 牛ひき肉 |
+| 豆腐 | 木綿豆腐, 絹ごし豆腐, 高野豆腐 |
+| トマト | ミニトマト |
 
 ### シードデータ
 
@@ -203,8 +256,11 @@ users ─────< recipes >───── recipe_ingredients >────
 
 ### フェーズ 2：AI パースの実装
 
-- Jina Reader + Claude API による自動抽出機能。
-- URL 入力のみで保存が完了する体験の構築。
+- JSON-LD 抽出による高速解析（schema.org/Recipe 対応サイト）
+- Jina Reader + Gemini API によるフォールバック抽出
+- URL 入力のみで保存が完了する体験の構築
+- 食材マッチング精度改善（正規化 + 部分一致）
+- 親子関係による検索拡張
 
 ### フェーズ 3：LINE Messaging API 連携
 

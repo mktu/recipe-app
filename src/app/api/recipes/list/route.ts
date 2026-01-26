@@ -50,9 +50,57 @@ function buildIngredientMap(rows: RecipeIngredientRow[]): Map<string, RecipeIngr
   return map
 }
 
-function filterByIngredients(recipes: RecipeWithIngredients[], ingredientIds: string[]): RecipeWithIngredients[] {
+type IngredientWithParent = {
+  id: string
+  parent_id: string | null
+}
+
+/**
+ * 食材IDとその子食材IDを取得（親子展開）
+ * 例: 「豚肉」のIDを渡すと、「豚肉」「豚バラ肉」「豚こま切れ肉」等のIDを返す
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getIngredientAndChildIds(supabase: any, ingredientIds: string[]): Promise<Map<string, string[]>> {
+  if (ingredientIds.length === 0) return new Map()
+
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('id, parent_id')
+    .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
+
+  if (error) {
+    console.error('[getIngredientAndChildIds] Error:', error)
+    return new Map(ingredientIds.map((id) => [id, [id]]))
+  }
+
+  const rows = (data ?? []) as IngredientWithParent[]
+  const result = new Map<string, string[]>()
+  for (const searchId of ingredientIds) {
+    const matchingIds = rows
+      .filter((row) => row.id === searchId || row.parent_id === searchId)
+      .map((row) => row.id)
+    if (!matchingIds.includes(searchId)) {
+      matchingIds.push(searchId)
+    }
+    result.set(searchId, matchingIds)
+  }
+  return result
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function filterByIngredients(supabase: any, recipes: RecipeWithIngredients[], ingredientIds: string[]): Promise<RecipeWithIngredients[]> {
   if (ingredientIds.length === 0) return recipes
-  return recipes.filter((r) => ingredientIds.every((id) => r.mainIngredients.some((i) => i.id === id)))
+
+  // 各検索食材について、その食材+子食材のIDを取得
+  const expandedIdsMap = await getIngredientAndChildIds(supabase, ingredientIds)
+
+  return recipes.filter((recipe) => {
+    const recipeIngredientIds = recipe.mainIngredients.map((i) => i.id)
+    return ingredientIds.every((searchId) => {
+      const expandedIds = expandedIdsMap.get(searchId) || [searchId]
+      return expandedIds.some((id) => recipeIngredientIds.includes(id))
+    })
+  })
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,7 +134,8 @@ export async function POST(request: NextRequest) {
 
     const ingredientMap = await fetchRecipeIngredients(supabase, recipes.map((r: { id: string }) => r.id))
     const result = attachIngredients(recipes, ingredientMap)
-    return NextResponse.json({ data: filterByIngredients(result, ingredientIds) })
+    const filtered = await filterByIngredients(supabase, result, ingredientIds)
+    return NextResponse.json({ data: filtered })
   } catch (err) {
     console.error('[POST /api/recipes/list] Error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 })
