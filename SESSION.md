@@ -1,36 +1,24 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-26 (食材フィルターUI改善)
+2026-01-27 (Supabase型リファクタリング完了)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 食材マッチング改善完了
 
 ## 直近の完了タスク
+- [x] **Supabase型リファクタリング**
+  - `supabase gen types typescript --local` で型を再生成
+  - `InsertTables` → `TablesInsert` に変更（新しいSupabase形式）
+  - 全ての `as never` / `as any` 型アサーションを削除
+  - `eslint-disable-next-line @typescript-eslint/no-explicit-any` を全て解消
+  - 自動生成ファイル（database.ts）を eslint max-lines から除外
+- [x] **Claude Code hooks追加**
+  - `git commit` 後に requirements.md 更新リマインダーを表示
 - [x] **食材フィルターUI改善**
-  - 152件の食材を全表示 → 検索入力 + 履歴表示に変更
-  - `useIngredientHistory` フック: localStorage で使用履歴を保存（最大10件）
-  - `useIngredientFilter` フック: 検索・フィルタロジックを集約
-  - 検索入力で部分一致フィルタリング
-  - 選択済み食材を常に表示（検索中も）
-  - 選択時に検索クエリを自動クリア
-  - コンポーネント分割でlint警告解消
+  - 検索入力 + 履歴表示に変更
 - [x] **親子展開検索のバグ修正**
-  - 原因: `src/app/api/recipes/list/route.ts` が独自の `filterByIngredients` 関数を持ち、親子展開ロジックが含まれていなかった
-  - 修正: API ルートに `getIngredientAndChildIds` 関数を追加し、親子展開対応の `filterByIngredients` を実装
-  - 結果: 「豚肉」で検索 → 「豚バラ肉」「豚ロース」「豚こま切れ肉」を含むレシピがヒットするように
 - [x] **食材マッチング精度改善**
-  - 正規化関数の追加（分量・単位の除去）
-  - 部分一致マッチングの実装（最長一致優先）
-  - 「豚肉細切れ 200g」→「豚肉」にマッチするように
-- [x] **検索の親子展開**
-  - `ingredients.parent_id` カラム追加
-  - 親子関係のシードデータ設定（鶏肉、豚肉、牛肉、豆腐、トマト）
-- [x] **DBスキーマ更新**
-  - `recipes.ingredients_linked` カラム追加（将来の非同期処理用）
-  - `ingredients.parent_id` カラム追加
-- [x] **非同期処理ヘルパー作成**（`run-after-response.ts`）
-  - 将来の非同期マッチング処理用に準備
 
 ## 進行中のタスク
 なし
@@ -39,11 +27,6 @@
 
 ### 動作確認
 - [ ] 実際にレシピを登録して食材マッチングの動作確認
-
-### リファクタリング
-- [ ] `eslint-disable-next-line @typescript-eslint/no-explicit-any` の解消
-  - `src/app/api/recipes/list/route.ts` 等で `SupabaseClient<Database>` 型を使用
-  - 関連ファイル: `src/lib/db/queries/recipes.ts`, `src/lib/recipe/match-ingredients.ts`
 
 ### 将来の改善（必要に応じて）
 - [ ] LLMフォールバック（ルールベースでマッチしない場合）
@@ -56,8 +39,9 @@
 - 認証はLIFF SDKベースでクライアントサイド取得
 - **Gemini API無料枠:** `gemini-2.5-flash` を使用（20 requests/day程度）
 - **JSON-LD対応サイト:** delishkitchen等はJSON-LDで高速解析可能
+- **DB型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 
-## 食材マッチングフロー（更新）
+## 食材マッチングフロー
 
 ```
 入力: "豚肉細切れ 200g"
@@ -104,7 +88,7 @@ src/
 │   └── db/queries/
 │       └── recipes.ts              # レシピクエリ（親子展開検索）
 ├── types/
-│   ├── database.ts                 # DB型定義（parent_id, ingredients_linked追加）
+│   ├── database.ts                 # DB型定義（supabase gen types で生成）
 │   └── json-ld.ts                  # JSON-LD型定義（schema-dts使用）
 └── hooks/
     ├── use-selected-ingredients.ts # 選択済み食材取得フック
@@ -114,11 +98,12 @@ src/
 
 ## コミット履歴（直近）
 ```
+c67529d Refactor: regenerate Supabase types and remove any assertions
+d894add Add Claude Code hook to remind requirements.md update
+79ec07f Improve ingredient filter UI with search and history
 c99f0c9 Add ingredient matching improvements and parent-child search expansion
 99f6fbd Update SESSION.md for handoff
 f2bed62 Fix ingredient name display in selector
-e9c6d24 Fix sourceName to use publisher instead of author
-8c3aa2e Replace deprecated generateObject with generateText
 ```
 
 ## GitHubリポジトリ
@@ -127,10 +112,8 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
+- `src/types/database.ts` - DB型定義（自動生成）
 - `src/app/api/recipes/list/route.ts` - レシピ一覧API（親子展開検索）
 - `src/lib/recipe/match-ingredients.ts` - 食材マッチングロジック
-- `src/lib/recipe/normalize-ingredient.ts` - 食材名正規化
 - `src/lib/db/queries/recipes.ts` - レシピクエリ
-- `src/components/features/home/ingredient-filter.tsx` - 食材フィルターUI
-- `src/hooks/use-ingredient-filter.ts` - 食材フィルターロジック
-- `supabase/migrations/20250125000000_ingredient_improvements.sql` - DBマイグレーション
+- `eslint.config.mjs` - ESLint設定（自動生成ファイル除外）
