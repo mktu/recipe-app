@@ -1,6 +1,11 @@
+import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
+import type { Database, Tables } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient } from '@/types/recipe'
 import { NextRequest, NextResponse } from 'next/server'
+
+type TypedSupabaseClient = SupabaseClient<Database>
+type RecipeRow = Tables<'recipes'>
 
 interface ListRecipesRequest {
   lineUserId: string
@@ -22,15 +27,13 @@ const sortConfig: Record<SortOrder, [string, { ascending: boolean; nullsFirst?: 
   recently_viewed: ['last_viewed_at', { ascending: false, nullsFirst: false }],
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getUserId(supabase: any, lineUserId: string): Promise<string | null> {
-  const { data } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  return data?.id ?? null
+async function getUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
+  const { data } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
+  return (data as { id: string } | null)?.id ?? null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchRecipes(supabase: any, userId: string, searchQuery: string | undefined, sortOrder: SortOrder) {
-  let query = supabase.from('recipes').select('*').eq('user_id', userId)
+async function fetchRecipes(client: TypedSupabaseClient, userId: string, searchQuery: string | undefined, sortOrder: SortOrder) {
+  let query = client.from('recipes').select('*').eq('user_id', userId)
   if (searchQuery?.trim()) {
     const term = `%${searchQuery.trim()}%`
     query = query.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
@@ -59,11 +62,10 @@ type IngredientWithParent = {
  * 食材IDとその子食材IDを取得（親子展開）
  * 例: 「豚肉」のIDを渡すと、「豚肉」「豚バラ肉」「豚こま切れ肉」等のIDを返す
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getIngredientAndChildIds(supabase: any, ingredientIds: string[]): Promise<Map<string, string[]>> {
+async function getIngredientAndChildIds(client: TypedSupabaseClient, ingredientIds: string[]): Promise<Map<string, string[]>> {
   if (ingredientIds.length === 0) return new Map()
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('ingredients')
     .select('id, parent_id')
     .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
@@ -87,12 +89,11 @@ async function getIngredientAndChildIds(supabase: any, ingredientIds: string[]):
   return result
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function filterByIngredients(supabase: any, recipes: RecipeWithIngredients[], ingredientIds: string[]): Promise<RecipeWithIngredients[]> {
+async function filterByIngredients(client: TypedSupabaseClient, recipes: RecipeWithIngredients[], ingredientIds: string[]): Promise<RecipeWithIngredients[]> {
   if (ingredientIds.length === 0) return recipes
 
   // 各検索食材について、その食材+子食材のIDを取得
-  const expandedIdsMap = await getIngredientAndChildIds(supabase, ingredientIds)
+  const expandedIdsMap = await getIngredientAndChildIds(client, ingredientIds)
 
   return recipes.filter((recipe) => {
     const recipeIngredientIds = recipe.mainIngredients.map((i) => i.id)
@@ -103,9 +104,8 @@ async function filterByIngredients(supabase: any, recipes: RecipeWithIngredients
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchRecipeIngredients(supabase: any, recipeIds: string[]): Promise<Map<string, RecipeIngredient[]>> {
-  const { data } = await supabase
+async function fetchRecipeIngredients(client: TypedSupabaseClient, recipeIds: string[]): Promise<Map<string, RecipeIngredient[]>> {
+  const { data } = await client
     .from('recipe_ingredients')
     .select('recipe_id, is_main, ingredients(id, name)')
     .in('recipe_id', recipeIds)
@@ -113,7 +113,7 @@ async function fetchRecipeIngredients(supabase: any, recipeIds: string[]): Promi
   return buildIngredientMap((data || []) as RecipeIngredientRow[])
 }
 
-function attachIngredients(recipes: RecipeWithIngredients[], ingredientMap: Map<string, RecipeIngredient[]>): RecipeWithIngredients[] {
+function attachIngredients(recipes: RecipeRow[], ingredientMap: Map<string, RecipeIngredient[]>): RecipeWithIngredients[] {
   return recipes.map((r) => ({ ...r, mainIngredients: ingredientMap.get(r.id) || [] }))
 }
 
@@ -121,20 +121,19 @@ export async function POST(request: NextRequest) {
   const { lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } = (await request.json()) as ListRecipesRequest
   if (!lineUserId) return NextResponse.json({ error: 'lineUserId は必須です' }, { status: 400 })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createServerClient() as any
+  const client = createServerClient()
 
   try {
-    const userId = await getUserId(supabase, lineUserId)
+    const userId = await getUserId(client, lineUserId)
     if (!userId) return NextResponse.json({ data: [] })
 
-    const { data: recipes, error } = await fetchRecipes(supabase, userId, searchQuery, sortOrder)
+    const { data: recipes, error } = await fetchRecipes(client, userId, searchQuery, sortOrder)
     if (error) throw error
     if (!recipes?.length) return NextResponse.json({ data: [] })
 
-    const ingredientMap = await fetchRecipeIngredients(supabase, recipes.map((r: { id: string }) => r.id))
+    const ingredientMap = await fetchRecipeIngredients(client, recipes.map((r: { id: string }) => r.id))
     const result = attachIngredients(recipes, ingredientMap)
-    const filtered = await filterByIngredients(supabase, result, ingredientIds)
+    const filtered = await filterByIngredients(client, result, ingredientIds)
     return NextResponse.json({ data: filtered })
   } catch (err) {
     console.error('[POST /api/recipes/list] Error:', err)

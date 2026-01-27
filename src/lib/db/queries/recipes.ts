@@ -1,6 +1,9 @@
+import { SupabaseClient } from '@supabase/supabase-js'
 import { supabase, createServerClient } from '@/lib/db/client'
-import type { Tables } from '@/types/database'
+import type { Database, Tables, TablesInsert } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient, CreateRecipeInput } from '@/types/recipe'
+
+type TypedSupabaseClient = SupabaseClient<Database>
 
 export interface FetchRecipesParams {
   userId: string
@@ -161,15 +164,13 @@ export interface CreateRecipeResult {
   id: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getUserIdByLineUserId(supabase: any, lineUserId: string): Promise<string | null> {
-  const { data, error } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  return error || !data ? null : data.id
+async function getUserIdByLineUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
+  const { data, error } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
+  return error || !data ? null : (data as { id: string }).id
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function insertRecipe(supabase: any, userId: string, input: CreateRecipeInput): Promise<{ id: string } | null> {
-  const { data, error } = await supabase.from('recipes').insert({
+async function insertRecipe(client: TypedSupabaseClient, userId: string, input: CreateRecipeInput): Promise<{ id: string } | null> {
+  const recipeData: TablesInsert<'recipes'> = {
     user_id: userId,
     url: input.url,
     title: input.title,
@@ -178,32 +179,35 @@ async function insertRecipe(supabase: any, userId: string, input: CreateRecipeIn
     memo: input.memo || null,
     // 食材マッチングが完了している場合は true
     ingredients_linked: input.ingredientIds.length > 0,
-  }).select('id').single()
+  }
+  const { data, error } = await client.from('recipes').insert(recipeData).select('id').single()
   if (error) throw error
   return data
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function insertRecipeIngredients(supabase: any, recipeId: string, ingredientIds: string[]): Promise<void> {
+async function insertRecipeIngredients(client: TypedSupabaseClient, recipeId: string, ingredientIds: string[]): Promise<void> {
   if (ingredientIds.length === 0) return
-  const rows = ingredientIds.map((id) => ({ recipe_id: recipeId, ingredient_id: id, is_main: true }))
-  const { error } = await supabase.from('recipe_ingredients').insert(rows)
+  const rows: TablesInsert<'recipe_ingredients'>[] = ingredientIds.map((id) => ({
+    recipe_id: recipeId,
+    ingredient_id: id,
+    is_main: true,
+  }))
+  const { error } = await client.from('recipe_ingredients').insert(rows)
   if (error) console.error('[createRecipe] recipe_ingredients insert error:', error)
 }
 
 /** レシピを新規作成 */
 export async function createRecipe(input: CreateRecipeInput): Promise<{ data: CreateRecipeResult | null; error: Error | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createServerClient() as any
+  const client = createServerClient()
 
   try {
-    const userId = await getUserIdByLineUserId(supabase, input.lineUserId)
+    const userId = await getUserIdByLineUserId(client, input.lineUserId)
     if (!userId) return { data: null, error: new Error('ユーザーが見つかりません') }
 
-    const recipe = await insertRecipe(supabase, userId, input)
+    const recipe = await insertRecipe(client, userId, input)
     if (!recipe) return { data: null, error: new Error('レシピの作成に失敗しました') }
 
-    await insertRecipeIngredients(supabase, recipe.id, input.ingredientIds)
+    await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
     return { data: { id: recipe.id }, error: null }
   } catch (err) {
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }

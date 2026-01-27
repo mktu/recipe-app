@@ -1,4 +1,6 @@
+import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
+import type { Database, TablesInsert } from '@/types/database'
 import { normalizeIngredientName } from './normalize-ingredient'
 
 export interface MatchResult {
@@ -16,13 +18,12 @@ interface IngredientAlias {
   ingredient_id: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseClient = any
+type TypedSupabaseClient = SupabaseClient<Database>
 
 /**
  * レビュー済みのマスター食材を全て取得
  */
-async function fetchAllIngredients(supabase: SupabaseClient): Promise<Ingredient[]> {
+async function fetchAllIngredients(supabase: TypedSupabaseClient): Promise<Ingredient[]> {
   const { data } = await supabase
     .from('ingredients')
     .select('id, name')
@@ -32,7 +33,7 @@ async function fetchAllIngredients(supabase: SupabaseClient): Promise<Ingredient
 }
 
 async function findByAlias(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   name: string
 ): Promise<Ingredient | null> {
   const { data: aliasRows } = await supabase
@@ -54,7 +55,7 @@ async function findByAlias(
 }
 
 async function findByExactMatch(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   name: string
 ): Promise<Ingredient | null> {
   const { data: rows } = await supabase
@@ -104,19 +105,20 @@ function findByPartialMatch(
 }
 
 async function createIngredient(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   name: string
 ): Promise<Ingredient | null> {
+  const ingredientData: TablesInsert<'ingredients'> = { name, category: 'その他', needs_review: true }
   const { data: rows } = await supabase
     .from('ingredients')
-    .insert({ name, category: 'その他', needs_review: true })
+    .insert(ingredientData)
     .select('id, name')
 
   return (rows as Ingredient[] | null)?.[0] ?? null
 }
 
 async function matchSingleIngredient(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   allIngredients: Ingredient[],
   rawName: string
 ): Promise<MatchResult | null> {

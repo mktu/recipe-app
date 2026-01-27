@@ -23,7 +23,7 @@ export function RecipeDetailPage({ recipe }: RecipeDetailPageProps) {
   })
 
   const handleBack = useCallback(() => router.back(), [router])
-  const createdAt = new Date(recipe.created_at).toLocaleDateString('ja-JP')
+  const createdAt = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('ja-JP') : '-'
 
   return (
     <div className="mx-auto max-w-lg p-4">

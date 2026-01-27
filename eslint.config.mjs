@@ -24,6 +24,13 @@ const eslintConfig = defineConfig([
       "complexity": ["warn", 10],
     },
   },
+  // 自動生成ファイルの除外
+  {
+    files: ["src/types/database.ts"],
+    rules: {
+      "max-lines": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
