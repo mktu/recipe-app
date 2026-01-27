@@ -4,6 +4,8 @@ import { Clock, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import type { IngredientsByCategory } from '@/types/recipe'
+import { CategoryAccordionSection } from './category-accordion-section'
 
 interface ToggleableIngredient {
   id: string
@@ -14,9 +16,10 @@ interface IngredientFilterContentProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   selectedIngredients: ToggleableIngredient[]
+  selectedIds: string[]
   filteredIngredients: ToggleableIngredient[]
   validHistory: ToggleableIngredient[]
-  isLoading: boolean
+  categories: IngredientsByCategory[]
   onToggle: (ingredient: ToggleableIngredient) => void
   onClear: () => void
 }
@@ -25,25 +28,29 @@ export function IngredientFilterContent({
   searchQuery,
   onSearchChange,
   selectedIngredients,
+  selectedIds,
   filteredIngredients,
   validHistory,
-  isLoading,
+  categories,
   onToggle,
   onClear,
 }: IngredientFilterContentProps) {
   return (
-    <div className="mt-4 flex flex-col gap-4 px-4 pb-4">
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pt-4 pb-4">
       <SearchInput value={searchQuery} onChange={onSearchChange} />
       {selectedIngredients.length > 0 && (
         <SelectedSection ingredients={selectedIngredients} onToggle={onToggle} onClear={onClear} />
       )}
-      {isLoading ? (
-        <p className="text-center text-muted-foreground">読み込み中...</p>
-      ) : searchQuery ? (
-        <SearchResults query={searchQuery} ingredients={filteredIngredients} onToggle={onToggle} />
-      ) : (
-        <HistorySection history={validHistory} onToggle={onToggle} />
-      )}
+      <div className="flex-1 overflow-y-auto">
+        {searchQuery ? (
+          <SearchResults query={searchQuery} ingredients={filteredIngredients} onToggle={onToggle} />
+        ) : (
+          <div className="space-y-4">
+            <HistorySection history={validHistory} onToggle={onToggle} />
+            <CategoryAccordionSection categories={categories} selectedIds={selectedIds} onToggle={onToggle} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -146,31 +153,27 @@ function HistorySection({
   history: ToggleableIngredient[]
   onToggle: (ing: ToggleableIngredient) => void
 }) {
+  if (history.length === 0) return null
+
   return (
-    <div className="space-y-4 overflow-y-auto">
-      {history.length > 0 && (
-        <div>
-          <h4 className="mb-2 flex items-center gap-1 text-sm font-medium text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            最近使った食材
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {history.map((item) => (
-              <Badge
-                key={item.id}
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => onToggle(item)}
-              >
-                {item.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-      <p className="text-center text-sm text-muted-foreground">
-        食材名を入力すると候補が表示されます
-      </p>
+    <div>
+      <h4 className="mb-2 flex items-center gap-1 text-sm font-medium text-muted-foreground">
+        <Clock className="h-3.5 w-3.5" />
+        最近使った食材
+      </h4>
+      <div className="flex flex-wrap gap-2">
+        {history.map((item) => (
+          <Badge
+            key={item.id}
+            variant="outline"
+            className="cursor-pointer"
+            onClick={() => onToggle(item)}
+          >
+            {item.name}
+          </Badge>
+        ))}
+      </div>
     </div>
   )
 }
+

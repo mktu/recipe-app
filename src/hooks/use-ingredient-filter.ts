@@ -1,22 +1,22 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useIngredients } from './use-ingredients'
 import { useIngredientHistory } from './use-ingredient-history'
+import type { IngredientsByCategory } from '@/types/recipe'
 
 interface UseIngredientFilterProps {
+  categories: IngredientsByCategory[]
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
 }
 
-export function useIngredientFilter({ selectedIds, onSelectionChange }: UseIngredientFilterProps) {
+export function useIngredientFilter({ categories, selectedIds, onSelectionChange }: UseIngredientFilterProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const { ingredientsByCategory, isLoading } = useIngredients()
   const { history, addToHistory } = useIngredientHistory()
 
   const allIngredients = useMemo(
-    () => ingredientsByCategory.flatMap((cat) => cat.ingredients),
-    [ingredientsByCategory]
+    () => categories.flatMap((cat) => cat.ingredients),
+    [categories]
   )
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
@@ -53,10 +53,10 @@ export function useIngredientFilter({ selectedIds, onSelectionChange }: UseIngre
   return {
     searchQuery,
     setSearchQuery,
-    isLoading,
     filteredIngredients,
     validHistory,
     selectedIngredients,
+    selectedIds,
     toggleIngredient,
     clearSelection: useCallback(() => onSelectionChange([]), [onSelectionChange]),
   }

@@ -11,9 +11,13 @@ import { IngredientFilter } from './ingredient-filter'
 import { SelectedIngredients } from './selected-ingredients'
 import { RecipeList } from './recipe-list'
 import { AddRecipeFAB } from './add-recipe-fab'
-import type { SortOrder } from '@/types/recipe'
+import type { SortOrder, IngredientsByCategory } from '@/types/recipe'
 
-export function HomePage() {
+interface HomeClientProps {
+  ingredientCategories: IngredientsByCategory[]
+}
+
+export function HomeClient({ ingredientCategories }: HomeClientProps) {
   const router = useRouter()
   const { isLoading: authLoading, isAuthenticated } = useAuth()
   const filters = useRecipeFilters()
@@ -42,6 +46,7 @@ export function HomePage() {
         <SearchBar value={filters.searchQuery} onChange={filters.setSearchQuery} />
         <div className="flex flex-wrap items-center gap-2">
           <IngredientFilter
+            categories={ingredientCategories}
             selectedIds={filters.selectedIngredientIds}
             onSelectionChange={filters.setSelectedIngredientIds}
           />

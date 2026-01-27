@@ -7,15 +7,17 @@ import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useIngredientFilter } from '@/hooks/use-ingredient-filter'
 import { IngredientFilterContent } from './ingredient-filter-content'
+import type { IngredientsByCategory } from '@/types/recipe'
 
 interface IngredientFilterProps {
+  categories: IngredientsByCategory[]
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
 }
 
-export function IngredientFilter({ selectedIds, onSelectionChange }: IngredientFilterProps) {
+export function IngredientFilter({ categories, selectedIds, onSelectionChange }: IngredientFilterProps) {
   const [open, setOpen] = useState(false)
-  const filter = useIngredientFilter({ selectedIds, onSelectionChange })
+  const filter = useIngredientFilter({ categories, selectedIds, onSelectionChange })
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -38,9 +40,10 @@ export function IngredientFilter({ selectedIds, onSelectionChange }: IngredientF
           searchQuery={filter.searchQuery}
           onSearchChange={filter.setSearchQuery}
           selectedIngredients={filter.selectedIngredients}
+          selectedIds={filter.selectedIds}
           filteredIngredients={filter.filteredIngredients}
           validHistory={filter.validHistory}
-          isLoading={filter.isLoading}
+          categories={categories}
           onToggle={filter.toggleIngredient}
           onClear={filter.clearSelection}
         />
