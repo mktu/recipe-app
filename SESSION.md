@@ -1,30 +1,21 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-28 (食材データ取得のサーバーコンポーネント化 & UI修正)
+2026-01-28 (正規化ロジック改善 - 精度重視アプローチ)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 完了
 
 ## 直近の完了タスク
+- [x] **正規化ロジックの改善（精度重視）**
+  - ブランド名除去パターン追加（20種: キッコーマン、ミツカン等）
+  - 孤立した数字の除去（「大さじ」除去後の残り数字）
+  - スペースなしの「数字+単位」のみ除去に変更
+  - 玉/株/房を単位リストから除外（食材名の一部になりうる）
+  - 技術的決定を `requirements.md` に文書化
 - [x] **レシピカードの食材タグUI修正**
-  - 長い食材名を `max-w-[80px] truncate` で省略表示
-  - コンテナに `overflow-hidden` を追加してはみ出し防止
 - [x] **食材データ取得のサーバーコンポーネント化（全画面）**
-  - `use-recipe-filters.ts` から `useIngredients` 依存を削除
-  - レシピ追加画面（`confirm/page.tsx`）でもサーバーサイドで食材データ取得
-  - `use-ingredients.ts` を削除（クライアントサイドでの食材取得が不要に）
-- [x] **レシピ登録・食材マッチング動作確認**
 - [x] **折りたたみ式カテゴリ選択の追加**
-  - Accordion コンポーネント（shadcn/ui）を導入
-  - 2段階折りたたみ：「カテゴリから選ぶ」→ 各カテゴリ（野菜、肉、等）
-  - `CategoryAccordionSection` を別ファイルに分離（max-lines対応）
-- [x] **食材データのサーバーコンポーネント化**
-  - `page.tsx` を async 化し、`fetchIngredientsByCategory()` でデータ取得
-  - `HomePage` → `HomeClient` にリネーム、props で categories を渡す
-  - `revalidate = 3600`（1時間キャッシュ）を設定
-  - `useIngredientFilter` から `useIngredients` 依存を削除
-  - `isLoading` 状態が不要に（SSRで初期データあり）
 - [x] **Supabase型リファクタリング**
 - [x] **食材フィルターUI改善**（検索 + 履歴）
 
@@ -34,11 +25,8 @@
 ## 次にやること（優先度順）
 
 ### 食材マッチング改善
-- [ ] **正規化ロジックの強化（A）**
-  - ブランド名（キッコーマン、マンジョウ等）を除去するパターン追加
-  - `normalize-ingredient.ts` を修正
-- [ ] **マッチしない場合の新規作成を制限（C）**
-  - `match-ingredients.ts` の Step 5 を修正
+- [ ] **マッチしない場合の新規作成を制限**
+  - `match-ingredients.ts` の Step 4 を修正
   - マッチしない場合は `ingredients` に追加せずスキップ
 - [ ] **未マッチ食材の記録テーブル追加**
   - `unmatched_ingredients` テーブルを作成
@@ -78,10 +66,10 @@ components/features/home/home-client.tsx (Client Component)
 
 ## コミット履歴（直近）
 ```
+7f144c6 Improve ingredient normalization with precision-focused approach
+1235f3f Fix: truncate long ingredient names in recipe card
 ed743d0 Refactor: remove useIngredients hook and server-side fetch for all screens
-a58861c Update SESSION.md for session handoff
 c3fc716 Add collapsible category selection and server-side ingredient fetching
-be03399 Update SESSION.md for session handoff
 c67529d Refactor: regenerate Supabase types and remove any assertions
 ```
 
