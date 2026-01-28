@@ -8,7 +8,6 @@ interface IngredientListProps {
   categories: IngredientsByCategory[]
   selectedIds: string[]
   onToggle: (id: string) => void
-  isLoading: boolean
   isMaxReached: boolean
 }
 
@@ -16,13 +15,8 @@ export function IngredientList({
   categories,
   selectedIds,
   onToggle,
-  isLoading,
   isMaxReached,
 }: IngredientListProps) {
-  if (isLoading) {
-    return <p className="text-center text-muted-foreground">読み込み中...</p>
-  }
-
   return (
     <div className="space-y-6">
       {categories.map((group) => (

@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth'
 import { useCreateRecipe } from '@/hooks/use-create-recipe'
 import { RecipeForm, type RecipeFormData } from './recipe-form'
 import { PageHeader, CenteredMessage } from './ui-parts'
-import type { ParsedRecipe } from '@/types/recipe'
+import type { ParsedRecipe, IngredientsByCategory } from '@/types/recipe'
 
 function CreateErrorAlert({ error }: { error: Error }) {
   return (
@@ -19,9 +19,10 @@ function CreateErrorAlert({ error }: { error: Error }) {
 interface RecipeConfirmFormProps {
   url: string
   initialValues: ParsedRecipe
+  ingredientCategories: IngredientsByCategory[]
 }
 
-export function RecipeConfirmForm({ url, initialValues }: RecipeConfirmFormProps) {
+export function RecipeConfirmForm({ url, initialValues, ingredientCategories }: RecipeConfirmFormProps) {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const { createRecipe, isLoading: createLoading, error: createError } = useCreateRecipe()
@@ -54,6 +55,7 @@ export function RecipeConfirmForm({ url, initialValues }: RecipeConfirmFormProps
         <RecipeForm
           url={url}
           initialValues={initialValues}
+          ingredientCategories={ingredientCategories}
           onSubmit={handleSubmit}
           onBack={handleBack}
           isSubmitting={createLoading}

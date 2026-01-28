@@ -6,19 +6,20 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { IngredientSelector } from './ingredient-selector'
 import { useRecipeForm, type RecipeFormData } from './use-recipe-form'
-import type { ParsedRecipe } from '@/types/recipe'
+import type { ParsedRecipe, IngredientsByCategory } from '@/types/recipe'
 
 export type { RecipeFormData }
 
 interface RecipeFormProps {
   url: string
   initialValues?: Partial<ParsedRecipe>
+  ingredientCategories: IngredientsByCategory[]
   onSubmit: (data: RecipeFormData) => Promise<void>
   onBack: () => void
   isSubmitting: boolean
 }
 
-export function RecipeForm({ url, initialValues, onSubmit, onBack, isSubmitting }: RecipeFormProps) {
+export function RecipeForm({ url, initialValues, ingredientCategories, onSubmit, onBack, isSubmitting }: RecipeFormProps) {
   const { values, setters, error, handleSubmit } = useRecipeForm({ initialValues, onSubmit })
 
   return (
@@ -36,7 +37,7 @@ export function RecipeForm({ url, initialValues, onSubmit, onBack, isSubmitting 
         <Input value={values.imageUrl} onChange={(e) => setters.setImageUrl(e.target.value)} placeholder="https://..." disabled={isSubmitting} />
       </FormField>
       <FormField label="メイン食材">
-        <IngredientSelector selectedIds={values.ingredientIds} onSelectionChange={setters.setIngredientIds} />
+        <IngredientSelector categories={ingredientCategories} selectedIds={values.ingredientIds} onSelectionChange={setters.setIngredientIds} />
       </FormField>
       <FormField label="メモ">
         <Textarea value={values.memo} onChange={(e) => setters.setMemo(e.target.value)} placeholder="自分用のメモ" rows={3} disabled={isSubmitting} />

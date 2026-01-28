@@ -20,7 +20,7 @@ interface HomeClientProps {
 export function HomeClient({ ingredientCategories }: HomeClientProps) {
   const router = useRouter()
   const { isLoading: authLoading, isAuthenticated } = useAuth()
-  const filters = useRecipeFilters()
+  const filters = useRecipeFilters(ingredientCategories)
 
   const { recipes, isLoading: recipesLoading } = useRecipes({
     searchQuery: filters.searchQuery,

@@ -5,7 +5,6 @@ import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { useIngredients } from '@/hooks/use-ingredients'
 import { useSelectedIngredients } from '@/hooks/use-selected-ingredients'
 import { IngredientList } from './ingredient-list'
 import type { IngredientsByCategory } from '@/types/recipe'
@@ -36,11 +35,10 @@ interface IngredientSheetProps {
   categories: IngredientsByCategory[]
   selectedIds: string[]
   onToggle: (id: string) => void
-  isLoading: boolean
   isMaxReached: boolean
 }
 
-function IngredientSheet({ open, onOpenChange, selectedCount, categories, selectedIds, onToggle, isLoading, isMaxReached }: IngredientSheetProps) {
+function IngredientSheet({ open, onOpenChange, selectedCount, categories, selectedIds, onToggle, isMaxReached }: IngredientSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
@@ -54,7 +52,7 @@ function IngredientSheet({ open, onOpenChange, selectedCount, categories, select
           <SheetTitle>メイン食材を選択（{selectedCount}/{MAX_INGREDIENTS}）</SheetTitle>
         </SheetHeader>
         <div className="mt-4 overflow-y-auto px-4 pb-4">
-          <IngredientList categories={categories} selectedIds={selectedIds} onToggle={onToggle} isLoading={isLoading} isMaxReached={isMaxReached} />
+          <IngredientList categories={categories} selectedIds={selectedIds} onToggle={onToggle} isMaxReached={isMaxReached} />
         </div>
       </SheetContent>
     </Sheet>
@@ -62,13 +60,13 @@ function IngredientSheet({ open, onOpenChange, selectedCount, categories, select
 }
 
 interface IngredientSelectorProps {
+  categories: IngredientsByCategory[]
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
 }
 
-export function IngredientSelector({ selectedIds, onSelectionChange }: IngredientSelectorProps) {
+export function IngredientSelector({ categories, selectedIds, onSelectionChange }: IngredientSelectorProps) {
   const [open, setOpen] = useState(false)
-  const { ingredientsByCategory, isLoading } = useIngredients()
   const { ingredients: selectedIngredients } = useSelectedIngredients(selectedIds)
 
   const toggleIngredient = useCallback(
@@ -88,13 +86,13 @@ export function IngredientSelector({ selectedIds, onSelectionChange }: Ingredien
     (id: string): string => {
       const selected = selectedIngredients.get(id)
       if (selected) return selected.name
-      for (const group of ingredientsByCategory) {
+      for (const group of categories) {
         const found = group.ingredients.find((ing) => ing.id === id)
         if (found) return found.name
       }
       return ''
     },
-    [selectedIngredients, ingredientsByCategory]
+    [selectedIngredients, categories]
   )
 
   return (
@@ -107,10 +105,9 @@ export function IngredientSelector({ selectedIds, onSelectionChange }: Ingredien
           open={open}
           onOpenChange={setOpen}
           selectedCount={selectedIds.length}
-          categories={ingredientsByCategory}
+          categories={categories}
           selectedIds={selectedIds}
           onToggle={toggleIngredient}
-          isLoading={isLoading}
           isMaxReached={selectedIds.length >= MAX_INGREDIENTS}
         />
       </div>

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useIngredients } from './use-ingredients'
-import type { SortOrder } from '@/types/recipe'
+import type { SortOrder, IngredientsByCategory } from '@/types/recipe'
 
 export interface RecipeFiltersState {
   searchQuery: string
@@ -20,12 +19,12 @@ export interface RecipeFiltersActions {
   clearFilters: () => void
 }
 
-export function useRecipeFilters(): RecipeFiltersState & RecipeFiltersActions {
+export function useRecipeFilters(
+  ingredientsByCategory: IngredientsByCategory[]
+): RecipeFiltersState & RecipeFiltersActions {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
-
-  const { ingredientsByCategory } = useIngredients()
 
   const ingredientNameMap = useMemo(() => {
     const map = new Map<string, string>()
