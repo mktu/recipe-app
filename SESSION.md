@@ -1,12 +1,15 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-27 (折りたたみ式カテゴリ選択 & サーバーコンポーネント化)
+2026-01-28 (食材データ取得のサーバーコンポーネント化 & UI修正)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 完了
 
 ## 直近の完了タスク
+- [x] **レシピカードの食材タグUI修正**
+  - 長い食材名を `max-w-[80px] truncate` で省略表示
+  - コンテナに `overflow-hidden` を追加してはみ出し防止
 - [x] **食材データ取得のサーバーコンポーネント化（全画面）**
   - `use-recipe-filters.ts` から `useIngredients` 依存を削除
   - レシピ追加画面（`confirm/page.tsx`）でもサーバーサイドで食材データ取得
@@ -30,8 +33,20 @@
 
 ## 次にやること（優先度順）
 
+### 食材マッチング改善
+- [ ] **正規化ロジックの強化（A）**
+  - ブランド名（キッコーマン、マンジョウ等）を除去するパターン追加
+  - `normalize-ingredient.ts` を修正
+- [ ] **マッチしない場合の新規作成を制限（C）**
+  - `match-ingredients.ts` の Step 5 を修正
+  - マッチしない場合は `ingredients` に追加せずスキップ
+- [ ] **未マッチ食材の記録テーブル追加**
+  - `unmatched_ingredients` テーブルを作成
+  - マッチしなかった食材名を記録（ヒット率計測用）
+  - 後からエイリアス登録やLLMフォールバック導入の判断材料に
+
 ### 将来の改善（必要に応じて）
-- [ ] LLMフォールバック（ルールベースでマッチしない場合）
+- [ ] LLMフォールバック（ルールベースでマッチしない場合、ヒット率を見て判断）
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
@@ -63,11 +78,11 @@ components/features/home/home-client.tsx (Client Component)
 
 ## コミット履歴（直近）
 ```
+ed743d0 Refactor: remove useIngredients hook and server-side fetch for all screens
+a58861c Update SESSION.md for session handoff
 c3fc716 Add collapsible category selection and server-side ingredient fetching
 be03399 Update SESSION.md for session handoff
 c67529d Refactor: regenerate Supabase types and remove any assertions
-d894add Add Claude Code hook to remind requirements.md update
-79ec07f Improve ingredient filter UI with search and history
 ```
 
 ## GitHubリポジトリ

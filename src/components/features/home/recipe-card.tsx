@@ -34,10 +34,10 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
             )}
           </div>
           {displayIngredients.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5 overflow-hidden">
               {displayIngredients.map((ing) => (
                 <Badge key={ing.id} variant="secondary" className={badgeClass}>
-                  {ing.name}
+                  <span className="max-w-[80px] truncate">{ing.name}</span>
                 </Badge>
               ))}
               {extraCount > 0 && (
