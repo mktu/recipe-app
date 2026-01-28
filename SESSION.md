@@ -1,12 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-28 (正規化ロジック改善 - 精度重視アプローチ)
+2026-01-28 (正規化ロジック改善 + テスト追加)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 完了
 
 ## 直近の完了タスク
+- [x] **正規化ロジックのユニットテスト追加**
+  - Vitest をセットアップ（`npm run test` / `npm run test:watch`）
+  - 16件のテストケース（基本正規化、ブランド名除去、精度重視動作など）
+  - テストファイル用の ESLint 設定緩和
 - [x] **正規化ロジックの改善（精度重視）**
   - ブランド名除去パターン追加（20種: キッコーマン、ミツカン等）
   - 孤立した数字の除去（「大さじ」除去後の残り数字）
@@ -15,9 +19,6 @@
   - 技術的決定を `requirements.md` に文書化
 - [x] **レシピカードの食材タグUI修正**
 - [x] **食材データ取得のサーバーコンポーネント化（全画面）**
-- [x] **折りたたみ式カテゴリ選択の追加**
-- [x] **Supabase型リファクタリング**
-- [x] **食材フィルターUI改善**（検索 + 履歴）
 
 ## 進行中のタスク
 なし
@@ -66,11 +67,11 @@ components/features/home/home-client.tsx (Client Component)
 
 ## コミット履歴（直近）
 ```
+4cca0ba Relax ESLint rules for test files
+d7fd11d Add unit tests for ingredient normalization
 7f144c6 Improve ingredient normalization with precision-focused approach
 1235f3f Fix: truncate long ingredient names in recipe card
 ed743d0 Refactor: remove useIngredients hook and server-side fetch for all screens
-c3fc716 Add collapsible category selection and server-side ingredient fetching
-c67529d Refactor: regenerate Supabase types and remove any assertions
 ```
 
 ## GitHubリポジトリ
