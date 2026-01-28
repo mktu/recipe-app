@@ -31,6 +31,14 @@ const eslintConfig = defineConfig([
       "max-lines": "off",
     },
   },
+  // テストファイルの制限緩和
+  {
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+    rules: {
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
