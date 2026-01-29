@@ -121,7 +121,16 @@ npm run lint
 
 # shadcn/ui コンポーネント追加
 npx shadcn@latest add [component-name]
+
+# 食材アンマッチ解析
+./scripts/check-ingredient-match-rate.sh
 ```
+
+## カスタムコマンド
+
+| キーワード | 実行内容 |
+|------------|----------|
+| 「アンマッチ解析」 | `./scripts/check-ingredient-match-rate.sh` を実行し、マッチ率と未マッチ食材TOP20を報告 |
 
 ## ローカル開発環境 (Supabase)
 
