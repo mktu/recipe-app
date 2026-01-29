@@ -1,77 +1,62 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-28 (正規化ロジック改善 + テスト追加)
+2026-01-29 (未マッチ食材の記録機能追加)
 
 ## 現在のフェーズ
 フェーズ 2：AI パース (Jina Reader + Gemini) - 完了
 
 ## 直近の完了タスク
-- [x] **正規化ロジックのユニットテスト追加**
-  - Vitest をセットアップ（`npm run test` / `npm run test:watch`）
-  - 16件のテストケース（基本正規化、ブランド名除去、精度重視動作など）
-  - テストファイル用の ESLint 設定緩和
-- [x] **正規化ロジックの改善（精度重視）**
-  - ブランド名除去パターン追加（20種: キッコーマン、ミツカン等）
-  - 孤立した数字の除去（「大さじ」除去後の残り数字）
-  - スペースなしの「数字+単位」のみ除去に変更
-  - 玉/株/房を単位リストから除外（食材名の一部になりうる）
-  - 技術的決定を `requirements.md` に文書化
-- [x] **レシピカードの食材タグUI修正**
-- [x] **食材データ取得のサーバーコンポーネント化（全画面）**
+- [x] **未マッチ食材の記録テーブル追加**
+  - `unmatched_ingredients` テーブルを作成
+  - マッチしない食材を `ingredients` に追加せず記録のみ
+  - `raw_name`, `normalized_name`, `recipe_id` を保存
+- [x] **アンマッチ解析スクリプト追加**
+  - `./scripts/check-ingredient-match-rate.sh`
+  - マッチ率と未マッチ食材TOP20を表示
+  - 「アンマッチ解析して」で実行可能（CLAUDE.mdに記載）
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
 
-### 食材マッチング改善
-- [ ] **マッチしない場合の新規作成を制限**
-  - `match-ingredients.ts` の Step 4 を修正
-  - マッチしない場合は `ingredients` に追加せずスキップ
-- [ ] **未マッチ食材の記録テーブル追加**
-  - `unmatched_ingredients` テーブルを作成
-  - マッチしなかった食材名を記録（ヒット率計測用）
-  - 後からエイリアス登録やLLMフォールバック導入の判断材料に
+### 食材マッチング改善（アンマッチ率 79.7%）
+- [ ] **基本調味料の扱いを決定**
+  - 砂糖、サラダ油、ごま油、しょうゆ等がマスターにない
+  - 選択肢: (A) マスターに追加 / (B) 調味料は検索対象外に
+- [ ] **エイリアス登録**
+  - 「すりおろしニンニク」→「にんにく」
+  - 「料理酒」→「酒」など
+- [ ] **正規化ルール改善**
+  - 「しょうゆ 1と1/2」のように数字が残るケースあり
 
-### 将来の改善（必要に応じて）
-- [ ] LLMフォールバック（ルールベースでマッチしない場合、ヒット率を見て判断）
+### 将来の改善
+- [ ] LLMフォールバック（ルールベースでマッチしない場合）
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
 - Docker が必要（約 2GB のディスク使用）
-- 外部画像URLは next/image ではなく通常の img タグを使用
-- 認証はLIFF SDKベースでクライアントサイド取得
 - **Gemini API無料枠:** `gemini-2.5-flash` を使用（20 requests/day程度）
-- **JSON-LD対応サイト:** delishkitchen等はJSON-LDで高速解析可能
 - **DB型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
-- **食材マスター（ingredients）:** RLSは `USING (true)` で認証不要、サーバーコンポーネントで取得可能
 
-## アーキテクチャ（ホーム画面）
+## アーキテクチャ（食材マッチング）
 
 ```
-app/page.tsx (Server Component)
-  ├─ await fetchIngredientsByCategory()  ← サーバーで取得
-  ├─ revalidate = 3600 (1時間キャッシュ)
-  └─ <HomeClient ingredientCategories={...} />
-
-components/features/home/home-client.tsx (Client Component)
-  ├─ useAuth() - 認証チェック
-  ├─ useRecipeFilters() - フィルター状態管理
-  └─ <IngredientFilter categories={...} />
-       └─ <IngredientFilterContent />
-            ├─ 検索入力
-            ├─ 最近使った食材（履歴）
-            └─ CategoryAccordionSection（折りたたみ式カテゴリ）
+LLM出力 → 正規化 → マッチング試行
+                    ├─ Step 1: エイリアス検索
+                    ├─ Step 2: 完全一致
+                    ├─ Step 3: 部分一致
+                    └─ Step 4: 未マッチ → unmatched_ingredients に記録
 ```
 
 ## コミット履歴（直近）
 ```
+801ab1d docs: add custom command for unmatch analysis
+d9afd9c Add script to check ingredient match rate
+921c123 feat: record unmatched ingredients instead of auto-creating
+b5c86eb Update SESSION.md for session handoff
 4cca0ba Relax ESLint rules for test files
-d7fd11d Add unit tests for ingredient normalization
-7f144c6 Improve ingredient normalization with precision-focused approach
-1235f3f Fix: truncate long ingredient names in recipe card
-ed743d0 Refactor: remove useIngredients hook and server-side fetch for all screens
 ```
 
 ## GitHubリポジトリ
@@ -79,8 +64,7 @@ https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
-- `CLAUDE.md` - 開発ルール・ガイド
-- `src/app/page.tsx` - ホーム画面（サーバーコンポーネント）
-- `src/components/features/home/home-client.tsx` - ホーム画面クライアント
-- `src/components/features/home/category-accordion-section.tsx` - カテゴリ折りたたみ
-- `src/hooks/use-ingredient-filter.ts` - 食材フィルターロジック
+- `CLAUDE.md` - 開発ルール・ガイド（カスタムコマンド追加）
+- `src/lib/recipe/match-ingredients.ts` - 食材マッチングロジック
+- `scripts/check-ingredient-match-rate.sh` - アンマッチ解析スクリプト
+- `supabase/migrations/20260128000000_unmatched_ingredients.sql` - 未マッチテーブル
