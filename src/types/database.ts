@@ -184,6 +184,38 @@ export type Database = {
           },
         ]
       }
+      unmatched_ingredients: {
+        Row: {
+          created_at: string | null
+          id: string
+          normalized_name: string
+          raw_name: string
+          recipe_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          normalized_name: string
+          raw_name: string
+          recipe_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          normalized_name?: string
+          raw_name?: string
+          recipe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unmatched_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null

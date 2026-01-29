@@ -1,12 +1,15 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
-import type { Database, TablesInsert } from '@/types/database'
+import type { Database } from '@/types/database'
 import { normalizeIngredientName } from './normalize-ingredient'
 
 export interface MatchResult {
   ingredientId: string
   name: string
-  isNew: boolean
+}
+
+export interface MatchIngredientsOptions {
+  recipeId?: string  // 未マッチ記録用（どのレシピからの食材か）
 }
 
 interface Ingredient {
@@ -104,23 +107,27 @@ function findByPartialMatch(
   return null
 }
 
-async function createIngredient(
+/**
+ * マッチしなかった食材を記録（後からエイリアス登録やLLMフォールバックの判断材料に）
+ */
+async function recordUnmatchedIngredient(
   supabase: TypedSupabaseClient,
-  name: string
-): Promise<Ingredient | null> {
-  const ingredientData: TablesInsert<'ingredients'> = { name, category: 'その他', needs_review: true }
-  const { data: rows } = await supabase
-    .from('ingredients')
-    .insert(ingredientData)
-    .select('id, name')
-
-  return (rows as Ingredient[] | null)?.[0] ?? null
+  rawName: string,
+  normalizedName: string,
+  recipeId?: string
+): Promise<void> {
+  await supabase.from('unmatched_ingredients').insert({
+    raw_name: rawName,
+    normalized_name: normalizedName,
+    recipe_id: recipeId ?? null,
+  })
 }
 
 async function matchSingleIngredient(
   supabase: TypedSupabaseClient,
   allIngredients: Ingredient[],
-  rawName: string
+  rawName: string,
+  recipeId?: string
 ): Promise<MatchResult | null> {
   // Step 0: 正規化（分量・単位を除去）
   const normalizedName = normalizeIngredientName(rawName)
@@ -129,13 +136,13 @@ async function matchSingleIngredient(
   // Step 1: エイリアス検索
   const aliasMatch = await findByAlias(supabase, normalizedName)
   if (aliasMatch) {
-    return { ingredientId: aliasMatch.id, name: aliasMatch.name, isNew: false }
+    return { ingredientId: aliasMatch.id, name: aliasMatch.name }
   }
 
   // Step 2: 完全一致検索
   const exactMatch = await findByExactMatch(supabase, normalizedName)
   if (exactMatch) {
-    return { ingredientId: exactMatch.id, name: exactMatch.name, isNew: false }
+    return { ingredientId: exactMatch.id, name: exactMatch.name }
   }
 
   // Step 3: 部分一致検索
@@ -144,25 +151,19 @@ async function matchSingleIngredient(
     return {
       ingredientId: partialMatch.id,
       name: partialMatch.name,
-      isNew: false,
     }
   }
 
-  // Step 4: 新規作成（マッチしなかった場合）
-  const newIngredient = await createIngredient(supabase, normalizedName)
-  if (newIngredient) {
-    return {
-      ingredientId: newIngredient.id,
-      name: newIngredient.name,
-      isNew: true,
-    }
-  }
+  // Step 4: 未マッチを記録（ingredientsには追加しない）
+  // → 後からエイリアス登録やLLMフォールバックの判断材料に
+  await recordUnmatchedIngredient(supabase, rawName, normalizedName, recipeId)
 
   return null
 }
 
 export async function matchIngredients(
-  ingredientNames: string[]
+  ingredientNames: string[],
+  options: MatchIngredientsOptions = {}
 ): Promise<MatchResult[]> {
   if (ingredientNames.length === 0) return []
 
@@ -175,7 +176,12 @@ export async function matchIngredients(
   for (const name of ingredientNames) {
     if (!name.trim()) continue
 
-    const result = await matchSingleIngredient(supabase, allIngredients, name)
+    const result = await matchSingleIngredient(
+      supabase,
+      allIngredients,
+      name,
+      options.recipeId
+    )
     if (result) results.push(result)
   }
 
