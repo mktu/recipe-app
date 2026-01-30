@@ -34,6 +34,10 @@ recipe-app/
 │   └── types/            # 型定義
 ├── seed/                 # シードデータ
 │   └── ingredients.json  # 食材マスター初期データ (152件)
+├── docs/                 # 詳細ドキュメント
+│   ├── LINE_SETUP.md     # LINE 開発環境構成
+│   ├── SUPABASE_LOCAL.md # ローカル Supabase セットアップ
+│   └── DATABASE_DESIGN.md # DB設計詳細
 ├── requirements.md       # プロジェクト要件定義書
 ├── SESSION.md            # セッション引き継ぎ用ステータス
 └── CLAUDE.md             # このファイル
@@ -99,7 +103,7 @@ LIFF 環境に依存せず開発できるよう、認証レイヤーを抽象化
 - 食材は `ingredients` テーブルで正規化管理
 - AI が出力した食材は `ingredient_aliases` で名寄せ
 - レシピと食材の紐づけは `recipe_ingredients` 中間テーブル
-- 詳細は `requirements.md` の「6. データベース設計」を参照
+- 詳細は `docs/DATABASE_DESIGN.md` を参照
 
 ### LLM 連携のポイント
 
@@ -132,56 +136,25 @@ npx shadcn@latest add [component-name]
 |------------|----------|
 | 「アンマッチ解析」 | `./scripts/check-ingredient-match-rate.sh` を実行し、マッチ率と未マッチ食材TOP20を報告 |
 
-## ローカル開発環境 (Supabase)
+## 環境構築
 
-ローカル開発では Supabase CLI + Docker を使用し、リモート DB に接続せずに開発できる。
+### ローカル Supabase
 
-### セットアップ（初回のみ）
-
-```bash
-# Supabase CLI インストール (macOS)
-brew install supabase/tap/supabase
-
-# Docker が起動していることを確認
-docker info
-```
-
-### 起動・停止
+詳細は `docs/SUPABASE_LOCAL.md` を参照。
 
 ```bash
-# ローカル Supabase 起動
+# 起動
 supabase start
 
-# 停止
-supabase stop
-
-# 状態確認
-supabase status
-```
-
-### DB 操作
-
-```bash
-# マイグレーション + シード適用（DBリセット）
+# DB リセット（マイグレーション + シード）
 supabase db reset
 
-# 新しいマイグレーション作成
-supabase migration new <migration_name>
-
-# ローカル DB に直接接続
-psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+# Studio: http://127.0.0.1:54323
 ```
 
-### 環境変数
+### LINE 開発環境
 
-| 環境 | ファイル | 用途 |
-|------|----------|------|
-| ローカル | `.env.local` | `http://127.0.0.1:54321` を指す |
-| 本番 | `.env.production` | リモート Supabase を指す |
-
-### Studio (管理画面)
-
-ローカル起動後、http://127.0.0.1:54323 でアクセス可能。
+詳細は `docs/LINE_SETUP.md` を参照。
 
 ## 環境変数
 
@@ -196,8 +169,12 @@ SUPABASE_SERVICE_ROLE_KEY=
 # Gemini API
 GOOGLE_GENERATIVE_AI_API_KEY=
 
-# LINE LIFF (本番用)
+# LINE LIFF（LINE Login チャネル）
 NEXT_PUBLIC_LIFF_ID=
+
+# LINE Messaging API（Messaging API チャネル）
+LINE_CHANNEL_SECRET=
+LINE_CHANNEL_ACCESS_TOKEN=
 ```
 
 ## 実装フェーズ
