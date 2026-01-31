@@ -1,18 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-30 (ドキュメント分離)
+2026-01-31 (Webhook 実装・テスト完了)
 
 ## 現在のフェーズ
-フェーズ 3：LINE Messaging API 連携 - 準備中
+フェーズ 3：LINE Messaging API 連携 - Webhook 実装・テスト完了
 
 ## 直近の完了タスク
-- [x] **ドキュメント分離**
-  - CLAUDE.md (333→238行) と requirements.md (361→211行) を軽量化
-  - `docs/LINE_SETUP.md` - LINE開発環境構成
-  - `docs/SUPABASE_LOCAL.md` - ローカルSupabaseセットアップ
-  - `docs/DATABASE_DESIGN.md` - DB設計詳細
-- [x] LINE 開発環境構成の設計・ドキュメント化
+- [x] **Webhook エンドポイント作成・テスト完了** (`/api/webhook/line`)
+  - LINE Bot SDK (`@line/bot-sdk`) を使用
+  - 署名検証 (`validateSignature`)
+  - URL 検出・レシピ解析・保存
+  - 応答メッセージ送信
+  - ユーザー自動作成（Profile API で表示名取得）
+  - ngrok でローカルテスト済み
+- [x] ドキュメント分離
 - [x] LINE チャネル作成（LIFF ID・環境変数設定済み）
 
 ## 進行中のタスク
@@ -20,17 +22,11 @@
 
 ## 次にやること（優先度順）
 
-### フェーズ3: Webhook 実装
-- [ ] **Webhook エンドポイント作成**
-  - `/api/webhook/line` を実装
-  - LINE 署名検証
-  - URL 検出ロジック
-- [ ] **URL 受信 → レシピ解析 → 保存**
-  - 既存の `parseRecipe()` を再利用
-  - ユーザー特定（LINE user ID → users テーブル）
-- [ ] **応答メッセージ**
-  - 保存完了時にリッチメッセージで通知
-- [ ] **ngrok でローカルテスト**
+### フェーズ3: 改善・追加機能
+- [ ] **テスト用スクリプト作成**
+  - `/api/recipes/parse` と `/api/recipes` を使った連続登録スクリプト
+  - CI でも利用可能な形式で
+- [ ] **Vercel デプロイ・本番 Webhook URL 設定**
 
 ### フェーズ2残件（保留中）
 - [ ] 食材マッチング改善（アンマッチ率 79.7%）
@@ -44,11 +40,11 @@
 
 ## コミット履歴（直近）
 ```
+3bbd07e feat: add LINE Webhook endpoint for recipe registration
+8a6628a Update SESSION.md for session handoff
 c39d94a docs: split large documentation into focused files
 9bc5955 Update SESSION.md for session handoff
 801ab1d docs: add custom command for unmatch analysis
-d9afd9c Add script to check ingredient match rate
-921c123 feat: record unmatched ingredients instead of auto-creating
 ```
 
 ## GitHubリポジトリ
@@ -58,5 +54,6 @@ https://github.com/mktu/recipe-app
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/` - 詳細ドキュメント（LINE設定、Supabase、DB設計）
-- `src/lib/recipe/parse-recipe.ts` - レシピ解析ロジック（Webhook で再利用）
+- `src/app/api/webhook/line/route.ts` - LINE Webhook エンドポイント
+- `src/lib/recipe/parse-recipe.ts` - レシピ解析ロジック
 - `src/lib/recipe/match-ingredients.ts` - 食材マッチングロジック
