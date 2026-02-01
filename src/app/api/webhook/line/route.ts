@@ -123,11 +123,19 @@ async function replyWithResult(
 /** URL を処理してレシピ保存 */
 async function processUrl(replyToken: string, lineUserId: string, url: string): Promise<void> {
   try {
+    console.log('[LINE Webhook] Step 1: ensureUser start', { lineUserId })
     await ensureUser(lineUserId)
+    console.log('[LINE Webhook] Step 2: ensureUser done, saveRecipe start', { url })
     const result = await saveRecipe(lineUserId, url)
+    console.log('[LINE Webhook] Step 3: saveRecipe done', { result })
     await replyWithResult(replyToken, result)
   } catch (err) {
     console.error('[LINE Webhook] Error processing URL:', err)
+    console.error('[LINE Webhook] Error details:', {
+      name: err instanceof Error ? err.name : 'unknown',
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    })
     await replyError(replyToken)
   }
 }
