@@ -19,6 +19,13 @@ function extractUrls(text: string): string[] {
   return text.match(urlRegex) || []
 }
 
+/** ヘルプキーワードかどうかを判定 */
+function isHelpKeyword(text: string): boolean {
+  const keywords = ['使い方', 'ヘルプ', 'help', '?', '？']
+  const normalizedText = text.trim().toLowerCase()
+  return keywords.some((keyword) => normalizedText === keyword.toLowerCase())
+}
+
 /** ユーザーを確保（存在しなければ作成） */
 async function ensureUser(lineUserId: string): Promise<void> {
   const supabase = createServerClient()
@@ -57,6 +64,27 @@ async function replyNoUrl(replyToken: string): Promise<void> {
   await client.replyMessage({
     replyToken,
     messages: [{ type: 'text', text: 'レシピURLを送ってください 🍳' }],
+  })
+}
+
+/** ヘルプメッセージの応答 */
+async function replyHelp(replyToken: string): Promise<void> {
+  const helpText = `📖 RecipeHub の使い方
+
+【レシピを保存する】
+レシピサイトのURLをこのトークに送るだけ！
+AIが自動で食材を解析して保存します。
+
+【レシピを探す】
+画面下のメニューから「レシピ一覧」をタップ。
+食材で絞り込み検索もできます。
+
+【対応サイト】
+クックパッド、クラシル、デリッシュキッチンなど主要レシピサイトに対応しています。`
+
+  await client.replyMessage({
+    replyToken,
+    messages: [{ type: 'text', text: helpText }],
   })
 }
 
@@ -138,7 +166,16 @@ async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   if (!event.replyToken || !event.source?.userId) return
 
   const message = event.message as TextEventMessage
-  const urls = extractUrls(message.text)
+  const text = message.text
+
+  // ヘルプキーワードの場合
+  if (isHelpKeyword(text)) {
+    await replyHelp(event.replyToken)
+    return
+  }
+
+  // URL を抽出
+  const urls = extractUrls(text)
 
   if (urls.length === 0) {
     await replyNoUrl(event.replyToken)

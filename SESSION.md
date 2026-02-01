@@ -1,32 +1,38 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-01 (本番環境動作確認完了)
+2026-02-01 (リッチメニュー対応)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番運用開始**
 
 ## 直近の完了タスク
+- [x] **リッチメニュー対応**
+  - ヘルプメッセージ応答実装（`使い方`, `ヘルプ` 等のキーワードに対応）
+  - 設定手順を `docs/LINE_SETUP.md` に追記
+  - 4ボタン構成: レシピ一覧、食材で探す、レシピ追加、使い方
 - [x] **本番環境でのレシピ登録動作確認**
 - [x] **本番 DB マイグレーション適用**
-  - `ingredients_linked` カラム追加
-  - `parent_id` カラム追加
-  - `unmatched_ingredients` テーブル作成
 - [x] **GitHub Actions でマイグレーション自動化**
-  - `.github/workflows/supabase-migrate.yml`
-  - 要: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` シークレット設定
 - [x] **Vercel デプロイ・本番 Webhook URL 設定**
   - URL: https://recipe-app-wine-three.vercel.app
   - LINE Webhook: https://recipe-app-wine-three.vercel.app/api/webhook/line
-- [x] **Supabase API キー命名規則の移行**
-  - `ANON_KEY` → `PUBLISHABLE_KEY`
-  - `SERVICE_ROLE_KEY` → `SECRET_KEY`
-- [x] Webhook エンドポイント作成・テスト完了 (`/api/webhook/line`)
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
+
+### リッチメニュー関連
+- [ ] **リッチメニュー画像作成**
+  - サイズ: 2500x1686px（大）または 2500x843px（小）
+  - Canva 等で作成
+- [ ] **LINE Official Account Manager でリッチメニュー設定**
+  - 手順: `docs/LINE_SETUP.md` 参照
+- [ ] **LP（ランディングページ）作成**
+  - 使い方の詳細説明
+  - FAQ
+  - 友だち追加ボタン
 
 ### フェーズ3: 改善・追加機能
 - [ ] **テスト用スクリプト作成**
