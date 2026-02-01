@@ -1,19 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-01-31 (Webhook 実装・テスト完了)
+2026-02-01 (Vercel デプロイ完了)
 
 ## 現在のフェーズ
-フェーズ 3：LINE Messaging API 連携 - Webhook 実装・テスト完了
+フェーズ 3：LINE Messaging API 連携 - **本番デプロイ完了**
 
 ## 直近の完了タスク
-- [x] **Webhook エンドポイント作成・テスト完了** (`/api/webhook/line`)
-  - LINE Bot SDK (`@line/bot-sdk`) を使用
-  - 署名検証 (`validateSignature`)
-  - URL 検出・レシピ解析・保存
-  - 応答メッセージ送信
-  - ユーザー自動作成（Profile API で表示名取得）
-  - ngrok でローカルテスト済み
+- [x] **Vercel デプロイ・本番 Webhook URL 設定**
+  - URL: https://recipe-app-wine-three.vercel.app
+  - LINE Webhook: https://recipe-app-wine-three.vercel.app/api/webhook/line
+  - 疎通確認済み
+- [x] **Supabase API キー命名規則の移行**
+  - `ANON_KEY` → `PUBLISHABLE_KEY`
+  - `SERVICE_ROLE_KEY` → `SECRET_KEY`
+- [x] Webhook エンドポイント作成・テスト完了 (`/api/webhook/line`)
 - [x] ドキュメント分離
 - [x] LINE チャネル作成（LIFF ID・環境変数設定済み）
 
@@ -26,7 +27,6 @@
 - [ ] **テスト用スクリプト作成**
   - `/api/recipes/parse` と `/api/recipes` を使った連続登録スクリプト
   - CI でも利用可能な形式で
-- [ ] **Vercel デプロイ・本番 Webhook URL 設定**
 
 ### フェーズ2残件（保留中）
 - [ ] 食材マッチング改善（アンマッチ率 79.7%）
