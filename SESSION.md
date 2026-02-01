@@ -1,22 +1,27 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-01 (Vercel デプロイ完了)
+2026-02-01 (本番環境動作確認完了)
 
 ## 現在のフェーズ
-フェーズ 3：LINE Messaging API 連携 - **本番デプロイ完了**
+フェーズ 3：LINE Messaging API 連携 - **本番運用開始**
 
 ## 直近の完了タスク
+- [x] **本番環境でのレシピ登録動作確認**
+- [x] **本番 DB マイグレーション適用**
+  - `ingredients_linked` カラム追加
+  - `parent_id` カラム追加
+  - `unmatched_ingredients` テーブル作成
+- [x] **GitHub Actions でマイグレーション自動化**
+  - `.github/workflows/supabase-migrate.yml`
+  - 要: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` シークレット設定
 - [x] **Vercel デプロイ・本番 Webhook URL 設定**
   - URL: https://recipe-app-wine-three.vercel.app
   - LINE Webhook: https://recipe-app-wine-three.vercel.app/api/webhook/line
-  - 疎通確認済み
 - [x] **Supabase API キー命名規則の移行**
   - `ANON_KEY` → `PUBLISHABLE_KEY`
   - `SERVICE_ROLE_KEY` → `SECRET_KEY`
 - [x] Webhook エンドポイント作成・テスト完了 (`/api/webhook/line`)
-- [x] ドキュメント分離
-- [x] LINE チャネル作成（LIFF ID・環境変数設定済み）
 
 ## 進行中のタスク
 なし
