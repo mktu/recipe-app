@@ -198,34 +198,16 @@ async function insertRecipeIngredients(client: TypedSupabaseClient, recipeId: st
 
 /** レシピを新規作成 */
 export async function createRecipe(input: CreateRecipeInput): Promise<{ data: CreateRecipeResult | null; error: Error | null }> {
-  console.log('[createRecipe] Start', { lineUserId: input.lineUserId, url: input.url })
-
-  let client
-  try {
-    client = createServerClient()
-    console.log('[createRecipe] Server client created')
-  } catch (err) {
-    console.error('[createRecipe] Failed to create server client:', err)
-    return { data: null, error: err instanceof Error ? err : new Error('Failed to create server client') }
-  }
+  const client = createServerClient()
 
   try {
-    console.log('[createRecipe] Getting user ID')
     const userId = await getUserIdByLineUserId(client, input.lineUserId)
-    if (!userId) {
-      console.error('[createRecipe] User not found:', input.lineUserId)
-      return { data: null, error: new Error('ユーザーが見つかりません') }
-    }
-    console.log('[createRecipe] User ID found:', userId)
+    if (!userId) return { data: null, error: new Error('ユーザーが見つかりません') }
 
-    console.log('[createRecipe] Inserting recipe')
     const recipe = await insertRecipe(client, userId, input)
     if (!recipe) return { data: null, error: new Error('レシピの作成に失敗しました') }
-    console.log('[createRecipe] Recipe inserted:', recipe.id)
 
-    console.log('[createRecipe] Inserting ingredients:', input.ingredientIds)
     await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
-    console.log('[createRecipe] Done')
     return { data: { id: recipe.id }, error: null }
   } catch (err) {
     console.error('[createRecipe] Error:', err)
