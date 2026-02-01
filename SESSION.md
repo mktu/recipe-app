@@ -28,6 +28,11 @@
   - `/api/recipes/parse` と `/api/recipes` を使った連続登録スクリプト
   - CI でも利用可能な形式で
 
+### 運用改善（本番運用開始後に検討）
+- [ ] **Supabase Pro プランへのアップグレード検討**
+  - GitHub Integration でマイグレーション自動適用
+  - 現状は GitHub Actions で対応（`.github/workflows/supabase-migrate.yml`）
+
 ### フェーズ2残件（保留中）
 - [ ] 食材マッチング改善（アンマッチ率 79.7%）
   - → データを貯めてから方針決定予定
