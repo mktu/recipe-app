@@ -25,8 +25,8 @@ LINE では LIFF と Messaging API で別のチャネルタイプが必要:
 
 | 項目 | ローカル開発時 | 本番時 |
 |------|----------------|--------|
-| LIFF エンドポイント URL | （DevAuthProvider で不要） | `https://your-app.vercel.app` |
-| Webhook URL | `https://xxxx.ngrok.io/api/webhook/line` | `https://your-app.vercel.app/api/webhook/line` |
+| LIFF エンドポイント URL | （DevAuthProvider で不要） | `https://recipe-app-wine-three.vercel.app` |
+| Webhook URL | `https://xxxx.ngrok.io/api/webhook/line` | `https://recipe-app-wine-three.vercel.app/api/webhook/line` |
 
 ## ローカル開発フロー
 

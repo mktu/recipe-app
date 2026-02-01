@@ -48,3 +48,18 @@ psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ## Studio (管理画面)
 
 ローカル起動後、http://127.0.0.1:54323 でアクセス可能。
+
+## 本番マイグレーション
+
+`supabase/migrations/` にファイルを追加して `main` ブランチに push すると、GitHub Actions が自動で本番 DB にマイグレーションを適用する。
+
+### 必要な GitHub Secrets
+
+| Secret 名 | 取得方法 |
+|-----------|----------|
+| `SUPABASE_ACCESS_TOKEN` | [Supabase Dashboard](https://supabase.com/dashboard/account/tokens) → Access Tokens |
+| `SUPABASE_PROJECT_REF` | Project Settings → General → Reference ID |
+
+### 手動適用（緊急時）
+
+GitHub Actions が設定されていない場合や緊急時は、Supabase Dashboard の **SQL Editor** で直接実行する。
