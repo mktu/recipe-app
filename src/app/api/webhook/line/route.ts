@@ -96,12 +96,20 @@ AIが自動で食材を解析して保存します。
 
 /** テスト応答（URLプレビュー確認用） */
 async function replyTest(replyToken: string, lineUserId: string): Promise<void> {
-  const { data: recipes } = await fetchRecipes({ userId: lineUserId, sortOrder: 'newest' })
+  console.log('[replyTest] lineUserId:', lineUserId)
+
+  const { data: recipes, error } = await fetchRecipes({ userId: lineUserId, sortOrder: 'newest' })
+
+  console.log('[replyTest] fetchRecipes result:', {
+    recipeCount: recipes.length,
+    error: error?.message,
+    firstRecipe: recipes[0] ? { id: recipes[0].id, title: recipes[0].title, url: recipes[0].url } : null
+  })
 
   if (recipes.length === 0) {
     await client.replyMessage({
       replyToken,
-      messages: [{ type: 'text', text: 'レシピが登録されていません。まずURLを送って登録してください。' }],
+      messages: [{ type: 'text', text: `レシピが登録されていません。(debug: ${lineUserId}, error: ${error?.message || 'none'})` }],
     })
     return
   }
