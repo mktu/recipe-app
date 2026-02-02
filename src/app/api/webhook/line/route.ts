@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from '@line/bot-sdk'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
-import { createRecipe } from '@/lib/db/queries/recipes'
+import { createRecipe, fetchRecipes } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 
 const config = {
@@ -24,6 +24,12 @@ function isHelpKeyword(text: string): boolean {
   const keywords = ['使い方', 'ヘルプ', 'help', '?', '？']
   const normalizedText = text.trim().toLowerCase()
   return keywords.some((keyword) => normalizedText === keyword.toLowerCase())
+}
+
+/** テストキーワードかどうかを判定 */
+function isTestKeyword(text: string): boolean {
+  const normalizedText = text.trim().toLowerCase()
+  return normalizedText === 'テスト' || normalizedText === 'test'
 }
 
 /** ユーザーを確保（存在しなければ作成） */
@@ -85,6 +91,26 @@ AIが自動で食材を解析して保存します。
   await client.replyMessage({
     replyToken,
     messages: [{ type: 'text', text: helpText }],
+  })
+}
+
+/** テスト応答（URLプレビュー確認用） */
+async function replyTest(replyToken: string, lineUserId: string): Promise<void> {
+  const { data: recipes } = await fetchRecipes({ userId: lineUserId, sortOrder: 'newest' })
+
+  if (recipes.length === 0) {
+    await client.replyMessage({
+      replyToken,
+      messages: [{ type: 'text', text: 'レシピが登録されていません。まずURLを送って登録してください。' }],
+    })
+    return
+  }
+
+  // 最新のレシピURLを返す
+  const recipe = recipes[0]
+  await client.replyMessage({
+    replyToken,
+    messages: [{ type: 'text', text: recipe.url }],
   })
 }
 
@@ -171,6 +197,12 @@ async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   // ヘルプキーワードの場合
   if (isHelpKeyword(text)) {
     await replyHelp(event.replyToken)
+    return
+  }
+
+  // テストキーワードの場合（URLプレビュー確認用）
+  if (isTestKeyword(text)) {
+    await replyTest(event.replyToken, event.source.userId)
     return
   }
 

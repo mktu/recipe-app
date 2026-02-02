@@ -19,16 +19,17 @@
   - LINE Webhook: https://recipe-app-wine-three.vercel.app/api/webhook/line
 
 ## 進行中のタスク
-なし
+- [ ] **リッチメニュー画像の本番用デザイン作成**
+  - 現在はプレースホルダー画像（`assets/rich-menu-placeholder.png`）を使用中
 
 ## 次にやること（優先度順）
 
 ### リッチメニュー関連
-- [ ] **リッチメニュー画像作成**
-  - サイズ: 2500x1686px（大）または 2500x843px（小）
-  - Canva 等で作成
-- [ ] **LINE Official Account Manager でリッチメニュー設定**
-  - 手順: `docs/LINE_SETUP.md` 参照
+- [x] **LINE Official Account Manager でリッチメニュー設定** - 完了
+- [x] **プレースホルダー画像作成** - `assets/rich-menu-placeholder.png`
+- [ ] **リッチメニュー画像の本番デザイン作成**
+  - サイズ: 2500x1686px
+  - Canva 等で作成して差し替え
 - [ ] **LP（ランディングページ）作成**
   - 使い方の詳細説明
   - FAQ
@@ -56,11 +57,11 @@
 
 ## コミット履歴（直近）
 ```
-3bbd07e feat: add LINE Webhook endpoint for recipe registration
-8a6628a Update SESSION.md for session handoff
-c39d94a docs: split large documentation into focused files
-9bc5955 Update SESSION.md for session handoff
-801ab1d docs: add custom command for unmatch analysis
+b974e02 feat: add help message response for rich menu support
+2c2ba0c docs: update production URLs and migration instructions
+f83949c Update SESSION.md for session handoff
+622ddbf chore: remove debug logging
+9f72696 docs: add Supabase Pro upgrade to future tasks
 ```
 
 ## GitHubリポジトリ
