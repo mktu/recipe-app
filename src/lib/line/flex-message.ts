@@ -1,0 +1,100 @@
+import type { messagingApi } from '@line/bot-sdk'
+
+export interface RecipeCardData {
+  title: string
+  url: string
+  imageUrl?: string | null
+  sourceName?: string | null
+}
+
+type FlexMessage = messagingApi.FlexMessage
+
+const DEFAULT_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image'
+
+/** 単一のレシピカード（Bubble）を生成 */
+function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
+  const bodyContents: messagingApi.FlexComponent[] = [
+    {
+      type: 'text',
+      text: recipe.title,
+      weight: 'bold',
+      size: 'md',
+      wrap: true,
+      maxLines: 2,
+    },
+  ]
+
+  if (recipe.sourceName) {
+    bodyContents.push({
+      type: 'text',
+      text: recipe.sourceName,
+      size: 'xs',
+      color: '#999999',
+      margin: 'sm',
+    })
+  }
+
+  return {
+    type: 'bubble',
+    size: 'kilo',
+    hero: {
+      type: 'image',
+      url: recipe.imageUrl || DEFAULT_IMAGE,
+      size: 'full',
+      aspectRatio: '20:13',
+      aspectMode: 'cover',
+    },
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: bodyContents,
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'button',
+          action: {
+            type: 'uri',
+            label: 'レシピを見る',
+            uri: recipe.url,
+          },
+          style: 'primary',
+          color: '#FF6B6B',
+        },
+      ],
+    },
+  }
+}
+
+/** 単一レシピのFlex Message */
+export function createSingleRecipeMessage(recipe: RecipeCardData): FlexMessage {
+  return {
+    type: 'flex',
+    altText: `レシピ: ${recipe.title}`,
+    contents: createRecipeBubble(recipe),
+  }
+}
+
+/** 複数レシピのCarousel Flex Message（最大10件） */
+export function createRecipeCarouselMessage(recipes: RecipeCardData[]): FlexMessage {
+  const bubbles = recipes.slice(0, 10).map(createRecipeBubble)
+
+  return {
+    type: 'flex',
+    altText: `${recipes.length}件のレシピ`,
+    contents: {
+      type: 'carousel',
+      contents: bubbles,
+    },
+  }
+}
+
+/** レシピ数に応じてメッセージを生成 */
+export function createRecipeMessage(recipes: RecipeCardData[]): FlexMessage {
+  if (recipes.length === 1) {
+    return createSingleRecipeMessage(recipes[0])
+  }
+  return createRecipeCarouselMessage(recipes)
+}

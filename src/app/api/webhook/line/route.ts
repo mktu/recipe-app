@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from '@line/bot-sdk'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
-import { createRecipe, fetchRecipes } from '@/lib/db/queries/recipes'
+import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
+import { createRecipeMessage, RecipeCardData } from '@/lib/line/flex-message'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -94,7 +95,7 @@ AIが自動で食材を解析して保存します。
   })
 }
 
-/** テスト応答（URLプレビュー確認用） */
+/** テスト応答（Flex Messageでレシピカード表示） */
 async function replyTest(replyToken: string, lineUserId: string): Promise<void> {
   const supabase = createServerClient()
 
@@ -108,31 +109,38 @@ async function replyTest(replyToken: string, lineUserId: string): Promise<void> 
   if (!user || userError) {
     await client.replyMessage({
       replyToken,
-      messages: [{ type: 'text', text: `ユーザーが見つかりません。(error: ${userError?.message || 'no user'})` }],
+      messages: [{ type: 'text', text: 'ユーザーが見つかりません。' }],
     })
     return
   }
 
-  // レシピを取得
-  const { data: recipes, error: recipeError } = await supabase
+  // レシピを取得（最大3件）
+  const { data: recipes } = await supabase
     .from('recipes')
-    .select('id, title, url')
+    .select('id, title, url, image_url, source_name')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(1)
+    .limit(3)
 
   if (!recipes || recipes.length === 0) {
     await client.replyMessage({
       replyToken,
-      messages: [{ type: 'text', text: `レシピがありません。(userId: ${user.id}, error: ${recipeError?.message || 'none'})` }],
+      messages: [{ type: 'text', text: 'レシピが登録されていません。まずURLを送って登録してください。' }],
     })
     return
   }
 
-  // 最新のレシピURLを返す
+  // Flex Messageでレシピカードを返す
+  const recipeCards: RecipeCardData[] = recipes.map((r) => ({
+    title: r.title,
+    url: r.url,
+    imageUrl: r.image_url,
+    sourceName: r.source_name,
+  }))
+
   await client.replyMessage({
     replyToken,
-    messages: [{ type: 'text', text: recipes[0].url }],
+    messages: [createRecipeMessage(recipeCards)],
   })
 }
 
