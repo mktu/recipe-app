@@ -96,29 +96,43 @@ AIが自動で食材を解析して保存します。
 
 /** テスト応答（URLプレビュー確認用） */
 async function replyTest(replyToken: string, lineUserId: string): Promise<void> {
-  console.log('[replyTest] lineUserId:', lineUserId)
+  const supabase = createServerClient()
 
-  const { data: recipes, error } = await fetchRecipes({ userId: lineUserId, sortOrder: 'newest' })
+  // ユーザーを取得
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('line_user_id', lineUserId)
+    .single()
 
-  console.log('[replyTest] fetchRecipes result:', {
-    recipeCount: recipes.length,
-    error: error?.message,
-    firstRecipe: recipes[0] ? { id: recipes[0].id, title: recipes[0].title, url: recipes[0].url } : null
-  })
-
-  if (recipes.length === 0) {
+  if (!user || userError) {
     await client.replyMessage({
       replyToken,
-      messages: [{ type: 'text', text: `レシピが登録されていません。(debug: ${lineUserId}, error: ${error?.message || 'none'})` }],
+      messages: [{ type: 'text', text: `ユーザーが見つかりません。(error: ${userError?.message || 'no user'})` }],
+    })
+    return
+  }
+
+  // レシピを取得
+  const { data: recipes, error: recipeError } = await supabase
+    .from('recipes')
+    .select('id, title, url')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (!recipes || recipes.length === 0) {
+    await client.replyMessage({
+      replyToken,
+      messages: [{ type: 'text', text: `レシピがありません。(userId: ${user.id}, error: ${recipeError?.message || 'none'})` }],
     })
     return
   }
 
   // 最新のレシピURLを返す
-  const recipe = recipes[0]
   await client.replyMessage({
     replyToken,
-    messages: [{ type: 'text', text: recipe.url }],
+    messages: [{ type: 'text', text: recipes[0].url }],
   })
 }
 
