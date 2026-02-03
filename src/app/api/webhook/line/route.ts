@@ -4,6 +4,7 @@ import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import { createRecipeMessage, RecipeCardData } from '@/lib/line/flex-message'
+import { handleSearch } from '@/lib/line/search-handler'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -64,14 +65,6 @@ async function ensureUser(lineUserId: string): Promise<void> {
     console.error('[LINE Webhook] Failed to create user:', error)
     throw new Error('ユーザーの作成に失敗しました')
   }
-}
-
-/** URL なしの場合の応答 */
-async function replyNoUrl(replyToken: string): Promise<void> {
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: 'レシピURLを送ってください 🍳' }],
-  })
 }
 
 /** ヘルプメッセージの応答 */
@@ -239,12 +232,14 @@ async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   // URL を抽出
   const urls = extractUrls(text)
 
-  if (urls.length === 0) {
-    await replyNoUrl(event.replyToken)
+  // URLがある場合はレシピ保存
+  if (urls.length > 0) {
+    await processUrl(event.replyToken, event.source.userId, urls[0])
     return
   }
 
-  await processUrl(event.replyToken, event.source.userId, urls[0])
+  // URLがない場合は検索として処理
+  await handleSearch(client, event.replyToken, event.source.userId, text, ensureUser)
 }
 
 /**
