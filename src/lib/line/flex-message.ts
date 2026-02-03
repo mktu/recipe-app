@@ -9,6 +9,13 @@ export interface RecipeCardData {
 
 type FlexMessage = messagingApi.FlexMessage
 
+// RecipeHub Design Tokens
+const COLORS = {
+  primary: '#f59e0b',      // Amber/Gold - ボタン
+  textDark: '#3d3d3d',     // 濃いテキスト
+  textMuted: '#888888',    // 薄いテキスト（ソース名など）
+}
+
 const DEFAULT_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image'
 
 /** 単一のレシピカード（Bubble）を生成 */
@@ -29,7 +36,7 @@ function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
       type: 'text',
       text: recipe.sourceName,
       size: 'xs',
-      color: '#999999',
+      color: COLORS.textMuted,
       margin: 'sm',
     })
   }
@@ -61,7 +68,7 @@ function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
             uri: recipe.url,
           },
           style: 'primary',
-          color: '#FF6B6B',
+          color: COLORS.primary,
         },
       ],
     },
