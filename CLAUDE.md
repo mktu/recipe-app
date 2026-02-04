@@ -45,6 +45,29 @@ recipe-app/
 
 ## 開発ルール
 
+### ブランチ戦略（GitHub Flow）
+
+**ブランチ構成:**
+- `main`: 本番ブランチ（保護設定済み）
+- `feature/*`: 機能開発ブランチ
+
+**ワークフロー:**
+1. `main` から `feature/xxx` ブランチを作成
+2. 開発・コミット
+3. PR を作成（CI が自動実行）
+4. レビュー後 `main` にマージ
+
+**ブランチ命名規則:**
+- `feature/add-xxx` - 新機能追加
+- `feature/fix-xxx` - バグ修正
+- `feature/refactor-xxx` - リファクタリング
+- `feature/docs-xxx` - ドキュメント更新
+
+**CI チェック（PR 時に自動実行）:**
+- `npm run lint`
+- `npm run build`
+- マイグレーションテスト（DB変更時のみ）
+
 ### コーディング規約
 
 - TypeScript strict mode を使用
