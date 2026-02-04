@@ -1,0 +1,62 @@
+name: Test Migrations
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed.sql'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Verify migrations applied
+        run: |
+          MIGRATION_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM supabase_migrations.schema_migrations" | tail -1 | tr -d ' ')
+          EXPECTED_COUNT=$(ls supabase/migrations/*.sql | wc -l | tr -d ' ')
+
+          if [ "$MIGRATION_COUNT" != "$EXPECTED_COUNT" ]; then
+            echo "Migration count mismatch: expected $EXPECTED_COUNT, got $MIGRATION_COUNT"
+            exit 1
+          fi
+          echo "All $MIGRATION_COUNT migrations applied successfully"
+
+      - name: Verify required data
+        run: |
+          # 食材マスターが投入されているか
+          INGREDIENT_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredients" | tail -1 | tr -d ' ')
+          if [ "$INGREDIENT_COUNT" -lt 100 ]; then
+            echo "Ingredients not seeded: only $INGREDIENT_COUNT rows"
+            exit 1
+          fi
+          echo "Ingredients: $INGREDIENT_COUNT rows"
+
+          # エイリアスが投入されているか
+          ALIAS_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredient_aliases" | tail -1 | tr -d ' ')
+          if [ "$ALIAS_COUNT" -lt 50 ]; then
+            echo "Aliases not seeded: only $ALIAS_COUNT rows"
+            exit 1
+          fi
+          echo "Aliases: $ALIAS_COUNT rows"
+
+          # 親子関係が設定されているか
+          PARENT_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredients WHERE parent_id IS NOT NULL" | tail -1 | tr -d ' ')
+          if [ "$PARENT_COUNT" -lt 10 ]; then
+            echo "Parent relationships not set: only $PARENT_COUNT rows"
+            exit 1
+          fi
+          echo "Parent relationships: $PARENT_COUNT rows"
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
