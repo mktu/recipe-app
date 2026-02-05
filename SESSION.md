@@ -34,11 +34,11 @@
 
 ## コミット履歴（直近）
 ```
-b6495bb feat: add recipe registration test scripts (#1)
-f6f76ec docs: update SESSION.md for session handoff
-f83316b chore: add branch strategy and CI workflow
-4378f03 docs: update SESSION.md for session handoff
-b39fed2 feat: add ingredient master data migration and CI test workflow
+d85f74b docs: update SESSION.md for session handoff
+b6495bb Merge pull request #1 from mktu/feature/add-test-recipe-script
+6ad0f4d fix(ci): add dummy env vars for build
+f831643 chore: exclude scripts/ from max-lines lint rule
+b0adec1 docs: add scripts documentation
 ```
 
 ## GitHubリポジトリ
