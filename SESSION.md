@@ -1,17 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-04 (ブランチ戦略・CI導入)
+2026-02-05 (テスト用スクリプト追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・本番DB整備完了**
 
 ## 直近の完了タスク
-- [x] **ブランチ戦略の導入（GitHub Flow）**
-  - `main` 保護 + `feature/*` ブランチ運用
-  - CLAUDE.md にブランチ戦略セクション追加
-- [x] **CI ワークフロー追加**
-  - `.github/workflows/ci.yml` - PR時に lint + build 実行
+- [x] **レシピ登録テストスクリプト追加**
+  - `npm run collect:urls` - サイトマップからURL自動収集（138件）
+  - `npm run test:recipe` - 一括登録テスト
+  - 詳細は `scripts/README.md` 参照
+- [x] **CI修正** - ビルド時のSupabase環境変数追加
 
 ## 進行中のタスク
 なし
@@ -22,7 +22,6 @@
   - Require PR, Require status checks (`lint-and-build`)
 - [ ] リッチメニュー画像の本番デザイン作成
 - [ ] LP（ランディングページ）作成
-- [ ] テスト用スクリプト作成
 
 ## ブロッカー・注意点
 - ローカル開発時は `supabase start` で起動が必要
@@ -31,15 +30,15 @@
 - **DB型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 - **GitHub Secrets:** `SUPABASE_ACCESS_TOKEN` と `SUPABASE_PROJECT_REF` が必要（CI用）
 - **マイグレーション順序:** 食材マスター → エイリアスの順で適用される（タイムスタンプで制御）
-- **ブランチ運用:** これ以降は `feature/*` → PR → main マージの流れ
+- **ブランチ運用:** `feature/*` → PR → main マージの流れ
 
 ## コミット履歴（直近）
 ```
+b6495bb feat: add recipe registration test scripts (#1)
+f6f76ec docs: update SESSION.md for session handoff
 f83316b chore: add branch strategy and CI workflow
 4378f03 docs: update SESSION.md for session handoff
 b39fed2 feat: add ingredient master data migration and CI test workflow
-c6b79ad docs: update SESSION.md for session handoff
-15dc36d feat: add ingredient aliases for search flexibility
 ```
 
 ## GitHubリポジトリ
@@ -47,8 +46,9 @@ https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
-- `CLAUDE.md` - 開発ルール・ガイド（ブランチ戦略追記済み）
-- `.github/workflows/ci.yml` - lint + build CI **[今回追加]**
+- `CLAUDE.md` - 開発ルール・ガイド
+- `scripts/README.md` - テストスクリプトの使い方
+- `.github/workflows/ci.yml` - lint + build CI
 - `.github/workflows/supabase-migrate.yml` - 本番DBマイグレーション（mainプッシュ時）
 - `.github/workflows/test-migrations.yml` - マイグレーションテスト（PR時）
 - `src/app/api/webhook/line/route.ts` - LINE Webhook エンドポイント
