@@ -153,6 +153,8 @@ npx shadcn@latest add [component-name]
 ./scripts/check-ingredient-match-rate.sh
 ```
 
+その他のスクリプト（レシピ登録テスト等）は `scripts/README.md` を参照。
+
 ## カスタムコマンド
 
 | キーワード | 実行内容 |
