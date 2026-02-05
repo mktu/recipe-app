@@ -3,6 +3,23 @@ import { createServerClient } from '@/lib/db/client'
 import type { Database } from '@/types/database'
 import { normalizeIngredientName } from './normalize-ingredient'
 
+/** 検索対象外とする調味料・基礎食材 */
+const SEASONING_KEYWORDS = [
+  '塩', '砂糖', '醤油', 'しょうゆ', 'みりん', '酒', '料理酒',
+  '油', 'サラダ油', 'ごま油', 'オリーブオイル', 'オリーブ油',
+  '酢', '味噌', 'みそ', 'だし', '出汁', 'ダシ',
+  'マヨネーズ', 'ケチャップ', 'ソース', 'ウスターソース',
+  'こしょう', 'コショウ', '胡椒', '塩こしょう', '黒こしょう',
+  '片栗粉', '薄力粉', '強力粉', '小麦粉', 'パン粉',
+  'コンソメ', 'ブイヨン', '鶏ガラスープ',
+  '溶き卵', 'ねぎ刻み', '細ねぎ', '細ねぎ刻み',
+]
+
+function isSeasoning(name: string): boolean {
+  const normalized = name.toLowerCase()
+  return SEASONING_KEYWORDS.some((kw) => normalized.includes(kw))
+}
+
 export interface MatchResult {
   ingredientId: string
   name: string
@@ -132,6 +149,9 @@ async function matchSingleIngredient(
   // Step 0: 正規化（分量・単位を除去）
   const normalizedName = normalizeIngredientName(rawName)
   if (!normalizedName) return null
+
+  // Step 0.5: 調味料は除外（マッチ対象外）
+  if (isSeasoning(normalizedName)) return null
 
   // Step 1: エイリアス検索
   const aliasMatch = await findByAlias(supabase, normalizedName)
