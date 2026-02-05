@@ -39,6 +39,14 @@ const eslintConfig = defineConfig([
       "max-lines-per-function": "off",
     },
   },
+  // スクリプトファイルの制限緩和
+  {
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
