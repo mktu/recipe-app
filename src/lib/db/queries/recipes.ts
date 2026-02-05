@@ -196,22 +196,32 @@ async function insertRecipeIngredients(client: TypedSupabaseClient, recipeId: st
   if (error) console.error('[createRecipe] recipe_ingredients insert error:', error)
 }
 
+export interface CreateRecipeError {
+  message: string
+  code?: string
+}
+
 /** レシピを新規作成 */
-export async function createRecipe(input: CreateRecipeInput): Promise<{ data: CreateRecipeResult | null; error: Error | null }> {
+export async function createRecipe(input: CreateRecipeInput): Promise<{ data: CreateRecipeResult | null; error: CreateRecipeError | null }> {
   const client = createServerClient()
 
   try {
     const userId = await getUserIdByLineUserId(client, input.lineUserId)
-    if (!userId) return { data: null, error: new Error('ユーザーが見つかりません') }
+    if (!userId) return { data: null, error: { message: 'ユーザーが見つかりません' } }
 
     const recipe = await insertRecipe(client, userId, input)
-    if (!recipe) return { data: null, error: new Error('レシピの作成に失敗しました') }
+    if (!recipe) return { data: null, error: { message: 'レシピの作成に失敗しました' } }
 
     await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
     return { data: { id: recipe.id }, error: null }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[createRecipe] Error:', err)
-    return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
+    // PostgreSQLエラー（Supabaseから返される形式）を保持
+    if (err && typeof err === 'object' && 'code' in err) {
+      const pgError = err as { code: string; message?: string }
+      return { data: null, error: { message: pgError.message || 'Database error', code: pgError.code } }
+    }
+    return { data: null, error: { message: err instanceof Error ? err.message : 'Unknown error' } }
   }
 }
 
