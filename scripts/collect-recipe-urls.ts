@@ -40,12 +40,6 @@ const SITES: SiteConfig[] = [
     count: 50,
   },
   {
-    name: '味の素パーク',
-    sitemapUrl: 'https://park.ajinomoto.co.jp/sitemap-pt-recipe_card-2026-01.xml',
-    urlPattern: /https:\/\/park\.ajinomoto\.co\.jp\/recipe\/card\/[^<\s]+/g,
-    count: 15,
-  },
-  {
     name: 'みんなのきょうの料理',
     sitemapUrl: 'https://www.kyounoryouri.jp/sitemaps/recipe.xml',
     urlPattern: /https:\/\/www\.kyounoryouri\.jp\/recipe\/[^<\s]+\.html/g,
