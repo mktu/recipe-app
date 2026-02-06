@@ -21,8 +21,10 @@ jobs:
         run: supabase start
 
       - name: Verify migrations applied
+        env:
+          PGPASSWORD: postgres
         run: |
-          MIGRATION_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM supabase_migrations.schema_migrations" | tail -1 | tr -d ' ')
+          MIGRATION_COUNT=$(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -c "SELECT COUNT(*) FROM supabase_migrations.schema_migrations" | tr -d ' ')
           EXPECTED_COUNT=$(ls supabase/migrations/*.sql | wc -l | tr -d ' ')
 
           if [ "$MIGRATION_COUNT" != "$EXPECTED_COUNT" ]; then
@@ -32,9 +34,11 @@ jobs:
           echo "All $MIGRATION_COUNT migrations applied successfully"
 
       - name: Verify required data
+        env:
+          PGPASSWORD: postgres
         run: |
           # 食材マスターが投入されているか
-          INGREDIENT_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredients" | tail -1 | tr -d ' ')
+          INGREDIENT_COUNT=$(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -c "SELECT COUNT(*) FROM ingredients" | tr -d ' ')
           if [ "$INGREDIENT_COUNT" -lt 100 ]; then
             echo "Ingredients not seeded: only $INGREDIENT_COUNT rows"
             exit 1
@@ -42,7 +46,7 @@ jobs:
           echo "Ingredients: $INGREDIENT_COUNT rows"
 
           # エイリアスが投入されているか
-          ALIAS_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredient_aliases" | tail -1 | tr -d ' ')
+          ALIAS_COUNT=$(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -c "SELECT COUNT(*) FROM ingredient_aliases" | tr -d ' ')
           if [ "$ALIAS_COUNT" -lt 50 ]; then
             echo "Aliases not seeded: only $ALIAS_COUNT rows"
             exit 1
@@ -50,7 +54,7 @@ jobs:
           echo "Aliases: $ALIAS_COUNT rows"
 
           # 親子関係が設定されているか
-          PARENT_COUNT=$(supabase db execute --command "SELECT COUNT(*) FROM ingredients WHERE parent_id IS NOT NULL" | tail -1 | tr -d ' ')
+          PARENT_COUNT=$(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -c "SELECT COUNT(*) FROM ingredients WHERE parent_id IS NOT NULL" | tr -d ' ')
           if [ "$PARENT_COUNT" -lt 10 ]; then
             echo "Parent relationships not set: only $PARENT_COUNT rows"
             exit 1
