@@ -1,28 +1,29 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-06 (食材マッチング改善・調味料除外)
+2026-02-06 (お菓子材料除外・味の素パーク除外)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・本番DB整備完了**
 
 ## 直近の完了タスク
-- [x] **食材マッチング改善** (PR #2)
-  - 調味料除外フィルタ追加（塩、砂糖、醤油、油、片栗粉など）
-  - 食材マスター追加（レモン、ごま）
-  - エイリアス追加（にんにく、しょうが、レモン、ごま、たまご系）
-  - アンマッチ率改善: 69.5% → 36.6%
-- [x] **CI修正** - `supabase db execute` → `psql` に変更
-- [x] **ローカル開発環境改善** - LIFF_ID空でDevProvider使用可能
+- [x] **お菓子材料・追加調味料の除外フィルタ追加**
+  - グラニュー糖、めんつゆ、豆板醤、コチュジャン、はちみつ
+  - ホットケーキミックス、ベーキングパウダー、ココアパウダー、ビスケット
+  - お湯、水
+- [x] **味の素パークをURL収集対象から除外**
+  - JSON-LD非対応でGeminiフォールバック必須 → レート制限問題
+- [x] **レシピ登録テスト実行**（新URLセット138件）
+  - 成功: 126件、失敗: 12件（味の素パークのみ）
+  - アンマッチ率: 34.8%
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
 - [ ] **さらなるマッチング改善（任意）**
-  - 表記ゆれ対応: ニラ→にら、レンコン→れんこん、バナナ
-  - 除外追加: はちみつ、お湯、グラニュー糖、わさび、豆板醤
-  - お菓子材料の扱い検討
+  - 表記ゆれ対応: ニラ→にら、レンコン→れんこん
+  - 食材マスター追加: 長芋、小ねぎ、ローズマリー、ミント など
 - [ ] リッチメニュー画像の本番デザイン作成
 - [ ] LP（ランディングページ）作成
 
@@ -38,11 +39,11 @@
 
 ## コミット履歴（直近）
 ```
+4094b06 feat: exclude sweets ingredients and remove Ajinomoto Park from URL collection
+684d649 docs: update SESSION.md for session handoff
 61d7ca2 Merge pull request #2 from mktu/feature/improve-ingredient-matching
 36d66c7 fix(ci): use psql instead of supabase db execute
 839e2ec feat: improve ingredient matching with seasoning filter and aliases
-438a2cd docs: update SESSION.md for session handoff
-d85f74b docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -52,6 +53,6 @@ https://github.com/mktu/recipe-app
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
 - `scripts/README.md` - テストスクリプトの使い方
-- `src/lib/recipe/match-ingredients.ts` - 食材マッチング（調味料除外ロジック）
-- `supabase/migrations/20260206000000_add_ingredients_and_aliases.sql` - 食材・エイリアス追加
-- `.github/workflows/test-migrations.yml` - マイグレーションテスト（PR時）
+- `src/lib/recipe/match-ingredients.ts` - 食材マッチング（調味料・お菓子材料除外ロジック）
+- `scripts/collect-recipe-urls.ts` - URL収集スクリプト（味の素パーク除外済み）
+- `scripts/check-ingredient-match-rate.sh` - マッチ率確認スクリプト
