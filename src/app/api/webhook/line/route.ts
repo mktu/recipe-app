@@ -4,7 +4,7 @@ import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import { createRecipeMessage, RecipeCardData } from '@/lib/line/flex-message'
-import { handleSearch } from '@/lib/line/search-handler'
+import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt } from '@/lib/line/search-handler'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -220,6 +220,12 @@ async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   // ヘルプキーワードの場合
   if (isHelpKeyword(text)) {
     await replyHelp(event.replyToken)
+    return
+  }
+
+  // 食材検索キーワードの場合
+  if (isIngredientSearchKeyword(text)) {
+    await handleIngredientSearchPrompt(client, event.replyToken, event.source.userId)
     return
   }
 
