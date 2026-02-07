@@ -2,9 +2,18 @@ import { messagingApi } from '@line/bot-sdk'
 import { createRecipeMessage, createSearchResultMessage, RecipeCardData } from './flex-message'
 import { parseSearchQuery, ParsedSearchQuery } from './parse-search-query'
 import { searchRecipesForBot, SearchRecipeResult } from './search-recipes'
+import { buildIngredientQuickReply } from './quick-reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 type ReplyParams = { client: MessagingApiClient; replyToken: string }
+
+/** 食材検索キーワードかどうかを判定 */
+const INGREDIENT_SEARCH_KEYWORDS = ['食材', '食材で探す', '食材検索']
+
+export function isIngredientSearchKeyword(text: string): boolean {
+  const normalizedText = text.trim()
+  return INGREDIENT_SEARCH_KEYWORDS.includes(normalizedText)
+}
 
 const toCard = (r: SearchRecipeResult): RecipeCardData => ({
   title: r.title, url: r.url, imageUrl: r.imageUrl, sourceName: r.sourceName,
@@ -79,5 +88,39 @@ export async function handleSearch(
   } catch (err) {
     console.error('[LINE Webhook] Search error:', err)
     await replyText(params, '検索中にエラーが発生しました。')
+  }
+}
+
+/** 食材検索の案内メッセージ + クイックリプライを返す */
+export async function handleIngredientSearchPrompt(
+  client: MessagingApiClient,
+  replyToken: string,
+  lineUserId: string
+): Promise<void> {
+  try {
+    const quickReplyItems = await buildIngredientQuickReply(lineUserId)
+
+    const guideMessage = `🔍 食材で検索
+
+下の食材をタップするか、食材名を入力してください。
+
+例: 鶏肉 玉ねぎ`
+
+    await client.replyMessage({
+      replyToken,
+      messages: [
+        {
+          type: 'text',
+          text: guideMessage,
+          quickReply: quickReplyItems.length > 0 ? { items: quickReplyItems } : undefined,
+        },
+      ],
+    })
+  } catch (err) {
+    console.error('[LINE Webhook] Ingredient search prompt error:', err)
+    await client.replyMessage({
+      replyToken,
+      messages: [{ type: 'text', text: '食材検索の準備中にエラーが発生しました。' }],
+    })
   }
 }
