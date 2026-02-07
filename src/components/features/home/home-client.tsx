@@ -4,7 +4,8 @@ import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { useRecipes } from '@/hooks/use-recipes'
-import { useRecipeFilters } from '@/hooks/use-recipe-filters'
+import { useRecipeFilters, InitialFilters } from '@/hooks/use-recipe-filters'
+export type { InitialFilters }
 import { SearchBar } from './search-bar'
 import { SortSelect } from './sort-select'
 import { IngredientFilter } from './ingredient-filter'
@@ -15,12 +16,13 @@ import type { SortOrder, IngredientsByCategory } from '@/types/recipe'
 
 interface HomeClientProps {
   ingredientCategories: IngredientsByCategory[]
+  initialFilters?: InitialFilters
 }
 
-export function HomeClient({ ingredientCategories }: HomeClientProps) {
+export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
   const router = useRouter()
   const { isLoading: authLoading, isAuthenticated } = useAuth()
-  const filters = useRecipeFilters(ingredientCategories)
+  const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
   const { recipes, isLoading: recipesLoading } = useRecipes({
     searchQuery: filters.searchQuery,

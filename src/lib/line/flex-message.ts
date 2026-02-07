@@ -74,6 +74,43 @@ export function createRecipeCarouselMessage(recipes: RecipeCardData[]): FlexMess
   }
 }
 
+/** 「もっと見る」Bubble を生成 */
+function createMoreBubble(url: string, totalCount: number): messagingApi.FlexBubble {
+  return {
+    type: 'bubble',
+    size: 'kilo',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      justifyContent: 'center',
+      contents: [
+        { type: 'text', text: `他 ${totalCount - 3}件`, size: 'lg', weight: 'bold', align: 'center', color: COLORS.textDark },
+        { type: 'text', text: 'すべてのレシピを見る', size: 'sm', align: 'center', color: COLORS.textMuted, margin: 'md' },
+      ],
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [{ type: 'button', action: { type: 'uri', label: 'もっと見る', uri: url }, style: 'primary', color: COLORS.primary }],
+    },
+  }
+}
+
+/** 検索結果用のCarousel（もっと見るボタン付き） */
+export function createSearchResultMessage(recipes: RecipeCardData[], moreUrl: string, totalCount: number): FlexMessage {
+  const bubbles: messagingApi.FlexBubble[] = recipes.slice(0, 3).map(createRecipeBubble)
+  bubbles.push(createMoreBubble(moreUrl, totalCount))
+
+  return {
+    type: 'flex',
+    altText: `${totalCount}件のレシピが見つかりました`,
+    contents: {
+      type: 'carousel',
+      contents: bubbles,
+    },
+  }
+}
+
 /** レシピ数に応じてメッセージを生成 */
 export function createRecipeMessage(recipes: RecipeCardData[]): FlexMessage {
   if (recipes.length === 1) {

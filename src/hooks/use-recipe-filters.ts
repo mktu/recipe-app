@@ -19,11 +19,17 @@ export interface RecipeFiltersActions {
   clearFilters: () => void
 }
 
+export interface InitialFilters {
+  searchQuery: string
+  ingredientIds: string[]
+}
+
 export function useRecipeFilters(
-  ingredientsByCategory: IngredientsByCategory[]
+  ingredientsByCategory: IngredientsByCategory[],
+  initialFilters?: InitialFilters
 ): RecipeFiltersState & RecipeFiltersActions {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState(initialFilters?.searchQuery ?? '')
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>(initialFilters?.ingredientIds ?? [])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
 
   const ingredientNameMap = useMemo(() => {
