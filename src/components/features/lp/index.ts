@@ -1,0 +1,5 @@
+export { HeroSection } from './hero-section'
+export { FeaturesSection } from './features-section'
+export { ScreenshotSection } from './screenshot-section'
+export { FAQSection } from './faq-section'
+export { CTASection, LPFooter } from './cta-section'

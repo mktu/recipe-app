@@ -1,0 +1,158 @@
+import Link from 'next/link'
+import { SearchIcon, MessageCircleIcon, ChevronDownIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+interface HeroSectionProps {
+  lineFriendUrl: string
+}
+
+export function HeroSection({ lineFriendUrl }: HeroSectionProps) {
+  return (
+    <section className="relative overflow-hidden px-4 pt-12 pb-24 sm:px-6 lg:px-8">
+      <HeroDecorations />
+
+      <div className="relative mx-auto max-w-5xl">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+          <HeroContent lineFriendUrl={lineFriendUrl} />
+          <PhoneMockup />
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
+        <ChevronDownIcon className="h-6 w-6 text-muted-foreground" />
+      </div>
+    </section>
+  )
+}
+
+function HeroDecorations() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <svg
+        className="absolute -top-4 right-4 h-24 w-24 text-red-400/20 sm:h-32 sm:w-32"
+        viewBox="0 0 100 100"
+        fill="currentColor"
+      >
+        <circle cx="50" cy="55" r="40" />
+        <path d="M50 15 Q45 5 40 15 Q35 5 30 15 L35 25 Q42 20 50 25 Q58 20 65 25 L70 15 Q65 5 60 15 Q55 5 50 15" />
+      </svg>
+      <svg
+        className="absolute top-1/3 -left-8 h-28 w-28 rotate-45 text-orange-400/20 sm:h-36 sm:w-36"
+        viewBox="0 0 100 100"
+        fill="currentColor"
+      >
+        <path d="M50 10 L70 80 Q50 95 30 80 Z" />
+        <path d="M45 5 Q40 -5 35 5 L42 15 Z" />
+        <path d="M55 5 Q60 -5 65 5 L58 15 Z" />
+      </svg>
+      <svg
+        className="absolute -bottom-8 right-1/4 h-24 w-24 text-amber-300/20 sm:h-32 sm:w-32"
+        viewBox="0 0 100 100"
+        fill="currentColor"
+      >
+        <ellipse cx="50" cy="60" rx="35" ry="30" />
+        <path d="M50 30 Q45 15 50 5 Q55 15 50 30" />
+      </svg>
+    </div>
+  )
+}
+
+function HeroContent({ lineFriendUrl }: { lineFriendUrl: string }) {
+  return (
+    <div className="text-center lg:text-left">
+      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+        お気に入りレシピを
+        <br />
+        <span className="text-primary">食材で検索</span>
+      </h1>
+      <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground lg:mx-0">
+        SNSやWebで見つけたレシピをURLで保存。
+        <br />
+        AIが自動でタグ付けして、冷蔵庫の中身から
+        <br className="hidden sm:inline" />
+        あなたのレシピを瞬時に検索。
+      </p>
+      <div className="mt-8">
+        <Button
+          asChild
+          size="lg"
+          className="gap-2 bg-[#06C755] text-base text-white hover:bg-[#05b04c]"
+        >
+          <Link href={lineFriendUrl}>
+            <MessageCircleIcon className="h-5 w-5" />
+            LINEで始める
+          </Link>
+        </Button>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">無料で使えます</p>
+    </div>
+  )
+}
+
+function PhoneMockup() {
+  return (
+    <div className="flex justify-center lg:justify-end">
+      <div className="relative">
+        <div className="relative h-[420px] w-[200px] rounded-[2.5rem] border-4 border-foreground/20 bg-foreground/5 p-2 shadow-xl sm:h-[480px] sm:w-[230px]">
+          <div className="h-full w-full overflow-hidden rounded-[2rem] bg-card">
+            <div className="flex h-6 items-center justify-center bg-primary/10">
+              <div className="h-1 w-12 rounded-full bg-foreground/20" />
+            </div>
+            <div className="p-3">
+              <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+                <SearchIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  食材で検索...
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] text-primary">
+                  鶏肉
+                </span>
+                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] text-primary">
+                  なす
+                </span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                  豚肉
+                </span>
+              </div>
+              <div className="mt-3 space-y-2">
+                <MockRecipeCard
+                  title="鶏肉となすの味噌炒め"
+                  source="クラシル"
+                  gradient="from-orange-200 to-amber-100"
+                />
+                <MockRecipeCard
+                  title="なすの揚げ浸し"
+                  source="DELISH KITCHEN"
+                  gradient="from-green-200 to-emerald-100"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute -right-4 top-16 rounded-lg border bg-card px-3 py-2 shadow-lg">
+          <p className="text-[10px] font-medium text-accent">✨ AI解析完了</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MockRecipeCard({
+  title,
+  source,
+  gradient,
+}: {
+  title: string
+  source: string
+  gradient: string
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-2">
+      <div className={`h-16 rounded bg-linear-to-br ${gradient}`} />
+      <p className="mt-1 truncate text-[10px] font-medium">{title}</p>
+      <p className="text-[8px] text-muted-foreground">{source}</p>
+    </div>
+  )
+}
