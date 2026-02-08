@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-08 (食材検索クイックリプライ機能追加)
+2026-02-08 (食材検索クイックリプライ機能・Botテストスクリプト追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・本番DB整備完了**
@@ -15,6 +15,7 @@
 - [x] **LINE Botテスト用CLIスクリプト追加**
   - `npm run test:bot "食材"` でローカルテスト可能
   - ngrok不要で動作確認できる
+- [x] **scripts/README.md にBotテストスクリプトの使い方を追記**
 
 ## 進行中のタスク
 なし
@@ -45,11 +46,11 @@
 
 ## コミット履歴（直近）
 ```
+47f5f2f docs: add LINE Bot test script usage to README
+f7b16d1 docs: update SESSION.md for session handoff
 b6b8035 Merge pull request #3 from mktu/feature/ingredient-quick-reply
 0251d74 fix: exclude scripts folder from TypeScript build
 1546c8a feat: add CLI script for testing LINE Bot responses
-c65ba58 feat: add Quick Reply for ingredient search in LINE Bot
-82172b0 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -62,3 +63,4 @@ https://github.com/mktu/recipe-app
 - `src/lib/line/quick-reply.ts` - クイックリプライビルダー
 - `src/lib/db/queries/frequent-ingredients.ts` - 頻出食材クエリ（RPC）
 - `scripts/test-bot.ts` - Botテスト用CLIスクリプト
+- `scripts/README.md` - スクリプトの使い方
