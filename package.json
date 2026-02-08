@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:recipe": "tsx scripts/test-recipe-registration.ts",
+    "test:bot": "tsx scripts/test-bot.ts",
     "collect:urls": "tsx scripts/collect-recipe-urls.ts",
     "prepare": "husky"
   },
