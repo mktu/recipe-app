@@ -22,7 +22,7 @@ export function FeaturesSection() {
           <FeatureStep
             step={2}
             icon={<TagsIcon className="h-8 w-8 text-primary" />}
-            title="AIが自動タグ付け"
+            title="自動タグ付け"
             description="レシピの食材を自動で抽出してタグ付け。手間なく整理できます"
           />
           <FeatureStep

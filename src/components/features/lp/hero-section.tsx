@@ -1,5 +1,10 @@
 import Link from 'next/link'
-import { SearchIcon, MessageCircleIcon, ChevronDownIcon } from 'lucide-react'
+import {
+  SearchIcon,
+  MessageCircleIcon,
+  ChevronDownIcon,
+  CheckIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface HeroSectionProps {
@@ -68,7 +73,7 @@ function HeroContent({ lineFriendUrl }: { lineFriendUrl: string }) {
       <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground lg:mx-0">
         SNSやWebで見つけたレシピをURLで保存。
         <br />
-        AIが自動でタグ付けして、冷蔵庫の中身から
+        自動でタグ付けして、冷蔵庫の中身から
         <br className="hidden sm:inline" />
         あなたのレシピを瞬時に検索。
       </p>
@@ -84,7 +89,20 @@ function HeroContent({ lineFriendUrl }: { lineFriendUrl: string }) {
           </Link>
         </Button>
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">無料で使えます</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground lg:justify-start">
+        <span className="flex items-center gap-1">
+          <CheckIcon className="h-4 w-4 text-accent" />
+          完全無料
+        </span>
+        <span className="flex items-center gap-1">
+          <CheckIcon className="h-4 w-4 text-accent" />
+          登録かんたん
+        </span>
+        <span className="flex items-center gap-1">
+          <CheckIcon className="h-4 w-4 text-accent" />
+          広告なし
+        </span>
+      </div>
     </div>
   )
 }
@@ -132,7 +150,7 @@ function PhoneMockup() {
           </div>
         </div>
         <div className="absolute -right-4 top-16 rounded-lg border bg-card px-3 py-2 shadow-lg">
-          <p className="text-[10px] font-medium text-accent">✨ AI解析完了</p>
+          <p className="text-[10px] font-medium text-accent">✨ 解析完了</p>
         </div>
       </div>
     </div>
