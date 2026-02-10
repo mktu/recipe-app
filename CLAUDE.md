@@ -151,6 +151,9 @@ npx shadcn@latest add [component-name]
 
 # 食材アンマッチ解析
 ./scripts/check-ingredient-match-rate.sh
+
+# 埋め込みバックフィル（既存レシピのベクトル生成）
+npm run backfill:embeddings
 ```
 
 その他のスクリプト（レシピ登録テスト等）は `scripts/README.md` を参照。
