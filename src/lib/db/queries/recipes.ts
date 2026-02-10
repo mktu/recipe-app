@@ -2,6 +2,9 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { supabase, createServerClient } from '@/lib/db/client'
 import type { Database, Tables, TablesInsert } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient, CreateRecipeInput } from '@/types/recipe'
+import { generateAndSaveEmbedding, getVectorSearchIds } from './recipe-embedding'
+
+const MIN_ILIKE_RESULTS = 3
 
 type TypedSupabaseClient = SupabaseClient<Database>
 
@@ -124,17 +127,38 @@ async function fetchRecipesFromDb(
   searchQuery: string | undefined,
   sortOrder: SortOrder
 ): Promise<Tables<'recipes'>[]> {
-  let query = supabase.from('recipes').select('*').eq('user_id', userId)
-
-  if (searchQuery?.trim()) {
-    const term = `%${searchQuery.trim()}%`
-    query = query.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
+  // 検索クエリがない場合は通常の取得
+  if (!searchQuery?.trim()) {
+    let query = supabase.from('recipes').select('*').eq('user_id', userId)
+    query = applySortOrder(query, sortOrder)
+    const { data, error } = await query
+    if (error) throw error
+    return (data ?? []) as Tables<'recipes'>[]
   }
 
+  // ハイブリッド検索
+  return searchRecipesHybrid(userId, searchQuery.trim(), sortOrder)
+}
+
+/** ハイブリッド検索: ILIKE優先、結果が少ない場合はベクトル検索で補完 */
+async function searchRecipesHybrid(userId: string, searchQuery: string, sortOrder: SortOrder): Promise<Tables<'recipes'>[]> {
+  const term = `%${searchQuery}%`
+  let query = supabase.from('recipes').select('*').eq('user_id', userId)
+    .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
   query = applySortOrder(query, sortOrder)
   const { data, error } = await query
   if (error) throw error
-  return (data ?? []) as Tables<'recipes'>[]
+  const ilikeRecipes = (data ?? []) as Tables<'recipes'>[]
+  if (ilikeRecipes.length >= MIN_ILIKE_RESULTS) return ilikeRecipes
+
+  try {
+    const additionalIds = await getVectorSearchIds(supabase, userId, searchQuery, ilikeRecipes.map((r) => r.id), 20)
+    if (additionalIds.length > 0) {
+      const { data: extra } = await supabase.from('recipes').select('*').in('id', additionalIds)
+      return [...ilikeRecipes, ...((extra ?? []) as Tables<'recipes'>[])]
+    }
+  } catch (e) { console.error('[searchRecipesHybrid] Vector search failed:', e) }
+  return ilikeRecipes
 }
 
 function applySortOrder<T>(query: T, sortOrder: SortOrder): T {
@@ -213,6 +237,12 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
     if (!recipe) return { data: null, error: { message: 'レシピの作成に失敗しました' } }
 
     await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
+
+    // 埋め込み生成（非同期、エラーは握りつぶす）
+    generateAndSaveEmbedding(client, recipe.id, input.title).catch((err) => {
+      console.error('[createRecipe] Embedding generation failed:', err)
+    })
+
     return { data: { id: recipe.id }, error: null }
   } catch (err: unknown) {
     console.error('[createRecipe] Error:', err)

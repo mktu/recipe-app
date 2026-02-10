@@ -12,6 +12,7 @@
     "test:recipe": "tsx scripts/test-recipe-registration.ts",
     "test:bot": "tsx scripts/test-bot.ts",
     "collect:urls": "tsx scripts/collect-recipe-urls.ts",
+    "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
     "prepare": "husky"
   },
   "lint-staged": {

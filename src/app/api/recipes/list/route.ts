@@ -3,6 +3,9 @@ import { createServerClient } from '@/lib/db/client'
 import type { Database, Tables } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient } from '@/types/recipe'
 import { NextRequest, NextResponse } from 'next/server'
+import { getVectorSearchIds } from '@/lib/db/queries/recipe-embedding'
+
+const MIN_ILIKE_RESULTS = 3
 
 type TypedSupabaseClient = SupabaseClient<Database>
 type RecipeRow = Tables<'recipes'>
@@ -33,13 +36,37 @@ async function getUserId(client: TypedSupabaseClient, lineUserId: string): Promi
 }
 
 async function fetchRecipes(client: TypedSupabaseClient, userId: string, searchQuery: string | undefined, sortOrder: SortOrder) {
-  let query = client.from('recipes').select('*').eq('user_id', userId)
-  if (searchQuery?.trim()) {
-    const term = `%${searchQuery.trim()}%`
-    query = query.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
+  // 検索クエリがない場合は通常の取得
+  if (!searchQuery?.trim()) {
+    const query = client.from('recipes').select('*').eq('user_id', userId)
+    const [col, opt] = sortConfig[sortOrder]
+    return query.order(col, opt)
   }
+
+  // ハイブリッド検索
+  return searchRecipesHybrid(client, userId, searchQuery.trim(), sortOrder)
+}
+
+/** ハイブリッド検索: ILIKE優先、結果が少ない場合はベクトル検索で補完 */
+async function searchRecipesHybrid(client: TypedSupabaseClient, userId: string, searchQuery: string, sortOrder: SortOrder) {
+  const term = `%${searchQuery}%`
+  let query = client.from('recipes').select('*').eq('user_id', userId)
+    .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
   const [col, opt] = sortConfig[sortOrder]
-  return query.order(col, opt)
+  query = query.order(col, opt)
+  const { data, error } = await query
+  if (error) return { data: null, error }
+  const ilikeRecipes = (data ?? []) as RecipeRow[]
+  if (ilikeRecipes.length >= MIN_ILIKE_RESULTS) return { data: ilikeRecipes, error: null }
+
+  try {
+    const additionalIds = await getVectorSearchIds(client, userId, searchQuery, ilikeRecipes.map((r) => r.id), 20)
+    if (additionalIds.length > 0) {
+      const { data: extra } = await client.from('recipes').select('*').in('id', additionalIds)
+      return { data: [...ilikeRecipes, ...((extra ?? []) as RecipeRow[])], error: null }
+    }
+  } catch (e) { console.error('[searchRecipesHybrid] Vector search failed:', e) }
+  return { data: ilikeRecipes, error: null }
 }
 
 function buildIngredientMap(rows: RecipeIngredientRow[]): Map<string, RecipeIngredient[]> {

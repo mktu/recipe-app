@@ -128,6 +128,7 @@ export type Database = {
       recipes: {
         Row: {
           created_at: string | null
+          embedding_generated_at: string | null
           id: string
           image_url: string | null
           ingredients_linked: boolean | null
@@ -137,6 +138,7 @@ export type Database = {
           source_name: string | null
           tags: string[] | null
           title: string
+          title_embedding: string | null
           updated_at: string | null
           url: string
           user_id: string
@@ -144,6 +146,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          embedding_generated_at?: string | null
           id?: string
           image_url?: string | null
           ingredients_linked?: boolean | null
@@ -153,6 +156,7 @@ export type Database = {
           source_name?: string | null
           tags?: string[] | null
           title: string
+          title_embedding?: string | null
           updated_at?: string | null
           url: string
           user_id: string
@@ -160,6 +164,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          embedding_generated_at?: string | null
           id?: string
           image_url?: string | null
           ingredients_linked?: boolean | null
@@ -169,6 +174,7 @@ export type Database = {
           source_name?: string | null
           tags?: string[] | null
           title?: string
+          title_embedding?: string | null
           updated_at?: string | null
           url?: string
           user_id?: string
@@ -248,6 +254,23 @@ export type Database = {
           id: string
           name: string
           recipe_count: number
+        }[]
+      }
+      search_recipes_by_embedding: {
+        Args: {
+          p_match_count?: number
+          p_match_threshold?: number
+          p_query_embedding: string
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          image_url: string
+          memo: string
+          similarity: number
+          source_name: string
+          title: string
+          url: string
         }[]
       }
     }

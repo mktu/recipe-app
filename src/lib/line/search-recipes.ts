@@ -1,5 +1,8 @@
 import { createServerClient } from '@/lib/db/client'
 import type { ParsedSearchQuery } from './parse-search-query'
+import { getVectorSearchIds } from '@/lib/db/queries/recipe-embedding'
+
+const MIN_ILIKE_RESULTS = 3
 
 export interface SearchRecipeResult {
   id: string
@@ -72,21 +75,50 @@ export async function searchRecipesForBot(
   const recipeIds = await findRecipeIdsByIngredients(query.ingredientIds)
   if (recipeIds !== null && recipeIds.length === 0) return []
 
-  let recipesQuery = supabase
-    .from('recipes')
-    .select('id, title, url, image_url, source_name')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  // 検索クエリがない場合は通常の検索
+  if (!query.searchQuery.trim()) {
+    let recipesQuery = supabase
+      .from('recipes')
+      .select('id, title, url, image_url, source_name')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit)
 
-  if (recipeIds !== null) recipesQuery = recipesQuery.in('id', recipeIds)
-  if (query.searchQuery.trim()) {
-    const term = `%${query.searchQuery.trim()}%`
-    recipesQuery = recipesQuery.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
+    if (recipeIds !== null) recipesQuery = recipesQuery.in('id', recipeIds)
+
+    const { data: recipes } = await recipesQuery
+    if (!recipes) return []
+
+    return recipes.map((r) => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name }))
   }
 
-  const { data: recipes } = await recipesQuery
-  if (!recipes) return []
+  // ハイブリッド検索
+  return searchRecipesHybridForBot(supabase, user.id, query.searchQuery.trim(), recipeIds, limit)
+}
 
-  return recipes.map((r) => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name }))
+type RecipeRow = { id: string; title: string; url: string; image_url: string | null; source_name: string | null }
+const toResult = (r: RecipeRow): SearchRecipeResult => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name })
+
+/** Bot用ハイブリッド検索 */
+async function searchRecipesHybridForBot(
+  supabase: ReturnType<typeof createServerClient>, userId: string, searchQuery: string, recipeIds: string[] | null, limit: number
+): Promise<SearchRecipeResult[]> {
+  const term = `%${searchQuery}%`
+  let q = supabase.from('recipes').select('id, title, url, image_url, source_name').eq('user_id', userId)
+    .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`).order('created_at', { ascending: false }).limit(limit)
+  if (recipeIds !== null) q = q.in('id', recipeIds)
+  const { data } = await q
+  const results = (data ?? []).map(toResult)
+  if (results.length >= MIN_ILIKE_RESULTS) return results
+
+  try {
+    const excludeIds = results.map((r) => r.id)
+    const additionalIds = await getVectorSearchIds(supabase, userId, searchQuery, excludeIds, limit)
+    const filteredIds = recipeIds ? additionalIds.filter((id) => recipeIds.includes(id)) : additionalIds
+    if (filteredIds.length > 0) {
+      const { data: extra } = await supabase.from('recipes').select('id, title, url, image_url, source_name').in('id', filteredIds)
+      return [...results, ...(extra ?? []).map(toResult)]
+    }
+  } catch (e) { console.error('[searchRecipesHybridForBot] Vector search failed:', e) }
+  return results
 }
