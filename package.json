@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:recipe": "tsx scripts/test-recipe-registration.ts",
+    "test:recipe:with-embeddings": "npm run test:recipe -- && npm run backfill:embeddings",
     "test:bot": "tsx scripts/test-bot.ts",
     "collect:urls": "tsx scripts/collect-recipe-urls.ts",
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
