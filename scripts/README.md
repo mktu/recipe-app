@@ -104,6 +104,52 @@ LINE Botのレスポンスをローカルで確認できる。ngrok不要。
      ...
 ```
 
+## 埋め込み生成（ベクトル検索用）
+
+レシピ登録時は `title_embedding = NULL` で保存され、バッチ処理で埋め込みを生成する。
+
+### ローカルでの埋め込み生成
+
+**方法1: バックフィルスクリプト（推奨）**
+
+```bash
+# レシピ登録 + 埋め込み生成をセットで実行
+npm run test:recipe:with-embeddings -- --limit=5
+
+# 埋め込みのみ生成（既存レシピ対象）
+npm run backfill:embeddings
+```
+
+**方法2: Edge Function をローカル実行**
+
+```bash
+# 1. Edge Function サーバーを起動（別ターミナル）
+npm run functions:serve
+
+# 2. Edge Function を呼び出し
+npm run functions:invoke
+```
+
+**出力例:**
+```json
+{"message":"Embedding generation completed","processed":3,"succeeded":3,"failed":0}
+```
+
+### ステージング/本番環境
+
+```bash
+# ステージング環境のバックフィル
+npm run backfill:embeddings -- --env=staging
+```
+
+本番では pg_cron + Edge Function で5分毎に自動実行される。
+
+### リトライ制限
+
+- 埋め込み生成に失敗したレシピは `embedding_retry_count` がインクリメントされる
+- 3回失敗すると処理対象から除外される
+- リセット: `UPDATE recipes SET embedding_retry_count = 0 WHERE ...`
+
 ## 食材マッチング解析
 
 ```bash

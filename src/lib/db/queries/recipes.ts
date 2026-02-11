@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { supabase, createServerClient } from '@/lib/db/client'
 import type { Database, Tables, TablesInsert } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient, CreateRecipeInput } from '@/types/recipe'
-import { generateAndSaveEmbedding, getVectorSearchIds } from './recipe-embedding'
+import { getVectorSearchIds } from './recipe-embedding'
 
 const MIN_ILIKE_RESULTS = 3
 
@@ -238,10 +238,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
 
     await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
 
-    // 埋め込み生成（非同期、エラーは握りつぶす）
-    generateAndSaveEmbedding(client, recipe.id, input.title).catch((err) => {
-      console.error('[createRecipe] Embedding generation failed:', err)
-    })
+    // 埋め込みは pg_cron + Edge Function でバッチ生成される（title_embedding = NULL で保存）
 
     return { data: { id: recipe.id }, error: null }
   } catch (err: unknown) {
