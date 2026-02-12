@@ -1,0 +1,2 @@
+[generate-embeddings]
+verify_jwt = false
