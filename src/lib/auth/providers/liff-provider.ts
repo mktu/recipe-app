@@ -22,12 +22,21 @@ export function createLiffProvider(liffId: string): AuthProviderAdapter {
         return null
       }
 
-      const profile = await liff.getProfile()
-
-      return {
-        lineUserId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl,
+      try {
+        const profile = await liff.getProfile()
+        return {
+          lineUserId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+        }
+      } catch (error) {
+        // トークンが無効な場合は再ログイン
+        const message = error instanceof Error ? error.message : ''
+        if (message.includes('revoked') || message.includes('expired')) {
+          liff.login()
+          return null
+        }
+        throw error
       }
     },
 
