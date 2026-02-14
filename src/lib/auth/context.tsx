@@ -56,6 +56,10 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
     setUser(null)
   }, [adapter])
 
+  const relogin = useCallback(async () => {
+    await adapter.relogin()
+  }, [adapter])
+
   const value: AuthContextValue = {
     user,
     status: isLoading ? 'loading' : user ? 'authenticated' : 'unauthenticated',
@@ -63,6 +67,7 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
     isLoading,
     error,
     logout,
+    relogin,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -21,7 +21,7 @@ interface HomeClientProps {
 
 export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
   const router = useRouter()
-  const { isLoading: authLoading, isAuthenticated, error: authError } = useAuth()
+  const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
   const { recipes, isLoading: recipesLoading } = useRecipes({
@@ -38,7 +38,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
   }
 
   if (authError) {
-    return <AuthErrorMessage error={authError} />
+    return <AuthErrorMessage error={authError} onRelogin={relogin} />
   }
 
   if (!isAuthenticated) {
@@ -84,11 +84,17 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   )
 }
 
-function AuthErrorMessage({ error }: { error: string }) {
+function AuthErrorMessage({ error, onRelogin }: { error: string; onRelogin: () => void }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <p className="mb-4 text-destructive">エラーが発生しました</p>
-      <pre className="max-w-full overflow-auto rounded bg-muted p-4 text-xs">{error}</pre>
+      <pre className="mb-4 max-w-full overflow-auto rounded bg-muted p-4 text-xs">{error}</pre>
+      <button
+        onClick={onRelogin}
+        className="rounded-lg bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90"
+      >
+        再ログイン
+      </button>
     </div>
   )
 }

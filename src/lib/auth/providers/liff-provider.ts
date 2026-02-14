@@ -83,5 +83,15 @@ export function createLiffProvider(id: string): AuthProviderAdapter {
         window.location.reload()
       }
     },
+
+    async relogin(): Promise<void> {
+      if (!liff) return
+      // ログアウトしてからログイン（トークンを完全にリセット）
+      if (liff.isLoggedIn()) {
+        liff.logout()
+      }
+      clearRetryCount()
+      liff.login()
+    },
   }
 }

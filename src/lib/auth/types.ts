@@ -25,6 +25,8 @@ export interface AuthContextValue {
   error: string | null
   /** ログアウト処理 */
   logout: () => Promise<void>
+  /** 再ログイン処理（トークン無効時用） */
+  relogin: () => Promise<void>
 }
 
 /** 認証プロバイダーのインターフェース */
@@ -37,4 +39,6 @@ export interface AuthProviderAdapter {
   isLoggedIn: () => boolean
   /** ログアウト */
   logout: () => Promise<void>
+  /** 再ログイン（トークン無効時用） */
+  relogin: () => Promise<void>
 }

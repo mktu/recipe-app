@@ -18,5 +18,9 @@ export function createDevProvider(): AuthProviderAdapter {
     async logout(): Promise<void> {
       console.log('[DevAuth] 開発モードではログアウト不可')
     },
+
+    async relogin(): Promise<void> {
+      console.log('[DevAuth] 開発モードでは再ログイン不可')
+    },
   }
 }
