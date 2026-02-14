@@ -1,6 +1,8 @@
 import type { ParsedRecipe } from '@/types/recipe'
+import type { JsonLdExtraction } from '@/types/json-ld'
 import { fetchHtml, HtmlFetchError } from '@/lib/scraper/html-fetcher'
 import { extractRecipeFromJsonLd } from '@/lib/scraper/json-ld-extractor'
+import { extractRecipeFromNextData } from '@/lib/scraper/next-data-extractor'
 import { fetchPageContent, JinaReaderError } from '@/lib/scraper/jina-reader'
 import { extractRecipeInfo } from '@/lib/llm/extract-recipe'
 import { matchIngredients } from './match-ingredients'
@@ -33,34 +35,51 @@ function createEmptyResult(url: string): ParsedRecipe {
 }
 
 /**
- * JSON-LD (schema.org/Recipe) を使用してレシピを解析
+ * 抽出結果からParsedRecipeを生成
+ */
+async function buildParsedRecipe(
+  extraction: JsonLdExtraction
+): Promise<ParsedRecipe> {
+  const matchedIngredients = await matchIngredients(extraction.ingredients)
+
+  return {
+    title: extraction.title,
+    sourceName: extraction.sourceName,
+    imageUrl: extraction.imageUrl,
+    ingredientIds: matchedIngredients.map((m) => m.ingredientId),
+    memo: '',
+  }
+}
+
+/**
+ * HTMLから直接レシピを解析（JSON-LD → __NEXT_DATA__）
  * @returns 解析結果、または失敗時はnull
  */
-async function parseWithJsonLd(url: string): Promise<ParsedRecipe | null> {
+async function parseWithHtmlFetch(url: string): Promise<ParsedRecipe | null> {
   try {
     const { html } = await fetchHtml(url)
-    const extraction = extractRecipeFromJsonLd(html, url)
 
-    if (!extraction) {
-      console.log('No valid JSON-LD Recipe found, falling back to Jina+Gemini')
-      return null
+    // Strategy 1: JSON-LD (schema.org/Recipe)
+    const jsonLdExtraction = extractRecipeFromJsonLd(html, url)
+    if (jsonLdExtraction) {
+      console.log('Successfully extracted with JSON-LD')
+      return buildParsedRecipe(jsonLdExtraction)
     }
 
-    // JSON-LD抽出成功 - 食材マッチング
-    const matchedIngredients = await matchIngredients(extraction.ingredients)
-
-    return {
-      title: extraction.title,
-      sourceName: extraction.sourceName,
-      imageUrl: extraction.imageUrl,
-      ingredientIds: matchedIngredients.map((m) => m.ingredientId),
-      memo: '',
+    // Strategy 2: __NEXT_DATA__ (Nadia等のNext.jsサイト)
+    const nextDataExtraction = extractRecipeFromNextData(html)
+    if (nextDataExtraction) {
+      console.log('Successfully extracted with __NEXT_DATA__')
+      return buildParsedRecipe(nextDataExtraction)
     }
+
+    console.log('No structured data found, falling back to Jina+Gemini')
+    return null
   } catch (error) {
     if (error instanceof HtmlFetchError) {
       console.log(`HTML fetch failed (${error.statusCode}), trying Jina Reader`)
     } else {
-      console.error('JSON-LD extraction failed:', error)
+      console.error('HTML extraction failed:', error)
     }
     return null
   }
@@ -94,17 +113,17 @@ async function parseWithJinaGemini(url: string): Promise<ParsedRecipe | null> {
  * URLからレシピ情報を解析する
  *
  * 処理フロー:
- * 1. まず JSON-LD (schema.org/Recipe) での抽出を試みる
- * 2. 失敗した場合は Jina Reader + Gemini にフォールバック
- * 3. 食材名を ingredients/ingredient_aliases で正規化
+ * 1. HTML直接取得でJSON-LD抽出を試みる
+ * 2. 失敗したら__NEXT_DATA__抽出を試みる（Nadia等）
+ * 3. 失敗したらJina Reader + Geminiにフォールバック
+ * 4. 食材名をingredients/ingredient_aliasesで正規化
  */
 export async function parseRecipe(url: string): Promise<ParsedRecipe> {
   try {
-    // Strategy 1: JSON-LD抽出（高速・Jinaブロック回避）
-    const jsonLdResult = await parseWithJsonLd(url)
-    if (jsonLdResult) {
-      console.log('Successfully parsed with JSON-LD')
-      return jsonLdResult
+    // Strategy 1: HTML直接取得（JSON-LD → __NEXT_DATA__）
+    const htmlFetchResult = await parseWithHtmlFetch(url)
+    if (htmlFetchResult) {
+      return htmlFetchResult
     }
 
     // Strategy 2: Jina Reader + Gemini（フォールバック）
