@@ -26,12 +26,15 @@ interface FetchParams {
 }
 
 async function fetchRecipesApi(params: FetchParams): Promise<RecipeWithIngredients[]> {
+  const t = Date.now()
+  console.log('[useRecipes] API呼び出し開始')
   const response = await fetch('/api/recipes/list', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   })
   const result = await response.json()
+  console.log('[useRecipes] API呼び出し完了:', Date.now() - t, 'ms')
   if (!response.ok) throw new Error(result.error || 'レシピの取得に失敗しました')
   return result.data || []
 }

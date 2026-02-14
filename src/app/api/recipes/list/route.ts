@@ -145,22 +145,39 @@ function attachIngredients(recipes: RecipeRow[], ingredientMap: Map<string, Reci
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  const timings: Record<string, number> = {}
+
   const { lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } = (await request.json()) as ListRecipesRequest
   if (!lineUserId) return NextResponse.json({ error: 'lineUserId は必須です' }, { status: 400 })
 
   const client = createServerClient()
 
   try {
+    let t = Date.now()
     const userId = await getUserId(client, lineUserId)
+    timings.getUserId = Date.now() - t
     if (!userId) return NextResponse.json({ data: [] })
 
+    t = Date.now()
     const { data: recipes, error } = await fetchRecipes(client, userId, searchQuery, sortOrder)
+    timings.fetchRecipes = Date.now() - t
     if (error) throw error
     if (!recipes?.length) return NextResponse.json({ data: [] })
 
+    t = Date.now()
     const ingredientMap = await fetchRecipeIngredients(client, recipes.map((r: { id: string }) => r.id))
+    timings.fetchIngredients = Date.now() - t
+
     const result = attachIngredients(recipes, ingredientMap)
+
+    t = Date.now()
     const filtered = await filterByIngredients(client, result, ingredientIds)
+    timings.filterByIngredients = Date.now() - t
+
+    timings.total = Date.now() - startTime
+    console.log('[POST /api/recipes/list] Timings:', timings, { recipeCount: filtered.length })
+
     return NextResponse.json({ data: filtered })
   } catch (err) {
     console.error('[POST /api/recipes/list] Error:', err)

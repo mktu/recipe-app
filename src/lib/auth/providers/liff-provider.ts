@@ -50,15 +50,25 @@ export function createLiffProvider(id: string): AuthProviderAdapter {
 
   const adapter: AuthProviderAdapter = {
     async initialize() {
+      const t1 = Date.now()
       const liffModule = await import('@line/liff')
+      console.log('[LIFF] SDK import:', Date.now() - t1, 'ms')
+
       liff = liffModule.default
+
+      const t2 = Date.now()
       await liff.init({ liffId: id })
+      console.log('[LIFF] init:', Date.now() - t2, 'ms')
+
       if (!liff.isLoggedIn()) liff.login()
     },
 
     async getUser(): Promise<AuthUser | null> {
       if (!liff || !liff.isLoggedIn()) return null
-      return fetchProfileWithRetry(() => adapter.getUser())
+      const t = Date.now()
+      const result = await fetchProfileWithRetry(() => adapter.getUser())
+      console.log('[LIFF] getProfile:', Date.now() - t, 'ms')
+      return result
     },
 
     isLoggedIn: () => liff?.isLoggedIn() ?? false,
