@@ -1,22 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-14 (LIFF認証問題修正・一般公開準備完了)
+2026-02-15 (Nadia対応の__NEXT_DATA__フォールバック追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **Route Groups で公開ページと認証必須ページを分離**
-  - `(public)`: `/lp`, `/privacy`, `/terms` - 認証不要
-  - `(protected)`: `/`, `/recipes/*` - LINE認証必要
-- [x] **LIFFトークン無効時の再ログイン機能追加**
-  - トークンが revoked/expired の場合、再ログインボタンを表示
-  - `liff.logout()` → `liff.login()` で完全に再認証
-  - sessionStorage でリトライ回数を管理（無限ループ防止）
-- [x] **LINE Loginチャネルを公開**
-  - 「開発中」→「公開済み」に変更
-  - 一般ユーザーがLIFFアプリにアクセス可能に
+- [x] **Nadia対応: __NEXT_DATA__フォールバック追加**
+  - NadiaはJSON-LDがクライアントサイドで動的挿入されるため、サーバーHTMLから取得不可
+  - Jina ReaderもCloudflareで断続的にブロックされる問題があった
+  - `__NEXT_DATA__`（Next.js SSRデータ）からレシピを抽出する機能を追加
+  - 処理フロー: JSON-LD → __NEXT_DATA__ → Jina Reader+Gemini
 
 ## 進行中のタスク
 なし
@@ -62,11 +57,11 @@
 
 ## コミット履歴（直近）
 ```
+6e27f0f feat: add __NEXT_DATA__ fallback for Nadia recipe parsing
+9b80f3d docs: update SESSION.md for session handoff
 f0ee521 refactor: extract fetchProfileWithRetry to fix max-lines warning
 10b7287 feat: add relogin button for token revoked error
 06b63b4 fix: prevent infinite login loop with retry limit
-e3a095b fix: handle revoked/expired LIFF access token by re-login
-1c44287 fix: extract AuthErrorMessage to fix eslint max-lines warning
 ```
 
 ## GitHubリポジトリ
@@ -75,9 +70,10 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
+- `src/lib/recipe/parse-recipe.ts` - レシピ解析メイン処理（フォールバックチェーン）
+- `src/lib/scraper/next-data-extractor.ts` - __NEXT_DATA__からのレシピ抽出（Nadia対応）
+- `src/lib/scraper/json-ld-extractor.ts` - JSON-LDからのレシピ抽出
 - `src/app/(public)/` - 認証不要ページ（LP, privacy, terms）
 - `src/app/(protected)/` - 認証必要ページ（ホーム, recipes）
-- `src/lib/auth/providers/liff-provider.ts` - LIFF認証プロバイダー（再ログイン機能）
-- `src/components/features/home/home-client.tsx` - ホーム画面（認証エラー表示）
 - `docs/LINE_SETUP.md` - LINE開発環境構成・リッチメニュー設定
 - `docs/EMBEDDING_BATCH_SETUP.md` - 本番環境の埋め込みバッチ処理セットアップ手順
