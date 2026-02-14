@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import { AuthWrapper } from "@/components/providers/auth-wrapper";
 import "./globals.css";
 
 const notoSansJP = Noto_Sans_JP({
@@ -31,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${notoSansJP.className} antialiased`}>
-        <AuthWrapper>{children}</AuthWrapper>
+        {children}
       </body>
     </html>
   );
