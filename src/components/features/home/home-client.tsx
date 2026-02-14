@@ -38,14 +38,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
   }
 
   if (authError) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <p className="mb-4 text-destructive">エラーが発生しました</p>
-        <pre className="max-w-full overflow-auto rounded bg-muted p-4 text-xs">
-          {authError}
-        </pre>
-      </div>
-    )
+    return <AuthErrorMessage error={authError} />
   }
 
   if (!isAuthenticated) {
@@ -87,6 +80,15 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <p className="text-muted-foreground">{children}</p>
+    </div>
+  )
+}
+
+function AuthErrorMessage({ error }: { error: string }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <p className="mb-4 text-destructive">エラーが発生しました</p>
+      <pre className="max-w-full overflow-auto rounded bg-muted p-4 text-xs">{error}</pre>
     </div>
   )
 }
