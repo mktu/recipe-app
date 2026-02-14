@@ -1,25 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-12 (埋め込みバッチ処理の実装・ステージング環境セットアップ完了)
+2026-02-14 (リッチメニュー画像適用・レイアウト変更完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・埋め込みバッチ処理完了**
 
 ## 直近の完了タスク
-- [x] **埋め込みバッチ処理への移行**
-  - レシピ作成時の即時埋め込み生成を廃止
-  - pg_cron + Edge Function で5分毎にバッチ処理
-  - リトライ制限（3回まで）を追加
-  - GitHub Actions で Edge Function 自動デプロイ
-  - ステージング環境のセットアップ完了
-- [x] **本番環境セットアップ手順書作成**
-  - `docs/EMBEDDING_BATCH_SETUP.md` に手順を文書化
-- [x] **ベクトル検索機能の実装**
-  - pgvector 拡張と embedding カラム追加（3072次元）
-  - Google gemini-embedding-001 を使用（無料枠: 1000 RPD）
-  - ハイブリッド検索: ILIKE で3件未満の場合、ベクトル検索で補完
-  - 類似度閾値: 0.65（精度調整済み）
+- [x] **リッチメニュー画像の適用とレイアウト変更**
+  - `public/rich-menu.png` を作成（2500x1686px）
+  - レイアウトを 2x2 から 1段目全幅 + 2段目3分割 に変更
+  - LINE Official Account Manager で設定
+  - `docs/LINE_SETUP.md` を更新
 
 ## 進行中のタスク
 なし
@@ -35,7 +27,6 @@
   - 環境変数 `NEXT_PUBLIC_LINE_FRIEND_URL` に設定
 - [ ] **さらなるマッチング改善（任意）**
   - 食材マスター追加: 長芋、小ねぎ、ローズマリー、ミント など
-- [ ] リッチメニュー画像の本番デザイン作成
 
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
@@ -66,11 +57,11 @@
 
 ## コミット履歴（直近）
 ```
+7e12b25 docs: update SESSION.md for session handoff
 f04a32d docs: add embedding batch setup guide for production
+62d7f7a fix: move config.toml to correct location with proper format
+831df41 fix: disable JWT verification for generate-embeddings function
 db1dd93 Merge pull request #5 from mktu/feature/batch-embedding-generation
-577290a feat: batch embedding generation with pg_cron and Edge Function
-2b529a1 Merge pull request #4 from mktu/feature/add-vector-search
-9ed5f3d feat: add vector search for recipe titles
 ```
 
 ## GitHubリポジトリ
@@ -79,8 +70,6 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
+- `docs/LINE_SETUP.md` - LINE開発環境構成・リッチメニュー設定
+- `public/rich-menu.png` - リッチメニュー画像（2500x1686px）
 - `docs/EMBEDDING_BATCH_SETUP.md` - 本番環境の埋め込みバッチ処理セットアップ手順
-- `supabase/functions/generate-embeddings/index.ts` - 埋め込み生成 Edge Function
-- `src/lib/embedding/` - 埋め込み生成クライアント
-- `src/lib/db/queries/recipe-embedding.ts` - ベクトル検索クエリ
-- `scripts/backfill-embeddings.ts` - バックフィルスクリプト
