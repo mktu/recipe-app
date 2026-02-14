@@ -96,7 +96,7 @@ export async function getRecipesWithoutEmbedding(
 }
 
 // ハイブリッド検索の設定
-const VECTOR_SEARCH_THRESHOLD = 0.65
+const VECTOR_SEARCH_THRESHOLD = 0.75
 
 /**
  * ベクトル検索で追加のレシピIDを取得

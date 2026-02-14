@@ -1,24 +1,26 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-14 (リッチメニュー画像適用・レイアウト変更完了)
+2026-02-14 (ベクトル検索閾値を0.75に変更・検索精度改善)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・埋め込みバッチ処理完了**
 
 ## 直近の完了タスク
-- [x] **リッチメニュー画像の適用とレイアウト変更**
-  - `public/rich-menu.png` を作成（2500x1686px）
-  - レイアウトを 2x2 から 1段目全幅 + 2段目3分割 に変更
-  - LINE Official Account Manager で設定
-  - `docs/LINE_SETUP.md` を更新
+- [x] **ベクトル検索の閾値を0.75に引き上げ**
+  - 「トマト鍋」で検索すると「ポトフ」がヒットしてしまう問題を修正
+  - `src/lib/db/queries/recipe-embedding.ts` の `VECTOR_SEARCH_THRESHOLD` を 0.65 → 0.75 に変更
+  - 類似度0.708のポトフが除外され、0.844のトマト鍋のみがヒットするように改善
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
+- [ ] **git push の実行** - HTTP 400エラーが発生したため手動でプッシュが必要
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
+- [ ] **検索精度のさらなる改善（必要に応じて）**
+  - 埋め込みに食材情報を含める案を検討
 - [ ] **LP用スクリーンショット画像の用意**
   - レシピ一覧画面（750×1334px）
   - 食材検索画面（750×1334px）
@@ -31,8 +33,10 @@
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
   - 詳細は `/Users/uemuramakoto/.claude/plans/distributed-frolicking-quasar.md` 参照
+- **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
+- **ベクトル検索閾値:** 0.75 に設定済み（誤検出防止のため）
 - **埋め込みバッチ処理:**
   - レシピ登録時は `title_embedding = NULL` で保存される
   - 5分毎に Edge Function が埋め込みを生成
@@ -57,11 +61,11 @@
 
 ## コミット履歴（直近）
 ```
+337350d fix: raise vector search threshold to 0.75 for better precision
+7efcf3b docs: update SESSION.md for session handoff
 7e12b25 docs: update SESSION.md for session handoff
 f04a32d docs: add embedding batch setup guide for production
 62d7f7a fix: move config.toml to correct location with proper format
-831df41 fix: disable JWT verification for generate-embeddings function
-db1dd93 Merge pull request #5 from mktu/feature/batch-embedding-generation
 ```
 
 ## GitHubリポジトリ
@@ -70,6 +74,6 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
+- `src/lib/db/queries/recipe-embedding.ts` - ベクトル検索クエリ（閾値設定）
 - `docs/LINE_SETUP.md` - LINE開発環境構成・リッチメニュー設定
-- `public/rich-menu.png` - リッチメニュー画像（2500x1686px）
 - `docs/EMBEDDING_BATCH_SETUP.md` - 本番環境の埋め込みバッチ処理セットアップ手順
