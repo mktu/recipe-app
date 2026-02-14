@@ -21,7 +21,7 @@ interface HomeClientProps {
 
 export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
   const router = useRouter()
-  const { isLoading: authLoading, isAuthenticated } = useAuth()
+  const { isLoading: authLoading, isAuthenticated, error: authError } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
   const { recipes, isLoading: recipesLoading } = useRecipes({
@@ -35,6 +35,17 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
 
   if (authLoading) {
     return <CenteredMessage>読み込み中...</CenteredMessage>
+  }
+
+  if (authError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+        <p className="mb-4 text-destructive">エラーが発生しました</p>
+        <pre className="max-w-full overflow-auto rounded bg-muted p-4 text-xs">
+          {authError}
+        </pre>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {

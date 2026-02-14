@@ -21,6 +21,8 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   /** ローディング中かどうか */
   isLoading: boolean
+  /** 認証エラー（デバッグ用） */
+  error: string | null
   /** ログアウト処理 */
   logout: () => Promise<void>
 }

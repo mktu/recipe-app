@@ -19,6 +19,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children, adapter }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -30,8 +31,12 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
         if (isMounted) {
           setUser(currentUser)
         }
-      } catch (error) {
-        console.error('[Auth] 初期化エラー:', error)
+      } catch (err) {
+        console.error('[Auth] 初期化エラー:', err)
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : String(err)
+          setError(`認証エラー: ${message}`)
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -56,6 +61,7 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
     status: isLoading ? 'loading' : user ? 'authenticated' : 'unauthenticated',
     isAuthenticated: !!user,
     isLoading,
+    error,
     logout,
   }
 
