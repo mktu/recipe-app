@@ -1,22 +1,21 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-14 (ベクトル検索閾値を0.75に変更・検索精度改善)
+2026-02-14 (LINE友だち追加URL設定完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **Bot検索機能完了・埋め込みバッチ処理完了**
 
 ## 直近の完了タスク
-- [x] **ベクトル検索の閾値を0.75に引き上げ**
-  - 「トマト鍋」で検索すると「ポトフ」がヒットしてしまう問題を修正
-  - `src/lib/db/queries/recipe-embedding.ts` の `VECTOR_SEARCH_THRESHOLD` を 0.65 → 0.75 に変更
-  - 類似度0.708のポトフが除外され、0.844のトマト鍋のみがヒットするように改善
+- [x] **LINE友だち追加URL設定**
+  - ベーシックID: `@103ffflw`
+  - ローカル: `.env.local` に `NEXT_PUBLIC_LINE_FRIEND_URL=https://line.me/R/ti/p/@103ffflw` を追加
+  - ステージング: Vercelダッシュボードで設定が必要
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
-- [ ] **git push の実行** - HTTP 400エラーが発生したため手動でプッシュが必要
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **検索精度のさらなる改善（必要に応じて）**
@@ -25,8 +24,7 @@
   - レシピ一覧画面（750×1334px）
   - 食材検索画面（750×1334px）
 - [ ] **OGP画像の作成**（1200×630px）
-- [ ] **LINE友だち追加URL設定**
-  - 環境変数 `NEXT_PUBLIC_LINE_FRIEND_URL` に設定
+- [ ] **Vercelで `NEXT_PUBLIC_LINE_FRIEND_URL` を設定**（ステージング環境用）
 - [ ] **さらなるマッチング改善（任意）**
   - 食材マスター追加: 長芋、小ねぎ、ローズマリー、ミント など
 
@@ -61,11 +59,11 @@
 
 ## コミット履歴（直近）
 ```
-337350d fix: raise vector search threshold to 0.75 for better precision
+53df748 chore: add rich-menu.png to gitignore
+12848fc fix: raise vector search threshold to 0.75 for better precision
 7efcf3b docs: update SESSION.md for session handoff
 7e12b25 docs: update SESSION.md for session handoff
 f04a32d docs: add embedding batch setup guide for production
-62d7f7a fix: move config.toml to correct location with proper format
 ```
 
 ## GitHubリポジトリ
