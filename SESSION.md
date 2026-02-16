@@ -1,12 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-15 (Nadia対応の__NEXT_DATA__フォールバック追加)
+2026-02-16 (レシピ一覧ページのパフォーマンス改善)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **レシピ一覧ページのパフォーマンス改善**
+  - Edge Function（get-recipes）を導入し、DBクエリを同一リージョン化
+  - Vercelリージョンを東京に変更
+  - LCP: 5.36s → 3.04s（約2.3秒改善）
+  - 詳細: Vercel(東京)→Supabase(Mumbai)の往復レイテンシがボトルネック
 - [x] **Nadia対応: __NEXT_DATA__フォールバック追加**
   - NadiaはJSON-LDがクライアントサイドで動的挿入されるため、サーバーHTMLから取得不可
   - Jina ReaderもCloudflareで断続的にブロックされる問題があった
@@ -17,6 +22,10 @@
 なし
 
 ## 次にやること（優先度順）
+- [ ] **本番環境のSupabaseプロジェクト作成**
+  - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
+  - ステージングはMumbaiリージョンでVercel東京との往復レイテンシが大きい
+  - 東京リージョンにすることでLCPを2.5s未満（良好）に改善見込み
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **LP用スクリーンショット画像の用意**
@@ -57,11 +66,11 @@
 
 ## コミット履歴（直近）
 ```
+184247f perf: add get-recipes Edge Function for reduced latency
+dbff286 perf: use singleton pattern for server Supabase client
+f51b9fe chore: add timing logs for performance investigation
 6e27f0f feat: add __NEXT_DATA__ fallback for Nadia recipe parsing
 9b80f3d docs: update SESSION.md for session handoff
-f0ee521 refactor: extract fetchProfileWithRetry to fix max-lines warning
-10b7287 feat: add relogin button for token revoked error
-06b63b4 fix: prevent infinite login loop with retry limit
 ```
 
 ## GitHubリポジトリ
