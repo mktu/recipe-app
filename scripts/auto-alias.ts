@@ -85,6 +85,13 @@ async function main() {
   // 環境変数読み込み後に動的インポート
   const { generateAliases } = await import('../src/lib/batch/alias-generator')
 
+  // 環境変数チェック
+  const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  if (!geminiApiKey) {
+    console.error('エラー: GOOGLE_GENERATIVE_AI_API_KEY が設定されていません')
+    process.exit(1)
+  }
+
   // Supabase クライアント
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,6 +110,7 @@ async function main() {
   const result = await generateAliases(supabase, {
     limit: options.limit,
     dryRun: options.dryRun,
+    geminiApiKey,
   })
 
   // 結果表示

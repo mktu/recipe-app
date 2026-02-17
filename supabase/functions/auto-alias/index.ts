@@ -4,12 +4,11 @@
  * pg_cron から1日1回呼び出され、未マッチ食材をLLMで判定し
  * エイリアス登録または新規食材追加を行う。
  *
- * ADR-001: 食材マッチングの表記揺れ対応
+ * 非同期パターン:
+ * - すぐにレスポンスを返す（cronタイムアウト回避）
+ * - バックグラウンドで処理を継続
  *
- * 環境変数:
- *   - SUPABASE_URL: 自動設定
- *   - SUPABASE_SERVICE_ROLE_KEY: 自動設定
- *   - GOOGLE_GENERATIVE_AI_API_KEY: 手動で Secrets に設定
+ * ADR-001: 食材マッチングの表記揺れ対応
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -151,179 +150,155 @@ async function callGeminiAPI(
 }
 
 // ===========================================
-// メイン処理
+// バックグラウンド処理
+// ===========================================
+
+async function processAliases(
+  supabaseUrl: string,
+  supabaseKey: string,
+  geminiApiKey: string
+): Promise<void> {
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  console.log(`[auto-alias] Starting background process...`)
+
+  // 1. 未マッチ食材を取得
+  const { data: unmatchedData, error: unmatchedError } = await supabase.rpc(
+    'get_unmatched_ingredient_counts',
+    { limit_count: MAX_ITEMS_PER_RUN }
+  )
+
+  if (unmatchedError) {
+    console.error(`[auto-alias] Failed to fetch unmatched: ${unmatchedError.message}`)
+    return
+  }
+
+  const unmatched = (unmatchedData ?? []) as UnmatchedIngredient[]
+
+  if (unmatched.length === 0) {
+    console.log('[auto-alias] No unmatched ingredients')
+    return
+  }
+
+  console.log(`[auto-alias] Found ${unmatched.length} unmatched ingredients`)
+
+  // 2. マスター食材を取得
+  const { data: masterData, error: masterError } = await supabase
+    .from('ingredients')
+    .select('id, name')
+    .eq('needs_review', false)
+
+  if (masterError) {
+    console.error(`[auto-alias] Failed to fetch master: ${masterError.message}`)
+    return
+  }
+
+  const masterIngredients = (masterData ?? []) as MasterIngredient[]
+  console.log(`[auto-alias] Loaded ${masterIngredients.length} master ingredients`)
+
+  // 3. LLMで判定
+  const unmatchedNames = unmatched.map((u) => u.normalized_name)
+  console.log('[auto-alias] Calling Gemini API...')
+  const prompt = buildPrompt(unmatchedNames, masterIngredients)
+  const llmResult = await callGeminiAPI(prompt, geminiApiKey)
+
+  if (!llmResult) {
+    console.error('[auto-alias] LLM matching failed')
+    return
+  }
+
+  console.log(`[auto-alias] LLM returned ${llmResult.results.length} results`)
+
+  // 4. 結果を処理
+  let aliasesCreated = 0
+  let newIngredientsCreated = 0
+  const processedNames: string[] = []
+
+  for (const item of llmResult.results) {
+    console.log(`[auto-alias] Processing: ${item.input} -> ${item.matchedId ?? 'new'}`)
+
+    if (item.matchedId) {
+      const { error } = await supabase.from('ingredient_aliases').insert({
+        alias: item.input,
+        ingredient_id: item.matchedId,
+        auto_generated: true,
+      })
+
+      if (!error) {
+        aliasesCreated++
+      } else if (error.code !== '23505') {
+        console.error(`[auto-alias] Insert alias error: ${error.message}`)
+      }
+      processedNames.push(item.input)
+    } else if (item.isNewIngredient && item.newIngredientCategory) {
+      const category = VALID_CATEGORIES.includes(item.newIngredientCategory)
+        ? item.newIngredientCategory
+        : DEFAULT_CATEGORY
+
+      const { error } = await supabase.from('ingredients').insert({
+        name: item.input,
+        category,
+        needs_review: true,
+      })
+
+      if (!error) {
+        newIngredientsCreated++
+      } else if (error.code !== '23505') {
+        console.error(`[auto-alias] Insert ingredient error: ${error.message}`)
+      }
+      processedNames.push(item.input)
+    } else {
+      processedNames.push(item.input)
+    }
+  }
+
+  // 5. 処理済みを削除
+  if (processedNames.length > 0) {
+    const { error } = await supabase
+      .from('unmatched_ingredients')
+      .delete()
+      .in('normalized_name', processedNames)
+
+    if (error) {
+      console.error(`[auto-alias] Delete error: ${error.message}`)
+    }
+  }
+
+  console.log(`[auto-alias] Done: aliases=${aliasesCreated}, new=${newIngredientsCreated}`)
+}
+
+// ===========================================
+// メイン（非同期パターン）
 // ===========================================
 
 Deno.serve(async () => {
-  try {
-    // 環境変数の取得
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    const geminiApiKey = Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY')
+  // 環境変数の取得
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const geminiApiKey = Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY')
 
-    if (!supabaseUrl || !supabaseKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Supabase credentials' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!geminiApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing GOOGLE_GENERATIVE_AI_API_KEY' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Supabase クライアント作成
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // 1. 未マッチ食材を取得（出現頻度順）
-    console.log(`Fetching unmatched ingredients (limit: ${MAX_ITEMS_PER_RUN})...`)
-    const { data: unmatchedData, error: unmatchedError } = await supabase.rpc(
-      'get_unmatched_ingredient_counts',
-      { limit_count: MAX_ITEMS_PER_RUN }
-    )
-
-    if (unmatchedError) {
-      throw new Error(`Failed to fetch unmatched: ${unmatchedError.message}`)
-    }
-
-    const unmatched = (unmatchedData ?? []) as UnmatchedIngredient[]
-
-    if (unmatched.length === 0) {
-      return new Response(
-        JSON.stringify({ message: 'No unmatched ingredients', processed: 0 }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log(`Found ${unmatched.length} unmatched ingredients`)
-
-    // 2. マスター食材を取得
-    const { data: masterData, error: masterError } = await supabase
-      .from('ingredients')
-      .select('id, name')
-      .eq('needs_review', false)
-
-    if (masterError) {
-      throw new Error(`Failed to fetch master: ${masterError.message}`)
-    }
-
-    const masterIngredients = (masterData ?? []) as MasterIngredient[]
-    console.log(`Loaded ${masterIngredients.length} master ingredients`)
-
-    // 3. LLMで判定
-    const unmatchedNames = unmatched.map((u) => u.normalized_name)
-    console.log('Calling Gemini API for matching...')
-    const prompt = buildPrompt(unmatchedNames, masterIngredients)
-    const llmResult = await callGeminiAPI(prompt, geminiApiKey)
-
-    if (!llmResult) {
-      return new Response(
-        JSON.stringify({ error: 'LLM matching failed' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log(`LLM returned ${llmResult.results.length} results`)
-
-    // 4. 結果を処理
-    let aliasesCreated = 0
-    let newIngredientsCreated = 0
-    const processedNames: string[] = []
-    const errors: string[] = []
-
-    for (const item of llmResult.results) {
-      console.log(`Processing: ${item.input} -> ${item.matchedId ?? 'new'} (${item.reason})`)
-
-      if (item.matchedId) {
-        // エイリアス登録
-        const { error: aliasError } = await supabase
-          .from('ingredient_aliases')
-          .insert({
-            alias: item.input,
-            ingredient_id: item.matchedId,
-            auto_generated: true,
-          })
-
-        if (aliasError) {
-          if (aliasError.code === '23505') {
-            // 重複エラーは無視
-            console.log(`Already exists: ${item.input}`)
-          } else {
-            errors.push(`Failed to insert alias ${item.input}: ${aliasError.message}`)
-            continue
-          }
-        } else {
-          aliasesCreated++
-        }
-        processedNames.push(item.input)
-      } else if (item.isNewIngredient && item.newIngredientCategory) {
-        // 新規食材追加
-        const category = VALID_CATEGORIES.includes(item.newIngredientCategory)
-          ? item.newIngredientCategory
-          : DEFAULT_CATEGORY
-
-        const { error: ingredientError } = await supabase
-          .from('ingredients')
-          .insert({
-            name: item.input,
-            category,
-            needs_review: true,
-          })
-
-        if (ingredientError) {
-          if (ingredientError.code === '23505') {
-            console.log(`Already exists: ${item.input}`)
-          } else {
-            errors.push(`Failed to insert ingredient ${item.input}: ${ingredientError.message}`)
-            continue
-          }
-        } else {
-          newIngredientsCreated++
-        }
-        processedNames.push(item.input)
-      } else {
-        // マッチせず、新規追加もしない
-        processedNames.push(item.input)
-      }
-    }
-
-    // 5. 処理済みを削除
-    if (processedNames.length > 0) {
-      console.log(`Deleting ${processedNames.length} processed items...`)
-      const { error: deleteError } = await supabase
-        .from('unmatched_ingredients')
-        .delete()
-        .in('normalized_name', processedNames)
-
-      if (deleteError) {
-        errors.push(`Failed to delete processed: ${deleteError.message}`)
-      }
-    }
-
-    const result = {
-      message: 'Auto-alias generation completed',
-      processed: llmResult.results.length,
-      aliasesCreated,
-      newIngredientsCreated,
-      errors: errors.length > 0 ? errors : undefined,
-    }
-
-    console.log('Done:', result)
-
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (error) {
-    console.error('Edge Function error:', error)
+  if (!supabaseUrl || !supabaseKey) {
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
+      JSON.stringify({ error: 'Missing Supabase credentials' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
+
+  if (!geminiApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'Missing GOOGLE_GENERATIVE_AI_API_KEY' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // バックグラウンドで処理開始（awaitしない）
+  processAliases(supabaseUrl, supabaseKey, geminiApiKey).catch((err) => {
+    console.error('[auto-alias] Background process error:', err)
+  })
+
+  // すぐにレスポンスを返す（cronタイムアウト回避）
+  return new Response(
+    JSON.stringify({ status: 'accepted', message: 'Processing started in background' }),
+    { status: 202, headers: { 'Content-Type': 'application/json' } }
+  )
 })

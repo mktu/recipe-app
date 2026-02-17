@@ -3,18 +3,14 @@
  *
  * 未マッチ食材をLLMで判定し、エイリアス登録または新規食材追加を行う
  * ADR-001: 食材マッチングの表記揺れ対応
+ *
+ * Deno/Node.js 両対応（fetch API ベース）
  */
 
-import { generateText, Output } from 'ai'
 import { SupabaseClient } from '@supabase/supabase-js'
-import { z } from 'zod'
-import { geminiFlash } from '@/lib/llm/gemini-client'
-import type { Database } from '@/types/database'
-
-type TypedSupabaseClient = SupabaseClient<Database>
 
 /** 処理上限 */
-const MAX_ITEMS_PER_RUN = 100
+const DEFAULT_LIMIT = 100
 
 /** カテゴリのデフォルト値 */
 const DEFAULT_CATEGORY = 'その他'
@@ -45,28 +41,17 @@ interface MasterIngredient {
   name: string
 }
 
-/** LLMの判定結果スキーマ */
-const aliasMatchResultSchema = z.object({
-  results: z.array(
-    z.object({
-      input: z.string().describe('入力された食材名'),
-      matchedId: z
-        .string()
-        .nullable()
-        .describe('マッチしたマスター食材のID。マッチしない場合はnull'),
-      isNewIngredient: z
-        .boolean()
-        .describe('新規食材として追加すべきかどうか'),
-      newIngredientCategory: z
-        .string()
-        .optional()
-        .describe('新規食材の場合のカテゴリ'),
-      reason: z.string().describe('判定理由'),
-    })
-  ),
-})
+interface LLMMatchResult {
+  input: string
+  matchedId: string | null
+  isNewIngredient: boolean
+  newIngredientCategory?: string
+  reason: string
+}
 
-type AliasMatchResult = z.infer<typeof aliasMatchResultSchema>
+interface LLMResponse {
+  results: LLMMatchResult[]
+}
 
 export interface GenerateAliasesResult {
   processed: number
@@ -75,133 +60,17 @@ export interface GenerateAliasesResult {
   errors: string[]
 }
 
-// ===========================================
-// DB操作
-// ===========================================
-
-/**
- * 未マッチ食材を出現頻度順で取得
- */
-async function fetchUnmatchedIngredients(
-  supabase: TypedSupabaseClient,
-  limit: number
-): Promise<UnmatchedIngredient[]> {
-  // normalized_nameでグループ化し、出現回数でソート
-  const { data, error } = await supabase.rpc('get_unmatched_ingredient_counts', {
-    limit_count: limit,
-  })
-
-  if (error) {
-    console.error('[fetchUnmatchedIngredients] Error:', error)
-    return []
-  }
-
-  return (data ?? []) as UnmatchedIngredient[]
-}
-
-/**
- * マスター食材一覧を取得
- */
-async function fetchMasterIngredients(
-  supabase: TypedSupabaseClient
-): Promise<MasterIngredient[]> {
-  const { data, error } = await supabase
-    .from('ingredients')
-    .select('id, name')
-    .eq('needs_review', false)
-
-  if (error) {
-    console.error('[fetchMasterIngredients] Error:', error)
-    return []
-  }
-
-  return (data ?? []) as MasterIngredient[]
-}
-
-/**
- * エイリアスを登録
- */
-async function insertAlias(
-  supabase: TypedSupabaseClient,
-  alias: string,
-  ingredientId: string
-): Promise<boolean> {
-  const { error } = await supabase.from('ingredient_aliases').insert({
-    alias,
-    ingredient_id: ingredientId,
-    auto_generated: true,
-  })
-
-  if (error) {
-    // 重複エラーは無視
-    if (error.code === '23505') {
-      console.log(`[insertAlias] Already exists: ${alias}`)
-      return true
-    }
-    console.error('[insertAlias] Error:', error)
-    return false
-  }
-
-  return true
-}
-
-/**
- * 新規食材を追加（要レビュー）
- */
-async function insertNewIngredient(
-  supabase: TypedSupabaseClient,
-  name: string,
-  category: string
-): Promise<string | null> {
-  const validCategory = VALID_CATEGORIES.includes(category)
-    ? category
-    : DEFAULT_CATEGORY
-
-  const { data, error } = await supabase
-    .from('ingredients')
-    .insert({
-      name,
-      category: validCategory,
-      needs_review: true,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    // 重複エラーは無視
-    if (error.code === '23505') {
-      console.log(`[insertNewIngredient] Already exists: ${name}`)
-      return null
-    }
-    console.error('[insertNewIngredient] Error:', error)
-    return null
-  }
-
-  return data?.id ?? null
-}
-
-/**
- * 処理済みの未マッチ食材を削除
- */
-async function deleteProcessedUnmatched(
-  supabase: TypedSupabaseClient,
-  normalizedNames: string[]
-): Promise<void> {
-  if (normalizedNames.length === 0) return
-
-  const { error } = await supabase
-    .from('unmatched_ingredients')
-    .delete()
-    .in('normalized_name', normalizedNames)
-
-  if (error) {
-    console.error('[deleteProcessedUnmatched] Error:', error)
-  }
+export interface GenerateAliasesOptions {
+  limit?: number
+  dryRun?: boolean
+  geminiApiKey: string
 }
 
 // ===========================================
-// LLM判定
+// Gemini API（fetch ベース）
 // ===========================================
+
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 function buildPrompt(
   unmatchedNames: string[],
@@ -236,33 +105,164 @@ ${masterList}
 ## 未マッチ食材リスト
 ${unmatchedList}
 
-## 出力
-各食材について以下を判定してください：
-- matchedId: マッチするマスター食材のID（マッチしない場合はnull）
-- isNewIngredient: 新規食材として追加すべきか
-- newIngredientCategory: 新規食材の場合のカテゴリ（${VALID_CATEGORIES.join(', ')}）
-- reason: 判定理由（簡潔に）`
+## 出力形式
+必ず以下のJSON形式で出力してください:
+{
+  "results": [
+    {
+      "input": "入力された食材名",
+      "matchedId": "マッチしたマスター食材のID（マッチしない場合はnull）",
+      "isNewIngredient": true/false,
+      "newIngredientCategory": "新規食材の場合のカテゴリ（${VALID_CATEGORIES.join(', ')}）",
+      "reason": "判定理由"
+    }
+  ]
+}`
 }
 
-async function matchWithLLM(
-  unmatchedNames: string[],
-  masterIngredients: MasterIngredient[]
-): Promise<AliasMatchResult | null> {
-  if (unmatchedNames.length === 0) return null
+async function callGeminiAPI(
+  prompt: string,
+  apiKey: string
+): Promise<LLMResponse | null> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  )
 
-  const prompt = buildPrompt(unmatchedNames, masterIngredients)
+  if (!response.ok) {
+    const error = await response.text()
+    console.error(`Gemini API error: ${response.status} - ${error}`)
+    return null
+  }
+
+  const data = await response.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!text) {
+    console.error('No text in Gemini response')
+    return null
+  }
 
   try {
-    const { output } = await generateText({
-      model: geminiFlash,
-      output: Output.object({ schema: aliasMatchResultSchema }),
-      prompt,
-    })
-
-    return output ?? null
-  } catch (error) {
-    console.error('[matchWithLLM] Error:', error)
+    return JSON.parse(text) as LLMResponse
+  } catch (e) {
+    console.error('Failed to parse Gemini response:', e)
     return null
+  }
+}
+
+// ===========================================
+// DB操作
+// ===========================================
+
+async function fetchUnmatchedIngredients(
+  supabase: SupabaseClient,
+  limit: number
+): Promise<UnmatchedIngredient[]> {
+  const { data, error } = await supabase.rpc('get_unmatched_ingredient_counts', {
+    limit_count: limit,
+  })
+
+  if (error) {
+    console.error('[fetchUnmatchedIngredients] Error:', error)
+    return []
+  }
+
+  return (data ?? []) as UnmatchedIngredient[]
+}
+
+async function fetchMasterIngredients(
+  supabase: SupabaseClient
+): Promise<MasterIngredient[]> {
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('id, name')
+    .eq('needs_review', false)
+
+  if (error) {
+    console.error('[fetchMasterIngredients] Error:', error)
+    return []
+  }
+
+  return (data ?? []) as MasterIngredient[]
+}
+
+async function insertAlias(
+  supabase: SupabaseClient,
+  alias: string,
+  ingredientId: string
+): Promise<boolean> {
+  const { error } = await supabase.from('ingredient_aliases').insert({
+    alias,
+    ingredient_id: ingredientId,
+    auto_generated: true,
+  })
+
+  if (error) {
+    if (error.code === '23505') {
+      console.log(`[insertAlias] Already exists: ${alias}`)
+      return true
+    }
+    console.error('[insertAlias] Error:', error)
+    return false
+  }
+
+  return true
+}
+
+async function insertNewIngredient(
+  supabase: SupabaseClient,
+  name: string,
+  category: string
+): Promise<string | null> {
+  const validCategory = VALID_CATEGORIES.includes(category)
+    ? category
+    : DEFAULT_CATEGORY
+
+  const { data, error } = await supabase
+    .from('ingredients')
+    .insert({
+      name,
+      category: validCategory,
+      needs_review: true,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      console.log(`[insertNewIngredient] Already exists: ${name}`)
+      return null
+    }
+    console.error('[insertNewIngredient] Error:', error)
+    return null
+  }
+
+  return data?.id ?? null
+}
+
+async function deleteProcessedUnmatched(
+  supabase: SupabaseClient,
+  normalizedNames: string[]
+): Promise<void> {
+  if (normalizedNames.length === 0) return
+
+  const { error } = await supabase
+    .from('unmatched_ingredients')
+    .delete()
+    .in('normalized_name', normalizedNames)
+
+  if (error) {
+    console.error('[deleteProcessedUnmatched] Error:', error)
   }
 }
 
@@ -270,14 +270,11 @@ async function matchWithLLM(
 // メイン処理
 // ===========================================
 
-/**
- * エイリアス自動生成のメイン処理
- */
 export async function generateAliases(
-  supabase: TypedSupabaseClient,
-  options: { limit?: number; dryRun?: boolean } = {}
+  supabase: SupabaseClient,
+  options: GenerateAliasesOptions
 ): Promise<GenerateAliasesResult> {
-  const { limit = MAX_ITEMS_PER_RUN, dryRun = false } = options
+  const { limit = DEFAULT_LIMIT, dryRun = false, geminiApiKey } = options
 
   const result: GenerateAliasesResult = {
     processed: 0,
@@ -303,8 +300,9 @@ export async function generateAliases(
 
   // 3. LLMで判定
   const unmatchedNames = unmatched.map((u) => u.normalized_name)
-  console.log('[generateAliases] Calling LLM for matching...')
-  const llmResult = await matchWithLLM(unmatchedNames, masterIngredients)
+  console.log('[generateAliases] Calling Gemini API...')
+  const prompt = buildPrompt(unmatchedNames, masterIngredients)
+  const llmResult = await callGeminiAPI(prompt, geminiApiKey)
 
   if (!llmResult) {
     result.errors.push('LLM matching failed')
@@ -328,16 +326,14 @@ export async function generateAliases(
     }
 
     if (item.matchedId) {
-      // エイリアス登録
       const success = await insertAlias(supabase, item.input, item.matchedId)
       if (success) {
         result.aliasesCreated++
-        processedNames.push(item.input)
       } else {
         result.errors.push(`Failed to insert alias: ${item.input}`)
       }
+      processedNames.push(item.input)
     } else if (item.isNewIngredient && item.newIngredientCategory) {
-      // 新規食材追加
       const newId = await insertNewIngredient(
         supabase,
         item.input,
@@ -345,13 +341,9 @@ export async function generateAliases(
       )
       if (newId) {
         result.newIngredientsCreated++
-        processedNames.push(item.input)
-      } else {
-        // 既に存在する場合も処理済みとする
-        processedNames.push(item.input)
       }
+      processedNames.push(item.input)
     } else {
-      // マッチせず、新規追加もしない（調味料等）
       processedNames.push(item.input)
     }
 
