@@ -37,7 +37,8 @@ recipe-app/
 ├── docs/                 # 詳細ドキュメント
 │   ├── LINE_SETUP.md     # LINE 開発環境構成
 │   ├── SUPABASE_LOCAL.md # ローカル Supabase セットアップ
-│   └── DATABASE_DESIGN.md # DB設計詳細
+│   ├── DATABASE_DESIGN.md # DB設計詳細
+│   └── EDGE_FUNCTIONS.md # Edge Functions 開発ガイド
 ├── requirements.md       # プロジェクト要件定義書
 ├── SESSION.md            # セッション引き継ぎ用ステータス
 └── CLAUDE.md             # このファイル
