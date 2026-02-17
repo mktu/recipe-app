@@ -24,20 +24,30 @@ const functions: FunctionConfig[] = [
   {
     name: 'auto-alias',
     sharedFiles: [
-      {
-        src: 'src/lib/batch/alias-generator.ts',
-        dest: 'alias-generator.ts',
-      },
+      { src: 'src/lib/batch/alias-generator.ts', dest: 'alias-generator.ts' },
+      { src: 'src/lib/batch/alias-db.ts', dest: 'alias-db.ts' },
+      { src: 'src/lib/batch/alias-llm.ts', dest: 'alias-llm.ts' },
     ],
   },
 ]
 
 function transformForDeno(content: string): string {
   // @supabase/supabase-js → npm:@supabase/supabase-js@2
-  return content.replace(
+  let result = content.replace(
     /from ['"]@supabase\/supabase-js['"]/g,
     "from 'npm:@supabase/supabase-js@2'"
   )
+
+  // ローカルインポートに .ts 拡張子を追加（Deno要件）
+  result = result.replace(
+    /from ['"]\.\/([^'"]+)['"]/g,
+    "from './$1.ts'"
+  )
+
+  // 既に .ts がある場合の重複を防ぐ
+  result = result.replace(/\.ts\.ts/g, '.ts')
+
+  return result
 }
 
 function buildFunction(config: FunctionConfig): void {
