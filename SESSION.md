@@ -1,76 +1,75 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-16 (レシピ一覧ページのパフォーマンス改善)
+2026-02-17 (食材エイリアス自動生成機能の実装)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **レシピ一覧ページのパフォーマンス改善**
-  - Edge Function（get-recipes）を導入し、DBクエリを同一リージョン化
-  - Vercelリージョンを東京に変更
-  - LCP: 5.36s → 3.04s（約2.3秒改善）
-  - 詳細: Vercel(東京)→Supabase(Mumbai)の往復レイテンシがボトルネック
-- [x] **Nadia対応: __NEXT_DATA__フォールバック追加**
-  - NadiaはJSON-LDがクライアントサイドで動的挿入されるため、サーバーHTMLから取得不可
-  - Jina ReaderもCloudflareで断続的にブロックされる問題があった
-  - `__NEXT_DATA__`（Next.js SSRデータ）からレシピを抽出する機能を追加
-  - 処理フロー: JSON-LD → __NEXT_DATA__ → Jina Reader+Gemini
+- [x] **食材エイリアス自動生成機能（ADR-001）**
+  - 未マッチ食材をLLMで判定し、エイリアス登録または新規食材追加
+  - バッチ処理（1日1回、最大100件）
+  - 非同期パターンでpg_cronの5秒タイムアウトを回避
+- [x] **Edge Function共有ロジックのリファクタリング**
+  - `src/lib/batch/` にソースコードを配置（Node.js用）
+  - ビルドスクリプトでDeno用に変換してコピー
+  - ESLint警告を解消（max-lines, complexity）
+- [x] **CI/CD対応**
+  - PR時に `functions:build` を実行してビルド検証
+  - マージ後に Edge Function をデプロイ
+  - 生成ファイルは `.gitignore` で除外
+- [x] **ドキュメント整備**
+  - `docs/EDGE_FUNCTIONS.md` を作成
+  - `docs/ADR-001-ingredient-matching.md` を作成
 
 ## 進行中のタスク
-なし
+- [ ] **auto-alias Edge Functionの本番デプロイ**
+  - PRをマージ後、CIでデプロイされる
+  - Supabaseダッシュボードで `auto-alias` のJWT検証をOFFに設定
+  - pg_cronジョブを設定（1日1回呼び出し）
 
 ## 次にやること（優先度順）
+- [ ] **auto-alias の本番設定**
+  - JWT検証OFF、pg_cronジョブ設定、環境変数（GOOGLE_GENERATIVE_AI_API_KEY）設定
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
-  - ステージングはMumbaiリージョンでVercel東京との往復レイテンシが大きい
-  - 東京リージョンにすることでLCPを2.5s未満（良好）に改善見込み
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **LP用スクリーンショット画像の用意**
-  - レシピ一覧画面（750×1334px）
-  - 食材検索画面（750×1334px）
 - [ ] **OGP画像の作成**（1200×630px）
-- [ ] **Vercelで `NEXT_PUBLIC_LINE_FRIEND_URL` を設定**（ステージング環境用）
-- [ ] **さらなるマッチング改善（任意）**
-  - 食材マスター追加: 長芋、小ねぎ、ローズマリー、ミント など
 
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
+- **食材エイリアス自動生成:**
+  - 初回登録時は未マッチのまま（翌日以降のバッチで補完）
+  - Edge Functionは非同期パターン（202 Acceptedを即座に返す）
+  - ローカルテスト: `npx tsx scripts/auto-alias.ts --dry-run`
+- **Edge Function開発:**
+  - 共有ロジック変更後は `npm run functions:build` を実行
+  - 詳細は `docs/EDGE_FUNCTIONS.md` を参照
 - **LIFF認証:**
-  - LINE Loginチャネルは「公開済み」ステータスが必要（開発中だと管理者のみアクセス可能）
-  - トークンが無効になった場合は再ログインボタンで対応
+  - LINE Loginチャネルは「公開済み」ステータスが必要
   - LIFF SDKには自動トークンリフレッシュ機能がない
-- **ベクトル検索閾値:** 0.75 に設定済み（誤検出防止のため）
+- **ベクトル検索閾値:** 0.75 に設定済み
 - **埋め込みバッチ処理:**
   - レシピ登録時は `title_embedding = NULL` で保存される
   - 5分毎に Edge Function が埋め込みを生成
-  - JWT 検証は Supabase ダッシュボードから手動で無効化（CLI の既知問題）
-- **ローカル埋め込み生成:**
-  - `npm run backfill:embeddings` でローカル DB の埋め込みを生成
-  - `npm run test:recipe:with-embeddings` でレシピ登録と埋め込み生成をセット実行
 - **ローカル開発:** `.env.local` の `NEXT_PUBLIC_LIFF_ID` を空にするとLINEログインなしで動作
 - ローカル開発時は `supabase start` で起動が必要
-- **RLS注意:** Webhookでは `createServerClient`（Secret Key）を使用すること
-- **Gemini API無料枠:**
-  - `gemini-2.5-flash` を使用（20 requests/day程度）
-  - `gemini-embedding-001` は 1000 RPD
 - **DB型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 - **GitHub Secrets:** `SUPABASE_ACCESS_TOKEN` と `SUPABASE_PROJECT_REF` が必要（CI用）
-- **ブランチ運用:** `feature/*` → PR → main マージの流れ
-- **Botテスト:** `npm run test:bot "メッセージ"` でローカルテスト可能
 
 ## コミット履歴（直近）
 ```
-184247f perf: add get-recipes Edge Function for reduced latency
-dbff286 perf: use singleton pattern for server Supabase client
-f51b9fe chore: add timing logs for performance investigation
-6e27f0f feat: add __NEXT_DATA__ fallback for Nadia recipe parsing
-9b80f3d docs: update SESSION.md for session handoff
+dd5560c docs: add Edge Functions development guide
+98ddaf9 chore: gitignore generated Edge Function files, build in CI
+69955f6 refactor: split alias-generator into smaller modules for lint compliance
+448447b refactor: share alias-generator logic between Node.js and Edge Function
+abf2f35 refactor: use fetch-based Gemini API and async pattern for Edge Function
 ```
 
 ## GitHubリポジトリ
@@ -79,10 +78,11 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
-- `src/lib/recipe/parse-recipe.ts` - レシピ解析メイン処理（フォールバックチェーン）
-- `src/lib/scraper/next-data-extractor.ts` - __NEXT_DATA__からのレシピ抽出（Nadia対応）
-- `src/lib/scraper/json-ld-extractor.ts` - JSON-LDからのレシピ抽出
-- `src/app/(public)/` - 認証不要ページ（LP, privacy, terms）
-- `src/app/(protected)/` - 認証必要ページ（ホーム, recipes）
-- `docs/LINE_SETUP.md` - LINE開発環境構成・リッチメニュー設定
-- `docs/EMBEDDING_BATCH_SETUP.md` - 本番環境の埋め込みバッチ処理セットアップ手順
+- `docs/ADR-001-ingredient-matching.md` - 食材マッチング表記揺れ対応のADR
+- `docs/EDGE_FUNCTIONS.md` - Edge Functions開発ガイド
+- `src/lib/batch/alias-generator.ts` - エイリアス自動生成メイン処理
+- `src/lib/batch/alias-db.ts` - エイリアス自動生成DB操作
+- `src/lib/batch/alias-llm.ts` - エイリアス自動生成LLM操作
+- `scripts/auto-alias.ts` - ローカル実行用スクリプト
+- `scripts/build-edge-functions.ts` - Edge Functionビルドスクリプト
+- `supabase/functions/auto-alias/index.ts` - Edge Functionエントリーポイント

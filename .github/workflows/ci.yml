@@ -22,6 +22,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Build Edge Functions
+        run: npm run functions:build
+
       - name: Build
         run: npm run build
         env:

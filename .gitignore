@@ -43,3 +43,6 @@ next-env.d.ts
 
 # LINE assets (managed directly in LINE console)
 public/rich-menu.png
+
+# Edge Function generated files (built from src/lib/batch/)
+supabase/functions/auto-alias/alias-*.ts
