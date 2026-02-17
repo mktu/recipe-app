@@ -37,14 +37,20 @@ export type Database = {
       ingredient_aliases: {
         Row: {
           alias: string
+          auto_generated: boolean | null
+          created_at: string | null
           ingredient_id: string
         }
         Insert: {
           alias: string
+          auto_generated?: boolean | null
+          created_at?: string | null
           ingredient_id: string
         }
         Update: {
           alias?: string
+          auto_generated?: boolean | null
+          created_at?: string | null
           ingredient_id?: string
         }
         Relationships: [
@@ -129,6 +135,7 @@ export type Database = {
         Row: {
           created_at: string | null
           embedding_generated_at: string | null
+          embedding_retry_count: number | null
           id: string
           image_url: string | null
           ingredients_linked: boolean | null
@@ -147,6 +154,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           embedding_generated_at?: string | null
+          embedding_retry_count?: number | null
           id?: string
           image_url?: string | null
           ingredients_linked?: boolean | null
@@ -165,6 +173,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           embedding_generated_at?: string | null
+          embedding_retry_count?: number | null
           id?: string
           image_url?: string | null
           ingredients_linked?: boolean | null
@@ -254,6 +263,13 @@ export type Database = {
           id: string
           name: string
           recipe_count: number
+        }[]
+      }
+      get_unmatched_ingredient_counts: {
+        Args: { limit_count?: number }
+        Returns: {
+          count: number
+          normalized_name: string
         }[]
       }
       search_recipes_by_embedding: {
