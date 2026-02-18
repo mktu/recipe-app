@@ -1,44 +1,29 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-18 (アーキテクチャドキュメント作成)
+2026-02-19 (LP hero画像の置き換え)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **アーキテクチャドキュメント作成**
-  - `docs/ARCHITECTURE.md` を新規作成
-  - システム構成、認証フロー、レシピ解析フロー、CI/CD等を図解
-- [x] **auto-alias Edge Functionの本番デプロイ**
-  - PRマージ後、CIでデプロイ完了
-  - JWT検証OFF設定完了
-  - pg_cronジョブ設定完了（1日1回呼び出し）
-- [x] **食材エイリアス自動生成機能（ADR-001）**
-  - 未マッチ食材をLLMで判定し、エイリアス登録または新規食材追加
-  - バッチ処理（1日1回、最大100件）
-  - 非同期パターンでpg_cronの5秒タイムアウトを回避
-- [x] **Edge Function共有ロジックのリファクタリング**
-  - `src/lib/batch/` にソースコードを配置（Node.js用）
-  - ビルドスクリプトでDeno用に変換してコピー
-  - ESLint警告を解消（max-lines, complexity）
-- [x] **CI/CD対応**
-  - PR時に `functions:build` を実行してビルド検証
-  - マージ後に Edge Function をデプロイ
-  - 生成ファイルは `.gitignore` で除外
-- [x] **ドキュメント整備**
-  - `docs/EDGE_FUNCTIONS.md` を作成
-  - `docs/ADR-001-ingredient-matching.md` を作成
+- [x] **LP hero画像の置き換え**
+  - `public/hero-mockup.png` を追加
+  - `hero-section.tsx` のPhoneMockupをコード描画から画像に変更
+  - 不要な `Frame 1.svg` を削除
 
 ## 進行中のタスク
-なし
+- [ ] **LP「シンプルで使いやすい」セクションの画像用意**
+  - LINEトーク画面（URL送信）と解析結果確認画面の2枚構成を予定
+  - ユーザーがスクリーンショットを用意中
 
 ## 次にやること（優先度順）
+- [ ] **LP「シンプルで使いやすい」セクションの画像追加**
+  - `screenshot-section.tsx` を更新
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
-- [ ] **LP用スクリーンショット画像の用意**
 - [ ] **OGP画像の作成**（1200×630px）
 
 ## 将来の改善案（実装保留）
@@ -67,11 +52,11 @@
 
 ## コミット履歴（直近）
 ```
+d476582 feat: replace LP hero mockup with actual screenshot
+1bceb9a docs: update SESSION.md for session handoff
 da698c4 docs: add architecture documentation
 7924111 Merge pull request #7 from mktu/feature/auto-alias-ingredients
 fb1fec2 docs: update SESSION.md for session handoff
-dd5560c docs: add Edge Functions development guide
-98ddaf9 chore: gitignore generated Edge Function files, build in CI
 ```
 
 ## GitHubリポジトリ
@@ -81,5 +66,5 @@ https://github.com/mktu/recipe-app
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
-- `docs/ADR-001-ingredient-matching.md` - 食材マッチング表記揺れ対応のADR
-- `docs/EDGE_FUNCTIONS.md` - Edge Functions開発ガイド
+- `src/components/features/lp/hero-section.tsx` - LP hero セクション
+- `src/components/features/lp/screenshot-section.tsx` - LP スクリーンショットセクション（次回更新予定）
