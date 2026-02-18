@@ -67,11 +67,11 @@
 
 ## コミット履歴（直近）
 ```
+da698c4 docs: add architecture documentation
+7924111 Merge pull request #7 from mktu/feature/auto-alias-ingredients
+fb1fec2 docs: update SESSION.md for session handoff
 dd5560c docs: add Edge Functions development guide
 98ddaf9 chore: gitignore generated Edge Function files, build in CI
-69955f6 refactor: split alias-generator into smaller modules for lint compliance
-448447b refactor: share alias-generator logic between Node.js and Edge Function
-abf2f35 refactor: use fetch-based Gemini API and async pattern for Edge Function
 ```
 
 ## GitHubリポジトリ
@@ -80,11 +80,6 @@ https://github.com/mktu/recipe-app
 ## 参照すべきファイル
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像
 - `docs/ADR-001-ingredient-matching.md` - 食材マッチング表記揺れ対応のADR
 - `docs/EDGE_FUNCTIONS.md` - Edge Functions開発ガイド
-- `src/lib/batch/alias-generator.ts` - エイリアス自動生成メイン処理
-- `src/lib/batch/alias-db.ts` - エイリアス自動生成DB操作
-- `src/lib/batch/alias-llm.ts` - エイリアス自動生成LLM操作
-- `scripts/auto-alias.ts` - ローカル実行用スクリプト
-- `scripts/build-edge-functions.ts` - Edge Functionビルドスクリプト
-- `supabase/functions/auto-alias/index.ts` - Edge Functionエントリーポイント
