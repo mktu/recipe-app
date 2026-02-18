@@ -1,6 +1,6 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import {
-  SearchIcon,
   MessageCircleIcon,
   ChevronDownIcon,
   CheckIcon,
@@ -110,67 +110,14 @@ function HeroContent({ lineFriendUrl }: { lineFriendUrl: string }) {
 function PhoneMockup() {
   return (
     <div className="flex justify-center lg:justify-end">
-      <div className="relative">
-        <div className="relative h-[420px] w-[200px] rounded-[2.5rem] border-4 border-foreground/20 bg-foreground/5 p-2 shadow-xl sm:h-[480px] sm:w-[230px]">
-          <div className="h-full w-full overflow-hidden rounded-[2rem] bg-card">
-            <div className="flex h-6 items-center justify-center bg-primary/10">
-              <div className="h-1 w-12 rounded-full bg-foreground/20" />
-            </div>
-            <div className="p-3">
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-                <SearchIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  食材で検索...
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1">
-                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] text-primary">
-                  鶏肉
-                </span>
-                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] text-primary">
-                  なす
-                </span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                  豚肉
-                </span>
-              </div>
-              <div className="mt-3 space-y-2">
-                <MockRecipeCard
-                  title="鶏肉となすの味噌炒め"
-                  source="クラシル"
-                  gradient="from-orange-200 to-amber-100"
-                />
-                <MockRecipeCard
-                  title="なすの揚げ浸し"
-                  source="DELISH KITCHEN"
-                  gradient="from-green-200 to-emerald-100"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="absolute -right-4 top-16 rounded-lg border bg-card px-3 py-2 shadow-lg">
-          <p className="text-[10px] font-medium text-accent">✨ 解析完了</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MockRecipeCard({
-  title,
-  source,
-  gradient,
-}: {
-  title: string
-  source: string
-  gradient: string
-}) {
-  return (
-    <div className="rounded-lg border bg-card p-2">
-      <div className={`h-16 rounded bg-linear-to-br ${gradient}`} />
-      <p className="mt-1 truncate text-[10px] font-medium">{title}</p>
-      <p className="text-[8px] text-muted-foreground">{source}</p>
+      <Image
+        src="/hero-mockup.png"
+        alt="RecipeHubアプリのスクリーンショット"
+        width={280}
+        height={560}
+        className="h-auto w-[200px] sm:w-[280px]"
+        priority
+      />
     </div>
   )
 }
