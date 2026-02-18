@@ -35,6 +35,7 @@ recipe-app/
 ├── seed/                 # シードデータ
 │   └── ingredients.json  # 食材マスター初期データ (152件)
 ├── docs/                 # 詳細ドキュメント
+│   ├── ARCHITECTURE.md   # アーキテクチャ全体像
 │   ├── LINE_SETUP.md     # LINE 開発環境構成
 │   ├── SUPABASE_LOCAL.md # ローカル Supabase セットアップ
 │   ├── DATABASE_DESIGN.md # DB設計詳細
