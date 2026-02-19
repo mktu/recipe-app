@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-19 (Edge Functions の verify_jwt 設定追加)
+2026-02-19 (バックログ整備・UX改善方針の議論)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
@@ -11,6 +11,9 @@
   - `supabase/config.toml` に全 Edge Functions の `verify_jwt = false` を追加
   - デプロイ毎に「Verify JWT with legacy secret」が有効になる問題を解決
   - 参考: [GitHub Issue #4059](https://github.com/supabase/cli/issues/4059)
+- [x] **バックログ管理ファイルの整備**
+  - `docs/backlogs/` ディレクトリを作成
+  - エピック3件をファイルとして整理（favorites, search-ux, line-recipe-list）
 
 ## 進行中のタスク
 - [ ] **LP「シンプルで使いやすい」セクションの画像用意**
@@ -25,6 +28,10 @@
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **OGP画像の作成**（1200×630px）
+- [ ] **エピック実装（詳細は `docs/backlogs/README.md` 参照）**
+  - お気に入り + 調理回数（favorites.md）
+  - 探すボトムシート（search-ux.md）
+  - LINEチャット縦リスト（line-recipe-list.md）
 
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
@@ -55,11 +62,11 @@
 
 ## コミット履歴（直近）
 ```
+0f9d071 docs: update SESSION.md for session handoff
 bc8ffa5 config: disable verify_jwt for Edge Functions by default
 6236315 docs: update SESSION.md for session handoff
 d476582 feat: replace LP hero mockup with actual screenshot
 1bceb9a docs: update SESSION.md for session handoff
-da698c4 docs: add architecture documentation
 ```
 
 ## GitHubリポジトリ
@@ -70,3 +77,4 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
 - `supabase/config.toml` - Edge Functions の verify_jwt 設定
+- `docs/backlogs/README.md` - エピック一覧（お気に入り・探す改善・LINE改善）
