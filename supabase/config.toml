@@ -361,6 +361,17 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Edge Functions の JWT 検証設定
+# Webhook等で外部からアクセスされる関数は verify_jwt = false に設定
+[functions.generate-embeddings]
+verify_jwt = false
+
+[functions.get-recipes]
+verify_jwt = false
+
+[functions.auto-alias]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
