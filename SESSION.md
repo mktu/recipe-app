@@ -1,16 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-19 (LP hero画像の置き換え)
+2026-02-19 (Edge Functions の verify_jwt 設定追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **LP hero画像の置き換え**
-  - `public/hero-mockup.png` を追加
-  - `hero-section.tsx` のPhoneMockupをコード描画から画像に変更
-  - 不要な `Frame 1.svg` を削除
+- [x] **Edge Functions の verify_jwt 設定**
+  - `supabase/config.toml` に全 Edge Functions の `verify_jwt = false` を追加
+  - デプロイ毎に「Verify JWT with legacy secret」が有効になる問題を解決
+  - 参考: [GitHub Issue #4059](https://github.com/supabase/cli/issues/4059)
 
 ## 進行中のタスク
 - [ ] **LP「シンプルで使いやすい」セクションの画像用意**
@@ -31,6 +31,9 @@
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
+- **Edge Functions の JWT 検証:**
+  - `config.toml` で `verify_jwt = false` を設定済み
+  - CI からのデプロイで自動的に適用される
 - **食材エイリアス自動生成:**
   - 初回登録時は未マッチのまま（翌日以降のバッチで補完）
   - Edge Functionは非同期パターン（202 Acceptedを即座に返す）
@@ -52,11 +55,11 @@
 
 ## コミット履歴（直近）
 ```
+bc8ffa5 config: disable verify_jwt for Edge Functions by default
+6236315 docs: update SESSION.md for session handoff
 d476582 feat: replace LP hero mockup with actual screenshot
 1bceb9a docs: update SESSION.md for session handoff
 da698c4 docs: add architecture documentation
-7924111 Merge pull request #7 from mktu/feature/auto-alias-ingredients
-fb1fec2 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -66,5 +69,4 @@ https://github.com/mktu/recipe-app
 - `requirements.md` - プロジェクト要件定義
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
-- `src/components/features/lp/hero-section.tsx` - LP hero セクション
-- `src/components/features/lp/screenshot-section.tsx` - LP スクリーンショットセクション（次回更新予定）
+- `supabase/config.toml` - Edge Functions の verify_jwt 設定
