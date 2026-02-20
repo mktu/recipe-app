@@ -66,6 +66,19 @@ npm run test:recipe --delay=2000
 合計: 10件
 ```
 
+## Flex Message プレビュー
+
+```bash
+npm run preview:flex           # デフォルト (5件)
+npm run preview:flex -- --count=3  # 件数指定 (1〜5)
+```
+
+出力された JSON を [LINE Flex Message Simulator](https://developers.line.biz/flex-simulator/) に貼り付けるとデプロイ前に見た目を確認できる。
+
+**ダミーデータに含まれるエッジケース:**
+- 画像なし（プレースホルダー表示の確認）
+- ソース名なし（レイアウト崩れの確認）
+
 ## LINE Botレスポンステスト
 
 ```bash
