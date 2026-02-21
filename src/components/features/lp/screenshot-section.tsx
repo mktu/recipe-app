@@ -1,4 +1,4 @@
-import { BookOpenIcon, SearchIcon } from 'lucide-react'
+import Image from 'next/image'
 
 export function ScreenshotSection() {
   return (
@@ -11,45 +11,28 @@ export function ScreenshotSection() {
           あなた専用のレシピ図鑑
         </p>
 
-        <div className="mt-12 flex justify-center gap-4">
-          <ScreenshotPlaceholder
-            icon={<BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />}
-            label="レシピ一覧画面"
-          />
-          <ScreenshotPlaceholder
-            icon={<SearchIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />}
-            label="食材検索画面"
-            className="hidden sm:block"
-          />
+        {/* mobile: scroll snap / desktop: side-by-side */}
+        <div className="mt-12 -mx-4 flex snap-x snap-mandatory overflow-x-auto sm:mx-0 sm:justify-center sm:overflow-visible">
+          <div className="flex w-full shrink-0 snap-center justify-center px-4 sm:w-auto sm:px-0">
+            <Image
+              src="/line-screenshot.webp"
+              alt="LINEトーク画面"
+              width={1024}
+              height={1916}
+              className="h-96 w-auto drop-shadow-xl"
+            />
+          </div>
+          <div className="flex w-full shrink-0 snap-center justify-center px-4 sm:w-auto sm:px-0 sm:ml-8">
+            <Image
+              src="/frame-screenshot.webp"
+              alt="解析結果確認画面"
+              width={990}
+              height={1916}
+              className="h-96 w-auto drop-shadow-xl"
+            />
+          </div>
         </div>
-
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          ※ 画像はイメージです
-        </p>
       </div>
     </section>
-  )
-}
-
-function ScreenshotPlaceholder({
-  icon,
-  label,
-  className = '',
-}: {
-  icon: React.ReactNode
-  label: string
-  className?: string
-}) {
-  return (
-    <div
-      className={`w-48 overflow-hidden rounded-2xl border bg-card shadow-lg ${className}`}
-    >
-      <div className="flex h-80 items-center justify-center bg-muted/50">
-        <div className="text-center">
-          {icon}
-          <p className="mt-2 text-xs text-muted-foreground">{label}</p>
-        </div>
-      </div>
-    </div>
   )
 }
