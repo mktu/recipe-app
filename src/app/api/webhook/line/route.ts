@@ -3,7 +3,7 @@ import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from 
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
-import { createRecipeMessage, RecipeCardData } from '@/lib/line/flex-message'
+import { createVerticalListMessage, RecipeCardData } from '@/lib/line/flex-message'
 import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt } from '@/lib/line/search-handler'
 
 const config = {
@@ -123,17 +123,19 @@ async function replyTest(replyToken: string, lineUserId: string): Promise<void> 
     return
   }
 
-  // Flex Messageでレシピカードを返す
+  // Flex Messageでレシピカードを返す（縦リスト）
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
   const recipeCards: RecipeCardData[] = recipes.map((r) => ({
     title: r.title,
-    url: r.url,
+    url: `https://liff.line.me/${liffId}/recipes/${r.id}`,
     imageUrl: r.image_url,
     sourceName: r.source_name,
   }))
 
+  const listUrl = `https://liff.line.me/${liffId}`
   await client.replyMessage({
     replyToken,
-    messages: [createRecipeMessage(recipeCards)],
+    messages: [createVerticalListMessage(recipeCards, listUrl, recipeCards.length)],
   })
 }
 

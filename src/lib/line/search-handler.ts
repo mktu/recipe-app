@@ -1,5 +1,5 @@
 import { messagingApi } from '@line/bot-sdk'
-import { createRecipeMessage, createSearchResultMessage, RecipeCardData } from './flex-message'
+import { createVerticalListMessage, RecipeCardData } from './flex-message'
 import { parseSearchQuery, ParsedSearchQuery } from './parse-search-query'
 import { searchRecipesForBot, SearchRecipeResult } from './search-recipes'
 import { buildIngredientQuickReply } from './quick-reply'
@@ -15,8 +15,16 @@ export function isIngredientSearchKeyword(text: string): boolean {
   return INGREDIENT_SEARCH_KEYWORDS.includes(normalizedText)
 }
 
+function toLiffDetailUrl(id: string): string {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+  return `https://liff.line.me/${liffId}/recipes/${id}`
+}
+
 const toCard = (r: SearchRecipeResult): RecipeCardData => ({
-  title: r.title, url: r.url, imageUrl: r.imageUrl, sourceName: r.sourceName,
+  title: r.title,
+  url: toLiffDetailUrl(r.id),
+  imageUrl: r.imageUrl,
+  sourceName: r.sourceName,
 })
 
 /** LIFF URLに検索クエリパラメータを付与 */
@@ -45,18 +53,12 @@ async function replyWithRecipes(
   recipes: SearchRecipeResult[],
   query: ParsedSearchQuery
 ): Promise<void> {
-  if (recipes.length >= 4) {
-    const moreUrl = buildLiffUrl(query)
-    await params.client.replyMessage({
-      replyToken: params.replyToken,
-      messages: [createSearchResultMessage(recipes.map(toCard), moreUrl, recipes.length)],
-    })
-  } else {
-    await params.client.replyMessage({
-      replyToken: params.replyToken,
-      messages: [createRecipeMessage(recipes.map(toCard))],
-    })
-  }
+  const top5 = recipes.slice(0, 5)
+  const listUrl = buildLiffUrl(query)
+  await params.client.replyMessage({
+    replyToken: params.replyToken,
+    messages: [createVerticalListMessage(top5.map(toCard), listUrl, recipes.length)],
+  })
 }
 
 /** 検索を実行して結果を返す */

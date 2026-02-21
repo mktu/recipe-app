@@ -118,3 +118,61 @@ export function createRecipeMessage(recipes: RecipeCardData[]): FlexMessage {
   }
   return createRecipeCarouselMessage(recipes)
 }
+
+function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
+  const textContents: messagingApi.FlexComponent[] = [
+    { type: 'text', text: recipe.title, weight: 'bold', size: 'sm', wrap: true, maxLines: 2 },
+  ]
+  if (recipe.sourceName) {
+    textContents.push({ type: 'text', text: recipe.sourceName, size: 'xs', color: COLORS.textMuted, margin: 'sm' })
+  }
+  return {
+    type: 'box',
+    layout: 'horizontal',
+    spacing: 'md',
+    paddingAll: 'md',
+    action: { type: 'uri', label: recipe.title, uri: recipe.url },
+    contents: [
+      { type: 'image', url: recipe.imageUrl || DEFAULT_IMAGE, size: 'sm', aspectRatio: '1:1', aspectMode: 'cover', flex: 0 },
+      { type: 'box', layout: 'vertical', justifyContent: 'center', contents: textContents },
+    ],
+  }
+}
+
+function buildListItems(recipes: RecipeCardData[]): messagingApi.FlexComponent[] {
+  const items: messagingApi.FlexComponent[] = []
+  recipes.forEach((recipe, index) => {
+    if (index > 0) items.push({ type: 'separator' })
+    items.push(createListItemBox(recipe))
+  })
+  return items
+}
+
+/** 縦リスト型 Flex Message（1バブルに複数レシピを縦並び） */
+export function createVerticalListMessage(
+  recipes: RecipeCardData[],
+  listUrl: string,
+  totalCount: number
+): FlexMessage {
+  return {
+    type: 'flex',
+    altText: `${totalCount}件のレシピが見つかりました`,
+    contents: {
+      type: 'bubble',
+      size: 'giga',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [{ type: 'text', text: `🔍 ${totalCount}件見つかりました`, weight: 'bold', size: 'md' }],
+      },
+      body: { type: 'box', layout: 'vertical', spacing: 'none', paddingAll: 'none', contents: buildListItems(recipes) },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'button', action: { type: 'uri', label: '📖 一覧をアプリで見る', uri: listUrl }, style: 'primary', color: COLORS.primary },
+        ],
+      },
+    },
+  }
+}
