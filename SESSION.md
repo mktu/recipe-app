@@ -1,19 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-19 (バックログ整備・UX改善方針の議論)
+2026-02-21 (LINEチャット縦リスト型Flex Message 実装完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **Edge Functions の verify_jwt 設定**
-  - `supabase/config.toml` に全 Edge Functions の `verify_jwt = false` を追加
-  - デプロイ毎に「Verify JWT with legacy secret」が有効になる問題を解決
-  - 参考: [GitHub Issue #4059](https://github.com/supabase/cli/issues/4059)
-- [x] **バックログ管理ファイルの整備**
-  - `docs/backlogs/` ディレクトリを作成
-  - エピック3件をファイルとして整理（favorites, search-ux, line-recipe-list）
+- [x] **LINEチャット縦リスト型 Flex Message への変更**
+  - カルーセル（横スクロール複数バブル）を廃止し、1バブル縦リストに統一
+  - 各アイテム: サムネイル + タイトル + ソース名、タップで LIFF `/recipes/:id` へ遷移
+  - 検索結果が全件表示（5件以下）の場合はフッターボタンを非表示
+  - `preview:flex` スクリプト追加（デプロイ前にシミュレーターで確認可能）
 
 ## 進行中のタスク
 - [ ] **LP「シンプルで使いやすい」セクションの画像用意**
@@ -21,6 +19,11 @@
   - ユーザーがスクリーンショットを用意中
 
 ## 次にやること（優先度順）
+- [ ] **LINEチャット縦リストの実機動作確認**
+  - `テスト` → 縦リスト表示
+  - 食材名・料理名検索 → 最大5件表示
+  - 各アイテムタップ → LIFF `/recipes/:id` へ遷移
+  - 6件以上のとき → フッターボタン表示
 - [ ] **LP「シンプルで使いやすい」セクションの画像追加**
   - `screenshot-section.tsx` を更新
 - [ ] **本番環境のSupabaseプロジェクト作成**
@@ -31,7 +34,6 @@
 - [ ] **エピック実装（詳細は `docs/backlogs/README.md` 参照）**
   - お気に入り + 調理回数（favorites.md）
   - 探すボトムシート（search-ux.md）
-  - LINEチャット縦リスト（line-recipe-list.md）
 
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
@@ -62,11 +64,11 @@
 
 ## コミット履歴（直近）
 ```
-0f9d071 docs: update SESSION.md for session handoff
-bc8ffa5 config: disable verify_jwt for Edge Functions by default
-6236315 docs: update SESSION.md for session handoff
-d476582 feat: replace LP hero mockup with actual screenshot
-1bceb9a docs: update SESSION.md for session handoff
+9903f96 Merge pull request #9 from mktu/feature/fix-flex-footer
+376662f fix: 全件表示時は「一覧をアプリで見る」ボタンを非表示にする
+ac99cd4 Merge pull request #8 from mktu/feature/line-recipe-list
+68f08b2 feat: LINE検索結果をカルーセルから縦リスト型Flex Messageに変更
+fb52651 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -77,4 +79,6 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
 - `supabase/config.toml` - Edge Functions の verify_jwt 設定
-- `docs/backlogs/README.md` - エピック一覧（お気に入り・探す改善・LINE改善）
+- `docs/backlogs/README.md` - エピック一覧（お気に入り・探す改善）
+- `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
+- `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト
