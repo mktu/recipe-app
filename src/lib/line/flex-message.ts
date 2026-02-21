@@ -154,6 +154,7 @@ export function createVerticalListMessage(
   listUrl: string,
   totalCount: number
 ): FlexMessage {
+  const hasMore = recipes.length < totalCount
   return {
     type: 'flex',
     altText: `${totalCount}件のレシピが見つかりました`,
@@ -166,13 +167,15 @@ export function createVerticalListMessage(
         contents: [{ type: 'text', text: `🔍 ${totalCount}件見つかりました`, weight: 'bold', size: 'md' }],
       },
       body: { type: 'box', layout: 'vertical', spacing: 'none', paddingAll: 'none', contents: buildListItems(recipes) },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          { type: 'button', action: { type: 'uri', label: '📖 一覧をアプリで見る', uri: listUrl }, style: 'primary', color: COLORS.primary },
-        ],
-      },
+      ...(hasMore && {
+        footer: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            { type: 'button', action: { type: 'uri', label: '📖 一覧をアプリで見る', uri: listUrl }, style: 'primary', color: COLORS.primary },
+          ],
+        },
+      }),
     },
   }
 }
