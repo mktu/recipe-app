@@ -1,27 +1,24 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-21 (LINEチャット縦リスト型Flex Message 実装完了・セッション終了)
+2026-02-22 (LPスクリーンショットセクション実装完了・セッション終了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **LINEチャット縦リスト型 Flex Message への変更**
-  - カルーセル（横スクロール複数バブル）を廃止し、1バブル縦リストに統一
-  - 各アイテム: サムネイル + タイトル + ソース名、タップで LIFF `/recipes/:id` へ遷移
-  - 検索結果が全件表示（5件以下）の場合はフッターボタンを非表示
-  - `preview:flex` スクリプト追加（デプロイ前にシミュレーターで確認可能）
+- [x] **LINEチャット縦リストの実機動作確認**（確認済み）
+- [x] **LPスクリーンショットセクションに実機画像を追加**
+  - SVG→WebP変換（高解像度・透明背景）で約97%圧縮（1.1MB→98KB）
+  - `drop-shadow` でフレーム形状に沿った影
+  - スマホ: CSS scroll snap で横スワイプ切り替え
+  - デスクトップ: 2枚横並び表示
+  - 使用ファイル: `public/line-screenshot.webp`、`public/frame-screenshot.webp`
 
 ## 進行中のタスク
-- [ ] **LP「シンプルで使いやすい」セクションの画像用意**
-  - LINEトーク画面（URL送信）と解析結果確認画面の2枚構成を予定
-  - ユーザーがスクリーンショットを用意中
+（なし）
 
 ## 次にやること（優先度順）
-- [x] **LINEチャット縦リストの実機動作確認**（完了）
-- [ ] **LP「シンプルで使いやすい」セクションの画像追加**
-  - `screenshot-section.tsx` を更新
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
@@ -64,11 +61,11 @@
 
 ## コミット履歴（直近）
 ```
+4c2bcf2 feat: LPスクリーンショットセクションに実機画像を追加
+a4b2e3d docs: update SESSION.md for session handoff
+38582d3 docs: update SESSION.md for session handoff
 9903f96 Merge pull request #9 from mktu/feature/fix-flex-footer
 376662f fix: 全件表示時は「一覧をアプリで見る」ボタンを非表示にする
-ac99cd4 Merge pull request #8 from mktu/feature/line-recipe-list
-68f08b2 feat: LINE検索結果をカルーセルから縦リスト型Flex Messageに変更
-fb52651 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -82,3 +79,6 @@ https://github.com/mktu/recipe-app
 - `docs/backlogs/README.md` - エピック一覧（お気に入り・探す改善）
 - `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
 - `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト
+- `src/components/features/lp/screenshot-section.tsx` - LPスクリーンショットセクション
+- `public/line-screenshot.webp` - LINEトーク画面スクリーンショット
+- `public/frame-screenshot.webp` - アプリ詳細画面スクリーンショット
