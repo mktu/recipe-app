@@ -1,19 +1,18 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-22 (LPスクリーンショットセクション実装完了・セッション終了)
+2026-02-22 (バックログ整理 - 探す体験をクイックリプライ方針に更新・セッション終了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **LINEチャット縦リストの実機動作確認**（確認済み）
-- [x] **LPスクリーンショットセクションに実機画像を追加**
-  - SVG→WebP変換（高解像度・透明背景）で約97%圧縮（1.1MB→98KB）
-  - `drop-shadow` でフレーム形状に沿った影
-  - スマホ: CSS scroll snap で横スワイプ切り替え
-  - デスクトップ: 2枚横並び表示
-  - 使用ファイル: `public/line-screenshot.webp`、`public/frame-screenshot.webp`
+- [x] **バックログ整理（探す体験 + データ準備）**
+  - `search-ux.md`: ボトムシート→クイックリプライに方針転換、Quick Reply 選択肢を4つに確定（お気に入り/よく作る/材料少なめ/時短）、リッチメニュー変更不要と明記
+  - `favorites.md`: 調理回数関連を切り出し、参照先をクイックリプライに修正
+  - `cook-count.md`: よく作る（調理回数カウント）バックログを新規作成
+  - `cooking-time.md`: 調理時間データ取得バックログを新規作成
+  - `README.md`: エピック一覧に新規2ファイルを追加
 
 ## 進行中のタスク
 （なし）
@@ -25,8 +24,10 @@
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **OGP画像の作成**（1200×630px）
 - [ ] **エピック実装（詳細は `docs/backlogs/README.md` 参照）**
-  - お気に入り + 調理回数（favorites.md）
-  - 探すボトムシート（search-ux.md）
+  - 探す体験の改善 - クイックリプライ（search-ux.md）
+  - お気に入り（favorites.md）
+  - よく作る - 調理回数カウント（cook-count.md）
+  - 調理時間データ取得（cooking-time.md）
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
@@ -61,11 +62,11 @@
 
 ## コミット履歴（直近）
 ```
+74b1289 docs: バックログ整理 - 探す体験をクイックリプライ方針に更新
+4a1fcc4 docs: update SESSION.md for session handoff
 4c2bcf2 feat: LPスクリーンショットセクションに実機画像を追加
 a4b2e3d docs: update SESSION.md for session handoff
 38582d3 docs: update SESSION.md for session handoff
-9903f96 Merge pull request #9 from mktu/feature/fix-flex-footer
-376662f fix: 全件表示時は「一覧をアプリで見る」ボタンを非表示にする
 ```
 
 ## GitHubリポジトリ
@@ -76,9 +77,10 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・ガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
 - `supabase/config.toml` - Edge Functions の verify_jwt 設定
-- `docs/backlogs/README.md` - エピック一覧（お気に入り・探す改善）
+- `docs/backlogs/README.md` - エピック一覧
+- `docs/backlogs/search-ux.md` - 探す体験（クイックリプライ）方針
+- `docs/backlogs/favorites.md` - お気に入りバックログ
+- `docs/backlogs/cook-count.md` - よく作る（調理回数）バックログ
+- `docs/backlogs/cooking-time.md` - 調理時間データ取得バックログ
 - `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
 - `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト
-- `src/components/features/lp/screenshot-section.tsx` - LPスクリーンショットセクション
-- `public/line-screenshot.webp` - LINEトーク画面スクリーンショット
-- `public/frame-screenshot.webp` - アプリ詳細画面スクリーンショット
