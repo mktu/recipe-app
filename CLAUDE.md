@@ -225,6 +225,11 @@ LINE_CHANNEL_ACCESS_TOKEN=
 SESSION.md を読んで現在の状態を把握してください
 ```
 
+### バックログ実装タスク着手時
+
+`docs/backlogs/` に記載されたエピックの実装に着手する場合は、
+プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
+
 ### SESSION.md の更新タイミング
 
 以下のタイミングで `SESSION.md` を更新する:
