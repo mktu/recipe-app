@@ -1,18 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-22 (バックログ整理 - 探す体験をクイックリプライ方針に更新・セッション終了)
+2026-02-24 (cooking_time_minutes 実装・マージ完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **cooking_time_minutes 実装（PR #10 マージ済み）**
+  - DB: `recipes` テーブルに `cooking_time_minutes INTEGER` カラム追加
+  - JSON-LD: ISO 8601 パーサー（PT1H30M→90分）で `cookTime`→`totalTime` の順に取得
+  - `__NEXT_DATA__`（Nadia）: `cookTime` フィールドを取得
+  - Gemini フォールバック: スキーマ・プロンプトに調理時間抽出ルールを追加
 - [x] **バックログ整理（探す体験 + データ準備）**
-  - `search-ux.md`: ボトムシート→クイックリプライに方針転換、Quick Reply 選択肢を4つに確定（お気に入り/よく作る/材料少なめ/時短）、リッチメニュー変更不要と明記
-  - `favorites.md`: 調理回数関連を切り出し、参照先をクイックリプライに修正
-  - `cook-count.md`: よく作る（調理回数カウント）バックログを新規作成
-  - `cooking-time.md`: 調理時間データ取得バックログを新規作成
-  - `README.md`: エピック一覧に新規2ファイルを追加
+  - `search-ux.md`: ボトムシート→クイックリプライに方針転換、Quick Reply 選択肢を4つに確定（お気に入り/よく作る/材料少なめ/時短）
+  - `cook-count.md` / `cooking-time.md`: バックログ新規作成
 
 ## 進行中のタスク
 （なし）
@@ -27,7 +29,7 @@
   - 探す体験の改善 - クイックリプライ（search-ux.md）
   - お気に入り（favorites.md）
   - よく作る - 調理回数カウント（cook-count.md）
-  - 調理時間データ取得（cooking-time.md）
+  - ~~調理時間データ取得（cooking-time.md）~~ ← **完了**
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
@@ -62,11 +64,11 @@
 
 ## コミット履歴（直近）
 ```
+9f4f3c6 Merge pull request #10 from mktu/feature/add-cooking-time
+89350c5 feat: recipes テーブルに cooking_time_minutes カラムを追加
+b1222fc docs: update SESSION.md for session handoff
 74b1289 docs: バックログ整理 - 探す体験をクイックリプライ方針に更新
 4a1fcc4 docs: update SESSION.md for session handoff
-4c2bcf2 feat: LPスクリーンショットセクションに実機画像を追加
-a4b2e3d docs: update SESSION.md for session handoff
-38582d3 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
