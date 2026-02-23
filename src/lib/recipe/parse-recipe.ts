@@ -48,6 +48,7 @@ async function buildParsedRecipe(
     imageUrl: extraction.imageUrl,
     ingredientIds: matchedIngredients.map((m) => m.ingredientId),
     memo: '',
+    cookingTimeMinutes: extraction.cookingTimeMinutes ?? null,
   }
 }
 
@@ -106,6 +107,7 @@ async function parseWithJinaGemini(url: string): Promise<ParsedRecipe | null> {
     imageUrl: extraction.imageUrl || '',
     ingredientIds: matchedIngredients.map((m) => m.ingredientId),
     memo: '',
+    cookingTimeMinutes: extraction.cookingTimeMinutes ?? null,
   }
 }
 

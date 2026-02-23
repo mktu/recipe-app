@@ -203,6 +203,7 @@ async function insertRecipe(client: TypedSupabaseClient, userId: string, input: 
     memo: input.memo || null,
     // 食材マッチングが完了している場合は true
     ingredients_linked: input.ingredientIds.length > 0,
+    cooking_time_minutes: input.cookingTimeMinutes ?? null,
   }
   const { data, error } = await client.from('recipes').insert(recipeData).select('id').single()
   if (error) throw error

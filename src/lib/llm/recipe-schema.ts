@@ -12,6 +12,12 @@ export const recipeExtractionSchema = z.object({
     .array(z.string())
     .max(5)
     .describe('メイン食材（調味料を除く、最大5つ）'),
+  cookingTimeMinutes: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe('調理時間（分）。不明の場合は null'),
 })
 
 export type RecipeExtraction = z.infer<typeof recipeExtractionSchema>

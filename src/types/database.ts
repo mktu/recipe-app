@@ -133,6 +133,7 @@ export type Database = {
       }
       recipes: {
         Row: {
+          cooking_time_minutes: number | null
           created_at: string | null
           embedding_generated_at: string | null
           embedding_retry_count: number | null
@@ -152,6 +153,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          cooking_time_minutes?: number | null
           created_at?: string | null
           embedding_generated_at?: string | null
           embedding_retry_count?: number | null
@@ -171,6 +173,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          cooking_time_minutes?: number | null
           created_at?: string | null
           embedding_generated_at?: string | null
           embedding_retry_count?: number | null

@@ -14,4 +14,5 @@ export interface JsonLdExtraction {
   sourceName: string
   imageUrl: string
   ingredients: string[] // recipeIngredientから抽出した食材名
+  cookingTimeMinutes?: number | null
 }

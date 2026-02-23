@@ -171,6 +171,7 @@ function buildPrompt(content: string, sourceUrl: string): string {
    - 主要な食材のみ抽出（最大5つ）
    - 可能な限り以下のリストの表記に合わせる
 4. 画像URL: メイン料理画像の絶対URL（見つからない場合は空文字）
+5. 調理時間: 分単位の整数で返す（「30分」→30、「1時間」→60、「1時間30分」→90）。不明な場合は null
 
 ## 参照用食材リスト
 ${ingredientList}
