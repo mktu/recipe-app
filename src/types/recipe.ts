@@ -42,6 +42,7 @@ export interface ParsedRecipe {
   imageUrl: string
   ingredientIds: string[]
   memo: string
+  cookingTimeMinutes?: number | null
 }
 
 /** レシピ作成入力 */
@@ -53,6 +54,7 @@ export interface CreateRecipeInput {
   imageUrl?: string
   ingredientIds: string[]
   memo?: string
+  cookingTimeMinutes?: number | null
 }
 
 /** 材料（分量付き） */

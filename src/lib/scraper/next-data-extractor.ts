@@ -19,6 +19,7 @@ interface NadiaRecipe {
   imageSet?: Array<{
     path?: string
   }>
+  cookTime?: number
 }
 
 /**
@@ -106,6 +107,7 @@ function extractNadiaRecipe(data: unknown): JsonLdExtraction | null {
     sourceName: 'Nadia',
     imageUrl,
     ingredients,
+    cookingTimeMinutes: recipe.cookTime ? recipe.cookTime : null,
   }
 }
 

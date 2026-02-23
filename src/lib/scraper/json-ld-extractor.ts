@@ -15,6 +15,8 @@ interface ParsedRecipeJsonLd {
   image?: unknown
   recipeIngredient?: string[]
   publisher?: unknown
+  cookTime?: unknown
+  totalTime?: unknown
 }
 
 /**
@@ -110,6 +112,21 @@ function findRecipeSchema(data: unknown): ParsedRecipeJsonLd | null {
 }
 
 /**
+ * ISO 8601 duration（例: PT20M, PT1H30M, PT1H, PT1200S）を分に変換
+ * 0以下の場合はnullを返す
+ */
+function parseIso8601Duration(value: unknown): number | null {
+  if (typeof value !== 'string') return null
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(value)
+  if (!match) return null
+  const hours = parseInt(match[1] ?? '0', 10)
+  const minutes = parseInt(match[2] ?? '0', 10)
+  const seconds = parseInt(match[3] ?? '0', 10)
+  const total = hours * 60 + minutes + Math.round(seconds / 60)
+  return total > 0 ? total : null
+}
+
+/**
  * RecipeオブジェクトをパースしてParsedRecipeJsonLdに変換
  */
 function parseRecipeObject(obj: Record<string, unknown>): ParsedRecipeJsonLd | null {
@@ -123,6 +140,8 @@ function parseRecipeObject(obj: Record<string, unknown>): ParsedRecipeJsonLd | n
     image: obj['image'],
     recipeIngredient: isStringArray(recipeIngredient) ? recipeIngredient : undefined,
     publisher: obj['publisher'],
+    cookTime: obj['cookTime'],
+    totalTime: obj['totalTime'],
   }
 }
 
@@ -221,11 +240,14 @@ export function extractRecipeFromJsonLd(
   for (const block of blocks) {
     const recipe = findRecipeSchema(block)
     if (recipe && recipe.recipeIngredient?.length) {
+      const cookingTimeMinutes =
+        parseIso8601Duration(recipe.cookTime) ?? parseIso8601Duration(recipe.totalTime)
       return {
         title: recipe.name,
         sourceName: extractSourceName(recipe.publisher, sourceUrl),
         imageUrl: extractImageUrl(recipe.image),
         ingredients: normalizeIngredients(recipe.recipeIngredient),
+        cookingTimeMinutes: cookingTimeMinutes ?? null,
       }
     }
   }
