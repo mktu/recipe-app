@@ -22,6 +22,7 @@
 - `memo`: String (ユーザーメモ)
 - `view_count`: Integer (閲覧回数、デフォルト 0)
 - `last_viewed_at`: Timestamp (最終閲覧日時)
+- `cooking_time_minutes`: Integer (調理時間・分。不明の場合は NULL)
 - `ingredients_linked`: Boolean (食材マッチング完了フラグ、デフォルト false)
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
