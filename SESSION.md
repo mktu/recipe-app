@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-24 (cooking_time_minutes 実装・マージ完了)
+2026-02-24 (cooking_time_minutes 実装・マージ完了・セッション終了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
@@ -15,6 +15,8 @@
 - [x] **バックログ整理（探す体験 + データ準備）**
   - `search-ux.md`: ボトムシート→クイックリプライに方針転換、Quick Reply 選択肢を4つに確定（お気に入り/よく作る/材料少なめ/時短）
   - `cook-count.md` / `cooking-time.md`: バックログ新規作成
+- [x] **CLAUDE.md 改善**
+  - バックログ実装タスク着手時に `docs/ARCHITECTURE.md` を読むルールを追加
 
 ## 進行中のタスク
 （なし）
@@ -33,7 +35,6 @@
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
-- スキル追加は現状不要と判断（CLAUDE.md カスタムコマンド方式で十分）
 
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
@@ -64,11 +65,11 @@
 
 ## コミット履歴（直近）
 ```
+a28c650 docs: バックログ実装タスク着手時にARCHITECTURE.mdを読むルールを追加
+831a122 docs: cooking-time バックログを完了ステータスに更新
+2722f18 docs: update SESSION.md - cooking_time_minutes 実装完了
 9f4f3c6 Merge pull request #10 from mktu/feature/add-cooking-time
 89350c5 feat: recipes テーブルに cooking_time_minutes カラムを追加
-b1222fc docs: update SESSION.md for session handoff
-74b1289 docs: バックログ整理 - 探す体験をクイックリプライ方針に更新
-4a1fcc4 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
