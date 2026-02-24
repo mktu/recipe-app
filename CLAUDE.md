@@ -6,44 +6,25 @@
 
 **ビジョン:** 「献立の意思決定コストをゼロにする」
 
-詳細な要件は `requirements.md` を参照。
+プロダクト要件は `requirements.md` を、機能詳細は `docs/backlogs/` を、アーキテクチャ全体像は `docs/ARCHITECTURE.md` を参照。
 
 ## 技術スタック
 
 - **Frontend:** Next.js (App Router), TypeScript
 - **Styling:** Tailwind CSS, shadcn/ui
 - **Backend/DB:** Supabase (Auth, PostgreSQL)
-- **LLM API:** Gemini 1.5 Flash (Vercel AI SDK 経由)
-- **Scraper:** Jina Reader API
+- **LLM API:** Gemini 2.5 Flash (Vercel AI SDK 経由)
+- **Scraper:** JSON-LD 抽出（優先）+ Jina Reader API（フォールバック）
 - **Platform:** LINE LIFF
 
 ## ディレクトリ構造
 
-```
-recipe-app/
-├── src/
-│   ├── app/              # Next.js App Router
-│   ├── components/
-│   │   ├── ui/           # shadcn/ui コンポーネント
-│   │   └── features/     # 機能別コンポーネント
-│   ├── lib/
-│   │   ├── auth/         # 認証プロバイダー (LIFF / Dev)
-│   │   ├── db/           # Supabase クライアント・クエリ
-│   │   ├── llm/          # LLM 関連 (レシピ解析)
-│   │   └── utils.ts      # ユーティリティ
-│   └── types/            # 型定義
-├── seed/                 # シードデータ
-│   └── ingredients.json  # 食材マスター初期データ (152件)
-├── docs/                 # 詳細ドキュメント
-│   ├── ARCHITECTURE.md   # アーキテクチャ全体像
-│   ├── LINE_SETUP.md     # LINE 開発環境構成
-│   ├── SUPABASE_LOCAL.md # ローカル Supabase セットアップ
-│   ├── DATABASE_DESIGN.md # DB設計詳細
-│   └── EDGE_FUNCTIONS.md # Edge Functions 開発ガイド
-├── requirements.md       # プロジェクト要件定義書
-├── SESSION.md            # セッション引き継ぎ用ステータス
-└── CLAUDE.md             # このファイル
-```
+詳細は `docs/ARCHITECTURE.md` を参照。主要なパス：
+
+- `src/lib/` - ビジネスロジック（`auth/`, `db/`, `line/`, `scraper/`, `recipe/` 等）
+- `src/components/features/` - 機能別コンポーネント
+- `src/hooks/` - カスタム hooks
+- `docs/backlogs/` - エピック別バックログ
 
 ## 開発ルール
 
@@ -111,31 +92,6 @@ ESLint で以下の警告を設定済み（肥大化防止）:
 2. テストしたい単位 → 関数/hooks として切り出す
 3. 責務が複数ある → ファイル分割
 
-### 認証の抽象化
-
-LIFF 環境に依存せず開発できるよう、認証レイヤーを抽象化する:
-
-```typescript
-// lib/auth/index.ts で環境に応じて切り替え
-// 開発時: DevAuthProvider (モック)
-// 本番時: LIFFAuthProvider
-```
-
-開発時は `NODE_ENV=development` で固定のダミーユーザーを使用。
-
-### DB 設計のポイント
-
-- 食材は `ingredients` テーブルで正規化管理
-- AI が出力した食材は `ingredient_aliases` で名寄せ
-- レシピと食材の紐づけは `recipe_ingredients` 中間テーブル
-- 詳細は `docs/DATABASE_DESIGN.md` を参照
-
-### LLM 連携のポイント
-
-- Vercel AI SDK を使用し、プロバイダーを抽象化
-- 食材抽出時は `seed/ingredients.json` のマスターリストを参照
-- エイリアステーブルで表記ゆれを吸収
-
 ## よく使うコマンド
 
 ```bash
@@ -156,6 +112,12 @@ npx shadcn@latest add [component-name]
 
 # 埋め込みバックフィル（既存レシピのベクトル生成）
 npm run backfill:embeddings
+
+# Edge Functions ビルド（共有ロジック変更後に実行）
+npm run functions:build
+
+# DB 型定義更新
+supabase gen types typescript --local > src/types/database.ts
 ```
 
 その他のスクリプト（レシピ登録テスト等）は `scripts/README.md` を参照。
@@ -168,23 +130,9 @@ npm run backfill:embeddings
 
 ## 環境構築
 
-### ローカル Supabase
-
-詳細は `docs/SUPABASE_LOCAL.md` を参照。
-
-```bash
-# 起動
-supabase start
-
-# DB リセット（マイグレーション + シード）
-supabase db reset
-
-# Studio: http://127.0.0.1:54323
-```
-
-### LINE 開発環境
-
-詳細は `docs/LINE_SETUP.md` を参照。
+- **ローカル Supabase:** `docs/SUPABASE_LOCAL.md` を参照
+- **LINE 開発環境:** `docs/LINE_SETUP.md` を参照
+- **アーキテクチャ・環境構成:** `docs/ARCHITECTURE.md` を参照
 
 ## 環境変数
 
@@ -207,13 +155,7 @@ LINE_CHANNEL_SECRET=
 LINE_CHANNEL_ACCESS_TOKEN=
 ```
 
-## 実装フェーズ
-
-1. **フェーズ 1:** Web/LIFF 基盤と DB 連携
-2. **フェーズ 2:** AI パース (Jina Reader + Gemini)
-3. **フェーズ 3:** LINE Messaging API 連携
-
-現在: **フェーズ 1 の準備段階**
+> `NEXT_PUBLIC_LIFF_ID` を空にすると DevAuthProvider（モックユーザー）で動作
 
 ## セッション引き継ぎ
 

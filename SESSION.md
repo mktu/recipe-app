@@ -1,21 +1,21 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-24 (LINE検索結果のリンクを元サイトURLに変更・セッション終了)
+2026-02-24 (ドキュメント整理・スキル追加・セッション終了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **ドキュメント整理**
+  - `CLAUDE.md`: ディレクトリ構造を実態に合わせ更新、ARCHITECTURE.md との重複セクション削除、参照リンクの役割を明確化
+  - `requirements.md`: プロダクト要件（ユースケース・機能要件・非機能要件）のみに絞り込み、技術詳細を削除
+  - `docs/ARCHITECTURE.md`: ディレクトリ構造セクションを追加
+- [x] **スキル追加**
+  - `/start-session`: SESSION.md を読んで状態サマリーを表示
+  - `end-session` に「ドキュメント更新チェック」ステップを追加（git diff で変更に応じた確認）
 - [x] **LINE検索結果のリンクを元サイトURLに変更**
-  - `src/lib/line/search-handler.ts`: `toLiffDetailUrl()` を削除し `r.url`（元レシピサイトURL）を直接使用
-  - 検索結果タップ → Cookpad / Nadia 等のレシピサイトへ直接遷移
-  - フッター「一覧をアプリで見る」ボタンは LIFF アプリへのリンクを維持
 - [x] **cooking_time_minutes 実装（PR #10 マージ済み）**
-  - DB: `recipes` テーブルに `cooking_time_minutes INTEGER` カラム追加
-  - JSON-LD: ISO 8601 パーサー（PT1H30M→90分）で `cookTime`→`totalTime` の順に取得
-  - `__NEXT_DATA__`（Nadia）: `cookTime` フィールドを取得
-  - Gemini フォールバック: スキーマ・プロンプトに調理時間抽出ルールを追加
 
 ## 進行中のタスク
 （なし）
@@ -64,25 +64,24 @@
 
 ## コミット履歴（直近）
 ```
+16fbc15 docs: cooking_time_minutes をDB設計・要件定義に追記
+6facf71 docs: update SESSION.md for session handoff
 15dc8dd feat: LINE検索結果のレシピリンクを元サイトURLに変更
 11a0dbe docs: update SESSION.md for session handoff
 a28c650 docs: バックログ実装タスク着手時にARCHITECTURE.mdを読むルールを追加
-831a122 docs: cooking-time バックログを完了ステータスに更新
-2722f18 docs: update SESSION.md - cooking_time_minutes 実装完了
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
-- `requirements.md` - プロジェクト要件定義
-- `CLAUDE.md` - 開発ルール・ガイド
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像
-- `supabase/config.toml` - Edge Functions の verify_jwt 設定
+- `requirements.md` - プロダクト要件（ユースケース・機能要件）
+- `CLAUDE.md` - 開発ルール・コマンド・スキル
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
 - `docs/backlogs/search-ux.md` - 探す体験（クイックリプライ）方針
 - `docs/backlogs/favorites.md` - お気に入りバックログ
 - `docs/backlogs/cook-count.md` - よく作る（調理回数）バックログ
-- `docs/backlogs/cooking-time.md` - 調理時間データ取得バックログ
+- `supabase/config.toml` - Edge Functions の verify_jwt 設定
 - `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
 - `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト

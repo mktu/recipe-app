@@ -4,18 +4,19 @@
 
 1. [概要](#概要)
 2. [技術スタック](#技術スタック)
-3. [環境構成](#環境構成)
-4. [システム構成図](#システム構成図)
-5. [ページ構成](#ページ構成)
-6. [API構成](#api構成)
-7. [Edge Functions](#edge-functions)
-8. [データベース設計](#データベース設計)
-9. [認証フロー](#認証フロー)
-10. [レシピ解析フロー](#レシピ解析フロー)
-11. [食材名寄せフロー](#食材名寄せフロー)
-12. [CI/CD](#cicd)
+3. [ディレクトリ構造](#ディレクトリ構造)
+4. [環境構成](#環境構成)
+5. [システム構成図](#システム構成図)
+6. [ページ構成](#ページ構成)
+7. [API構成](#api構成)
+8. [Edge Functions](#edge-functions)
+9. [データベース設計](#データベース設計)
+10. [認証フロー](#認証フロー)
+11. [レシピ解析フロー](#レシピ解析フロー)
+12. [食材名寄せフロー](#食材名寄せフロー)
+13. [CI/CD](#cicd)
 
-> ディレクトリ構造・開発ルールは `CLAUDE.md` を参照
+> 開発ルール・コマンドは `CLAUDE.md` を参照
 
 ---
 
@@ -75,6 +76,43 @@
 | AI | Vercel AI SDK + Google Gemini |
 | LINE | LIFF SDK, Messaging API SDK |
 | Validation | Zod |
+
+---
+
+## ディレクトリ構造
+
+```
+recipe-app/
+├── src/
+│   ├── app/
+│   │   ├── (protected)/      # 認証必須ページ（一覧・詳細・登録）
+│   │   ├── (public)/         # 認証不要ページ（LP・利用規約等）
+│   │   └── api/              # API Routes
+│   ├── components/
+│   │   ├── ui/               # shadcn/ui コンポーネント
+│   │   ├── features/         # 機能別コンポーネント
+│   │   └── providers/        # Context プロバイダー
+│   ├── hooks/                # カスタム hooks
+│   ├── lib/
+│   │   ├── auth/             # 認証プロバイダー (LIFF / Dev)
+│   │   ├── batch/            # Edge Functions 共有ロジック（Node.js）
+│   │   ├── db/               # Supabase クライアント・クエリ
+│   │   ├── embedding/        # ベクトル埋め込み
+│   │   ├── line/             # LINE Bot・Flex Message
+│   │   ├── llm/              # LLM 関連 (レシピ解析)
+│   │   ├── recipe/           # レシピ処理ロジック
+│   │   └── scraper/          # JSON-LD・Jina スクレイパー
+│   └── types/                # 型定義
+├── supabase/
+│   ├── functions/            # Edge Functions (Deno)
+│   └── migrations/           # DB マイグレーション
+├── seed/                     # シードデータ
+│   └── ingredients.json      # 食材マスター初期データ
+├── docs/                     # ドキュメント
+│   ├── backlogs/             # エピック別バックログ
+│   └── ...
+└── scripts/                  # 開発・運用スクリプト
+```
 
 ---
 

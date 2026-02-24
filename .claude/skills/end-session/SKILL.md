@@ -7,6 +7,22 @@ description: セッションを終了する前に SESSION.md を更新
 
 以下の処理を順番に実行してください：
 
+## 0. ドキュメント更新チェック
+
+`git diff main HEAD --name-only` でセッション中の変更ファイルを確認し、
+以下の対応表に基づいて更新漏れのドキュメントがないか確認する。
+問題なければスキップ。
+
+| 変更されたファイル | 確認すべきドキュメント |
+|---|---|
+| `supabase/migrations/` | `docs/DATABASE_DESIGN.md`, `docs/ARCHITECTURE.md` |
+| `supabase/functions/` | `docs/EDGE_FUNCTIONS.md`, `docs/ARCHITECTURE.md` |
+| `src/lib/line/` | `docs/ARCHITECTURE.md` |
+| `src/app/api/` | `docs/ARCHITECTURE.md`（API構成セクション） |
+| バックログのエピックが完了 | 該当の `docs/backlogs/*.md` |
+
+更新が必要なドキュメントがあれば、SESSION.md 更新の前にユーザーに確認する。
+
 ## 1. SESSION.md を更新
 
 以下のセクションを最新状態に更新：

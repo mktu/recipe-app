@@ -6,6 +6,8 @@
 - **ビジョン:** 「献立の意思決定コストをゼロにする」
 - **コンセプト:** 複数のレシピサイトや SNS に散らばったお気に入りレシピを URL 一つで集約し、冷蔵庫の余り物から「自分が認めたレシピ」を爆速で検索できる自分専用のレシピ図鑑。
 
+> 技術スタック・アーキテクチャは `docs/ARCHITECTURE.md` を参照。
+
 ---
 
 ## 2. 主要ユースケース
@@ -52,7 +54,6 @@
 - **全文検索:** レシピ名やメモからのキーワード検索。
   - ハイブリッド検索: ILIKE 部分一致 + ベクトル類似検索
   - 表記ゆれ対応（例：「白出汁」→「白だし」）
-  - 埋め込みモデル: Google `gemini-embedding-001` (768次元)
 - **ソート:** 登録順、閲覧順など。
 
 ### 3.3 レシピ管理機能
@@ -68,98 +69,7 @@
 
 ---
 
-## 4. 技術スタック
-
-- **Frontend:** Next.js (App Router), TypeScript
-- **Styling:** Tailwind CSS, shadcn/ui
-- **Backend/DB:** Supabase (Auth, PostgreSQL)
-- **LLM API:** Gemini 2.5 Flash (無料枠活用)
-- **LLM 抽象化:** Vercel AI SDK (将来的なプロバイダー切り替えに対応)
-- **Scraper:**
-  - JSON-LD 抽出（schema.org/Recipe 対応サイト向け、高速）
-  - Jina Reader API（フォールバック用）
-- **Platform:** LINE LIFF (LINE 内アプリ)
-
----
-
-## 5. レシピ解析ロジック（詳細）
-
-### 解析フロー（2段階）
-
-```
-URL → HTML取得 → JSON-LD抽出 → [成功?]
-                                ├─ Yes → 食材マッチング → 完了（高速）
-                                └─ No  → Jina Reader → Gemini → 食材マッチング → 完了
-```
-
-### Strategy 1: JSON-LD 抽出（優先）
-
-多くのレシピサイト（DELISH KITCHEN, クラシル等）は schema.org/Recipe の JSON-LD を埋め込んでいる。
-
-1. **入力:** HTML ページ
-2. **処理:** `<script type="application/ld+json">` から Recipe オブジェクトを抽出
-3. **出力:** タイトル、材料リスト、画像URL、サイト名、調理時間（`cookTime` → `totalTime` の順、ISO 8601 をパース）
-
-**メリット:** LLM 不要で高速（1-2秒）
-
-### Strategy 2: Jina Reader + Gemini（フォールバック）
-
-JSON-LD がないサイト向け。
-
-1. **入力:** Jina Reader で取得したテキストデータ
-2. **処理（Gemini）:**
-   - 膨大なテキストから「材料」セクションを特定
-   - 調味料（塩、醤油等）を除外し、メインの食材のみを抽出
-   - 調理時間を分単位の整数で抽出
-3. **出力:** 構造化された JSON データ
-
----
-
-## 6. データベース設計
-
-詳細は `docs/DATABASE_DESIGN.md` を参照。
-
-### 概要
-
-- `users` - ユーザー情報（LINE連携）
-- `recipes` - レシピ情報（URL、タイトル、材料等）
-- `ingredients` - 食材マスター
-- `ingredient_aliases` - 食材の同義語辞書
-- `recipe_ingredients` - レシピと食材の紐づけ（中間テーブル）
-
-### ER図（概要）
-
-```
-users ─────< recipes >───── recipe_ingredients >───── ingredients
-                                                           │
-                                              ingredient_aliases
-```
-
----
-
-## 7. 実装の境界線とフェーズ分割
-
-### フェーズ 1：Web/LIFF 基盤と DB 連携（最優先）
-
-- Supabase と Next.js の連携。
-- 手動でのレシピ登録と一覧表示。
-- 食材タグによる検索機能の実装。
-
-### フェーズ 2：AI パースの実装
-
-- JSON-LD 抽出による高速解析（schema.org/Recipe 対応サイト）
-- Jina Reader + Gemini API によるフォールバック抽出
-- URL 入力のみで保存が完了する体験の構築
-- 食材マッチング精度改善（正規化 + 部分一致）
-- 親子関係による検索拡張
-
-### フェーズ 3：LINE Messaging API 連携
-
-- LINE トーク画面から URL を送ると自動で保存される機能。
-
----
-
-## 8. 非機能要件
+## 4. 非機能要件
 
 - **レスポンス:** 食材検索は 1 秒以内に完了すること。
 - **モバイル UI:** 片手で操作できるボタン配置（親指が届く範囲に検索・登録ボタン）。
@@ -167,50 +77,12 @@ users ─────< recipes >───── recipe_ingredients >────
 
 ---
 
-## 9. 開発環境・テスト方針
-
-### 認証の抽象化
-
-LIFF 環境に依存せず開発できるよう、認証レイヤーを抽象化する。
-
-```
-認証プロバイダー（抽象化）
-├── LIFFAuthProvider   ← 本番用（LINE ログイン）
-└── DevAuthProvider    ← 開発用（モック認証）
-```
-
-- 環境変数 `NODE_ENV` で切り替え
-- 開発時は固定のダミーユーザーでログイン済み扱い
-
-### 開発フロー
-
-| フェーズ | 認証 | 確認方法 |
-|----------|------|----------|
-| 機能開発 | DevAuth（モック） | `localhost:3000` でブラウザ確認 |
-| LIFF 統合テスト | LIFF | ngrok + LINE アプリで実機確認 |
-| 本番 | LIFF | Vercel + LINE LIFF |
-
-### LIFF 実機確認が必要な場面
-
-以下の LIFF 固有機能をテストする時のみ実機確認を行う：
-
-- `liff.shareTargetPicker()`（LINE 共有）
-- `liff.sendMessages()`（トークに送信）
-- LINE ログインの UI/UX 確認
-
-### ngrok によるローカル公開
-
-```bash
-npx ngrok http 3000
-# 出力された https://xxxx.ngrok.io を LIFF Endpoint URL に設定
-```
-
----
-
-## 10. 将来の拡張方針（MVP 以降）
+## 5. 将来の拡張方針（MVP 以降）
 
 以下は MVP には含めないが、将来的に対応を検討する機能：
 
 - **レコメンド機能:** 閲覧記録（view_count, last_viewed_at）を活用し、「最近見ていないレシピ」「よく見るレシピ」などをサジェスト。
 - **動画系コンテンツ対応:** YouTube, Instagram 等の動画 URL からタイトル自動取得＋手動タグ付け。
 - **旬の食材タグ / クイックアクセス:** 季節や特売品に応じた食材のショートカット。
+
+> 各機能の詳細仕様は `docs/backlogs/` を参照。
