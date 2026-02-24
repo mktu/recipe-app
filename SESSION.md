@@ -1,22 +1,21 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-24 (cooking_time_minutes 実装・マージ完了・セッション終了)
+2026-02-24 (LINE検索結果のリンクを元サイトURLに変更・セッション終了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **LINE検索結果のリンクを元サイトURLに変更**
+  - `src/lib/line/search-handler.ts`: `toLiffDetailUrl()` を削除し `r.url`（元レシピサイトURL）を直接使用
+  - 検索結果タップ → Cookpad / Nadia 等のレシピサイトへ直接遷移
+  - フッター「一覧をアプリで見る」ボタンは LIFF アプリへのリンクを維持
 - [x] **cooking_time_minutes 実装（PR #10 マージ済み）**
   - DB: `recipes` テーブルに `cooking_time_minutes INTEGER` カラム追加
   - JSON-LD: ISO 8601 パーサー（PT1H30M→90分）で `cookTime`→`totalTime` の順に取得
   - `__NEXT_DATA__`（Nadia）: `cookTime` フィールドを取得
   - Gemini フォールバック: スキーマ・プロンプトに調理時間抽出ルールを追加
-- [x] **バックログ整理（探す体験 + データ準備）**
-  - `search-ux.md`: ボトムシート→クイックリプライに方針転換、Quick Reply 選択肢を4つに確定（お気に入り/よく作る/材料少なめ/時短）
-  - `cook-count.md` / `cooking-time.md`: バックログ新規作成
-- [x] **CLAUDE.md 改善**
-  - バックログ実装タスク着手時に `docs/ARCHITECTURE.md` を読むルールを追加
 
 ## 進行中のタスク
 （なし）
@@ -65,11 +64,11 @@
 
 ## コミット履歴（直近）
 ```
+15dc8dd feat: LINE検索結果のレシピリンクを元サイトURLに変更
+11a0dbe docs: update SESSION.md for session handoff
 a28c650 docs: バックログ実装タスク着手時にARCHITECTURE.mdを読むルールを追加
 831a122 docs: cooking-time バックログを完了ステータスに更新
 2722f18 docs: update SESSION.md - cooking_time_minutes 実装完了
-9f4f3c6 Merge pull request #10 from mktu/feature/add-cooking-time
-89350c5 feat: recipes テーブルに cooking_time_minutes カラムを追加
 ```
 
 ## GitHubリポジトリ
