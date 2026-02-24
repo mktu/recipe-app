@@ -15,14 +15,9 @@ export function isIngredientSearchKeyword(text: string): boolean {
   return INGREDIENT_SEARCH_KEYWORDS.includes(normalizedText)
 }
 
-function toLiffDetailUrl(id: string): string {
-  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-  return `https://liff.line.me/${liffId}/recipes/${id}`
-}
-
 const toCard = (r: SearchRecipeResult): RecipeCardData => ({
   title: r.title,
-  url: toLiffDetailUrl(r.id),
+  url: r.url,
   imageUrl: r.imageUrl,
   sourceName: r.sourceName,
 })
