@@ -1,26 +1,28 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-24 (ドキュメント整理・スキル追加・セッション終了)
+2026-02-26 (「最近見た」「よく見る」レシピ機能を実装・コミット済み)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **ドキュメント整理**
-  - `CLAUDE.md`: ディレクトリ構造を実態に合わせ更新、ARCHITECTURE.md との重複セクション削除、参照リンクの役割を明確化
-  - `requirements.md`: プロダクト要件（ユースケース・機能要件・非機能要件）のみに絞り込み、技術詳細を削除
-  - `docs/ARCHITECTURE.md`: ディレクトリ構造セクションを追加
-- [x] **スキル追加**
-  - `/start-session`: SESSION.md を読んで状態サマリーを表示
-  - `end-session` に「ドキュメント更新チェック」ステップを追加（git diff で変更に応じた確認）
-- [x] **LINE検索結果のリンクを元サイトURLに変更**
-- [x] **cooking_time_minutes 実装（PR #10 マージ済み）**
+- [x] **「最近見た」「よく見る」レシピ機能を追加**
+  - `POST /api/track/recipe/[id]`（LIFF用：閲覧記録）
+  - `GET /api/track/recipe/[id]`（LINE用：閲覧記録 + 元サイトへリダイレクト）
+  - `GET /api/recipes/[id]` から `recordRecipeView` を削除（リロードでカウントが増える問題を解消）
+  - LINE キーワード「最近見た」「よく見る」で対応レシピを Flex Message で返す
+  - LINE 検索結果カードのURLをトラッキング経由に変更
+  - `createVerticalListMessage` に `headerText` オプション追加
+- [x] **ドキュメント整理・スキル追加**（前セッション）
+- [x] **LINE検索結果のリンクを元サイトURLに変更**（前セッション）
+- [x] **cooking_time_minutes 実装（PR #10 マージ済み）**（前セッション）
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
+- [ ] **LINE 実機確認**（「最近見た」「よく見る」キーワード送信テスト）
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
@@ -30,7 +32,6 @@
   - 探す体験の改善 - クイックリプライ（search-ux.md）
   - お気に入り（favorites.md）
   - よく作る - 調理回数カウント（cook-count.md）
-  - ~~調理時間データ取得（cooking-time.md）~~ ← **完了**
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
@@ -40,6 +41,7 @@
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
+- **NEXT_PUBLIC_APP_URL**: Vercel の環境変数設定済み。ローカルは `.env.local` に `http://localhost:3000`
 - **Edge Functions の JWT 検証:**
   - `config.toml` で `verify_jwt = false` を設定済み
   - CI からのデプロイで自動的に適用される
@@ -64,11 +66,11 @@
 
 ## コミット履歴（直近）
 ```
+b968dbb feat: 「最近見た」「よく見る」レシピ機能を追加
+195f8cf docs: ドキュメント整理・start-session スキル追加
 16fbc15 docs: cooking_time_minutes をDB設計・要件定義に追記
 6facf71 docs: update SESSION.md for session handoff
 15dc8dd feat: LINE検索結果のレシピリンクを元サイトURLに変更
-11a0dbe docs: update SESSION.md for session handoff
-a28c650 docs: バックログ実装タスク着手時にARCHITECTURE.mdを読むルールを追加
 ```
 
 ## GitHubリポジトリ
@@ -84,4 +86,6 @@ https://github.com/mktu/recipe-app
 - `docs/backlogs/cook-count.md` - よく作る（調理回数）バックログ
 - `supabase/config.toml` - Edge Functions の verify_jwt 設定
 - `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
+- `src/lib/line/search-handler.ts` - LINE キーワードハンドラー
+- `src/app/api/track/recipe/[id]/route.ts` - トラッキングエンドポイント
 - `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト

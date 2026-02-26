@@ -231,6 +231,7 @@ graph TB
 | `/api/recipes/[id]` | GET/PUT/DELETE | レシピ詳細取得・更新・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | URL解析（Jina + Gemini） |
+| `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
 | `/api/webhook/line` | POST | LINE Webhook |
 
 ---
