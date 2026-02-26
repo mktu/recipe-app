@@ -19,8 +19,18 @@ interface HomeClientProps {
   initialFilters?: InitialFilters
 }
 
-export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
+function useRecipeHandlers() {
   const router = useRouter()
+  const handleRecipeClick = useCallback((id: string) => {
+    fetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
+    router.push(`/recipes/${id}`)
+  }, [router])
+  const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
+  return { handleRecipeClick, handleAddRecipe }
+}
+
+export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
+  const { handleRecipeClick, handleAddRecipe } = useRecipeHandlers()
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
@@ -29,9 +39,6 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
     ingredientIds: filters.selectedIngredientIds,
     sortOrder: filters.sortOrder,
   })
-
-  const handleRecipeClick = useCallback((id: string) => router.push(`/recipes/${id}`), [router])
-  const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
 
   if (authLoading) {
     return <CenteredMessage>読み込み中...</CenteredMessage>

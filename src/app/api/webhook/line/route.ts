@@ -4,7 +4,7 @@ import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import { createVerticalListMessage, RecipeCardData } from '@/lib/line/flex-message'
-import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt } from '@/lib/line/search-handler'
+import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } from '@/lib/line/search-handler'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -211,43 +211,33 @@ async function processUrl(replyToken: string, lineUserId: string, url: string): 
   }
 }
 
+/** キーワードを処理。処理済みなら true を返す */
+async function handleKeyword(text: string, replyToken: string, userId: string): Promise<boolean> {
+  if (isHelpKeyword(text)) { await replyHelp(replyToken); return true }
+  if (isRecentlyViewedKeyword(text)) { await handleRecentlyViewed(client, replyToken, userId); return true }
+  if (isMostViewedKeyword(text)) { await handleMostViewed(client, replyToken, userId); return true }
+  if (isIngredientSearchKeyword(text)) { await handleIngredientSearchPrompt(client, replyToken, userId); return true }
+  if (isTestKeyword(text)) { await replyTest(replyToken, userId); return true }
+  return false
+}
+
 /** メッセージイベントを処理 */
 async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   if (event.type !== 'message' || event.message.type !== 'text') return
   if (!event.replyToken || !event.source?.userId) return
 
-  const message = event.message as TextEventMessage
-  const text = message.text
+  const text = (event.message as TextEventMessage).text
+  const { replyToken, source: { userId } } = event
 
-  // ヘルプキーワードの場合
-  if (isHelpKeyword(text)) {
-    await replyHelp(event.replyToken)
-    return
-  }
+  if (await handleKeyword(text, replyToken, userId)) return
 
-  // 食材検索キーワードの場合
-  if (isIngredientSearchKeyword(text)) {
-    await handleIngredientSearchPrompt(client, event.replyToken, event.source.userId)
-    return
-  }
-
-  // テストキーワードの場合（URLプレビュー確認用）
-  if (isTestKeyword(text)) {
-    await replyTest(event.replyToken, event.source.userId)
-    return
-  }
-
-  // URL を抽出
   const urls = extractUrls(text)
-
-  // URLがある場合はレシピ保存
   if (urls.length > 0) {
-    await processUrl(event.replyToken, event.source.userId, urls[0])
+    await processUrl(replyToken, userId, urls[0])
     return
   }
 
-  // URLがない場合は検索として処理
-  await handleSearch(client, event.replyToken, event.source.userId, text, ensureUser)
+  await handleSearch(client, replyToken, userId, text, ensureUser)
 }
 
 /**

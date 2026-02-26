@@ -152,19 +152,22 @@ function buildListItems(recipes: RecipeCardData[]): messagingApi.FlexComponent[]
 export function createVerticalListMessage(
   recipes: RecipeCardData[],
   listUrl: string,
-  totalCount: number
+  totalCount: number,
+  headerText?: string
 ): FlexMessage {
+  const header = headerText ?? `🔍 ${totalCount}件見つかりました`
+  const altText = headerText ?? `${totalCount}件のレシピが見つかりました`
   const hasMore = recipes.length < totalCount
   return {
     type: 'flex',
-    altText: `${totalCount}件のレシピが見つかりました`,
+    altText,
     contents: {
       type: 'bubble',
       size: 'giga',
       header: {
         type: 'box',
         layout: 'vertical',
-        contents: [{ type: 'text', text: `🔍 ${totalCount}件見つかりました`, weight: 'bold', size: 'md' }],
+        contents: [{ type: 'text', text: header, weight: 'bold', size: 'md' }],
       },
       body: { type: 'box', layout: 'vertical', spacing: 'none', paddingAll: 'none', contents: buildListItems(recipes) },
       ...(hasMore && {

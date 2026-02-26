@@ -99,6 +99,38 @@ export async function searchRecipesForBot(
 type RecipeRow = { id: string; title: string; url: string; image_url: string | null; source_name: string | null }
 const toResult = (r: RecipeRow): SearchRecipeResult => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name })
 
+/** 最近見たレシピ（last_viewed_at DESC, NULL除外） */
+export async function fetchRecentlyViewedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
+  const supabase = createServerClient()
+  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('recipes')
+    .select('id, title, url, image_url, source_name')
+    .eq('user_id', user.id)
+    .not('last_viewed_at', 'is', null)
+    .order('last_viewed_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map(toResult)
+}
+
+/** よく見るレシピ（view_count DESC, 0除外） */
+export async function fetchMostViewedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
+  const supabase = createServerClient()
+  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('recipes')
+    .select('id, title, url, image_url, source_name')
+    .eq('user_id', user.id)
+    .gt('view_count', 0)
+    .order('view_count', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map(toResult)
+}
+
 /** Bot用ハイブリッド検索 */
 async function searchRecipesHybridForBot(
   supabase: ReturnType<typeof createServerClient>, userId: string, searchQuery: string, recipeIds: string[] | null, limit: number

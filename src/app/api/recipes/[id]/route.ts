@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchRecipeById, deleteRecipe, updateRecipeMemo, recordRecipeView } from '@/lib/db/queries/recipes'
+import { fetchRecipeById, deleteRecipe, updateRecipeMemo } from '@/lib/db/queries/recipes'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -27,9 +27,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (!data) {
     return NextResponse.json({ error: 'レシピが見つかりません' }, { status: 404 })
   }
-
-  // 閲覧数を記録（非同期で実行、エラーは無視）
-  recordRecipeView(id).catch(console.error)
 
   return NextResponse.json(data)
 }
