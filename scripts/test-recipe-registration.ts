@@ -32,6 +32,7 @@ interface ParsedRecipe {
   imageUrl: string
   ingredientIds: string[]
   memo: string
+  cookingTimeMinutes?: number | null
 }
 
 interface Recipe {
@@ -146,6 +147,7 @@ async function registerRecipe(
       imageUrl: parsed.imageUrl,
       ingredientIds: parsed.ingredientIds,
       memo: parsed.memo,
+      cookingTimeMinutes: parsed.cookingTimeMinutes ?? null,
     }),
   })
 

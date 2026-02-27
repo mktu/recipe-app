@@ -53,6 +53,7 @@ async function saveRecipe(lineUserId: string, url: string): Promise<{ success: b
     imageUrl: parsed.imageUrl,
     ingredientIds: parsed.ingredientIds,
     memo: parsed.memo,
+    cookingTimeMinutes: parsed.cookingTimeMinutes ?? null,
   })
 
   if (error) {
