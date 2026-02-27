@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from '@line/bot-sdk'
-import { parseRecipe } from '@/lib/recipe/parse-recipe'
-import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
-import { createVerticalListMessage, RecipeCardData } from '@/lib/line/flex-message'
 import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } from '@/lib/line/search-handler'
+import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites } from '@/lib/line/category-handler'
+import { replyTest, processUrl } from '@/lib/line/url-handler'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -24,30 +23,21 @@ function extractUrls(text: string): string[] {
 /** ヘルプキーワードかどうかを判定 */
 function isHelpKeyword(text: string): boolean {
   const keywords = ['使い方', 'ヘルプ', 'help', '?', '？']
-  const normalizedText = text.trim().toLowerCase()
-  return keywords.some((keyword) => normalizedText === keyword.toLowerCase())
+  return keywords.some((k) => text.trim().toLowerCase() === k.toLowerCase())
 }
 
 /** テストキーワードかどうかを判定 */
 function isTestKeyword(text: string): boolean {
-  const normalizedText = text.trim().toLowerCase()
-  return normalizedText === 'テスト' || normalizedText === 'test'
+  return ['テスト', 'test'].includes(text.trim().toLowerCase())
 }
 
 /** ユーザーを確保（存在しなければ作成） */
-async function ensureUser(lineUserId: string): Promise<void> {
+export async function ensureUser(lineUserId: string): Promise<void> {
   const supabase = createServerClient()
-
-  // 既存ユーザーを確認
   const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('line_user_id', lineUserId)
-    .single()
-
+    .from('users').select('id').eq('line_user_id', lineUserId).single()
   if (existingUser) return
 
-  // Profile API でユーザー情報を取得
   let displayName = 'LINE ユーザー'
   try {
     const profile = await client.getProfile(lineUserId)
@@ -56,11 +46,8 @@ async function ensureUser(lineUserId: string): Promise<void> {
     console.warn('[LINE Webhook] Failed to get profile, using default name')
   }
 
-  // 新規ユーザーを作成
   const { error } = await supabase
-    .from('users')
-    .insert({ line_user_id: lineUserId, display_name: displayName })
-
+    .from('users').insert({ line_user_id: lineUserId, display_name: displayName })
   if (error) {
     console.error('[LINE Webhook] Failed to create user:', error)
     throw new Error('ユーザーの作成に失敗しました')
@@ -76,149 +63,38 @@ async function replyHelp(replyToken: string): Promise<void> {
 AIが自動で食材を解析して保存します。
 
 【レシピを探す】
-画面下のメニューから「レシピ一覧」をタップ。
-食材で絞り込み検索もできます。
+「探す」と送るとカテゴリから選べます。
+食材名やキーワードで直接検索もできます。
 
 【対応サイト】
 クックパッド、クラシル、デリッシュキッチンなど主要レシピサイトに対応しています。`
 
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: helpText }],
-  })
+  await client.replyMessage({ replyToken, messages: [{ type: 'text', text: helpText }] })
 }
 
-/** テスト応答（Flex Messageでレシピカード表示） */
-async function replyTest(replyToken: string, lineUserId: string): Promise<void> {
-  const supabase = createServerClient()
+type KeywordEntry = [(t: string) => boolean, () => Promise<void>]
 
-  // ユーザーを取得
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('line_user_id', lineUserId)
-    .single()
-
-  if (!user || userError) {
-    await client.replyMessage({
-      replyToken,
-      messages: [{ type: 'text', text: 'ユーザーが見つかりません。' }],
-    })
-    return
-  }
-
-  // レシピを取得（最大3件）
-  const { data: recipes } = await supabase
-    .from('recipes')
-    .select('id, title, url, image_url, source_name')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(3)
-
-  if (!recipes || recipes.length === 0) {
-    await client.replyMessage({
-      replyToken,
-      messages: [{ type: 'text', text: 'レシピが登録されていません。まずURLを送って登録してください。' }],
-    })
-    return
-  }
-
-  // Flex Messageでレシピカードを返す（縦リスト）
-  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-  const recipeCards: RecipeCardData[] = recipes.map((r) => ({
-    title: r.title,
-    url: `https://liff.line.me/${liffId}/recipes/${r.id}`,
-    imageUrl: r.image_url,
-    sourceName: r.source_name,
-  }))
-
-  const listUrl = `https://liff.line.me/${liffId}`
-  await client.replyMessage({
-    replyToken,
-    messages: [createVerticalListMessage(recipeCards, listUrl, recipeCards.length)],
-  })
-}
-
-/** レシピ保存成功時の応答 */
-async function replySuccess(replyToken: string, title: string): Promise<void> {
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: `✅ レシピを保存しました！\n\n📖 ${title}` }],
-  })
-}
-
-/** 重複URL時の応答 */
-async function replyDuplicate(replyToken: string): Promise<void> {
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: 'このレシピは既に登録済みです 📝' }],
-  })
-}
-
-/** エラー時の応答 */
-async function replyError(replyToken: string): Promise<void> {
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: '⚠️ レシピの取得に失敗しました。URLを確認してください。' }],
-  })
-}
-
-/** レシピを解析して保存 */
-async function saveRecipe(lineUserId: string, url: string): Promise<{ success: boolean; title?: string; isDuplicate?: boolean }> {
-  const parsed = await parseRecipe(url)
-
-  const { error } = await createRecipe({
-    lineUserId,
-    url,
-    title: parsed.title || 'タイトル未取得',
-    sourceName: parsed.sourceName,
-    imageUrl: parsed.imageUrl,
-    ingredientIds: parsed.ingredientIds,
-    memo: parsed.memo,
-  })
-
-  if (error) {
-    if ('code' in error && error.code === '23505') {
-      return { success: false, isDuplicate: true }
-    }
-    throw error
-  }
-
-  return { success: true, title: parsed.title || 'タイトル未取得' }
-}
-
-/** 保存結果に応じて応答 */
-async function replyWithResult(
-  replyToken: string,
-  result: { success: boolean; title?: string; isDuplicate?: boolean }
-): Promise<void> {
-  if (result.isDuplicate) {
-    await replyDuplicate(replyToken)
-  } else if (result.success && result.title) {
-    await replySuccess(replyToken, result.title)
-  }
-}
-
-/** URL を処理してレシピ保存 */
-async function processUrl(replyToken: string, lineUserId: string, url: string): Promise<void> {
-  try {
-    await ensureUser(lineUserId)
-    const result = await saveRecipe(lineUserId, url)
-    await replyWithResult(replyToken, result)
-  } catch (err) {
-    console.error('[LINE Webhook] Error processing URL:', err)
-    await replyError(replyToken)
-  }
+function buildKeywordHandlers(replyToken: string, userId: string): KeywordEntry[] {
+  return [
+    [isHelpKeyword, () => replyHelp(replyToken)],
+    [isSearchKeyword, () => handleSearchCategoryPrompt(client, replyToken)],
+    [isOkiniiriKeyword, () => handleFavorites(client, replyToken)],
+    [isYokuTsukuruKeyword, () => handleYokuTsukuru(client, replyToken, userId)],
+    [isFewIngredientsKeyword, () => handleFewIngredients(client, replyToken, userId)],
+    [isShortCookingTimeKeyword, () => handleShortCookingTime(client, replyToken, userId)],
+    [isRecentlyViewedKeyword, () => handleRecentlyViewed(client, replyToken, userId)],
+    [isMostViewedKeyword, () => handleMostViewed(client, replyToken, userId)],
+    [isIngredientSearchKeyword, () => handleIngredientSearchPrompt(client, replyToken, userId)],
+    [isTestKeyword, () => replyTest(client, replyToken, userId)],
+  ]
 }
 
 /** キーワードを処理。処理済みなら true を返す */
 async function handleKeyword(text: string, replyToken: string, userId: string): Promise<boolean> {
-  if (isHelpKeyword(text)) { await replyHelp(replyToken); return true }
-  if (isRecentlyViewedKeyword(text)) { await handleRecentlyViewed(client, replyToken, userId); return true }
-  if (isMostViewedKeyword(text)) { await handleMostViewed(client, replyToken, userId); return true }
-  if (isIngredientSearchKeyword(text)) { await handleIngredientSearchPrompt(client, replyToken, userId); return true }
-  if (isTestKeyword(text)) { await replyTest(replyToken, userId); return true }
-  return false
+  const match = buildKeywordHandlers(replyToken, userId).find(([isMatch]) => isMatch(text))
+  if (!match) return false
+  await match[1]()
+  return true
 }
 
 /** メッセージイベントを処理 */
@@ -233,7 +109,7 @@ async function handleMessageEvent(event: WebhookEvent): Promise<void> {
 
   const urls = extractUrls(text)
   if (urls.length > 0) {
-    await processUrl(replyToken, userId, urls[0])
+    await processUrl(client, replyToken, userId, urls[0], ensureUser)
     return
   }
 
@@ -248,18 +124,13 @@ export async function POST(request: NextRequest) {
   const bodyText = await request.text()
   const signature = request.headers.get('x-line-signature') || ''
 
-  // 署名検証
   if (!validateSignature(bodyText, config.channelSecret, signature)) {
     console.error('[LINE Webhook] Invalid signature')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
   const body = JSON.parse(bodyText) as { events: WebhookEvent[] }
-
-  // 各イベントを処理
-  await Promise.all(
-    body.events.map((event) => handleMessageEvent(event))
-  )
+  await Promise.all(body.events.map((event) => handleMessageEvent(event)))
 
   return NextResponse.json({ status: 'ok' })
 }
