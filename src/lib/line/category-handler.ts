@@ -36,7 +36,7 @@ export function isOkiniiriKeyword(text: string): boolean {
   return ['お気に入り', 'おきにいり', 'お気に入りレシピ'].includes(text.trim())
 }
 
-/** 「探す」に対してカテゴリ選択の Quick Reply を返す */
+/** 「探す」に対して検索案内 + Quick Reply を返す */
 export async function handleSearchCategoryPrompt(
   client: MessagingApiClient,
   replyToken: string
@@ -46,10 +46,9 @@ export async function handleSearchCategoryPrompt(
     messages: [
       {
         type: 'text',
-        text: '🔍 どのレシピを探しますか？',
+        text: '🔍 レシピを探す\n\n食材名やレシピ名をそのまま入力して検索できます。\n例：「鶏肉 玉ねぎ」「パスタ」\n\nよく使う絞り込み👇',
         quickReply: {
           items: [
-            { type: 'action', action: { type: 'message', label: '⭐ お気に入り', text: 'お気に入り' } },
             { type: 'action', action: { type: 'message', label: '🔁 よく見る', text: 'よく見る' } },
             { type: 'action', action: { type: 'message', label: '📦 材料少なめ', text: '材料少なめ' } },
             { type: 'action', action: { type: 'message', label: '⏱ 時短', text: '時短' } },
