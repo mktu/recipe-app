@@ -16,9 +16,9 @@ export function isSearchKeyword(text: string): boolean {
   return ['探す', 'さがす', 'search'].includes(text.trim())
 }
 
-/** 「よく作る」キーワードかどうかを判定 */
+/** 「よく見る」キーワードかどうかを判定 */
 export function isYokuTsukuruKeyword(text: string): boolean {
-  return ['よく作る', 'よくつくる', 'よく作るレシピ'].includes(text.trim())
+  return ['よく見る', 'よくみる', 'よく見るレシピ', 'よく作る', 'よくつくる'].includes(text.trim())
 }
 
 /** 「時短」キーワードかどうかを判定 */
@@ -50,7 +50,7 @@ export async function handleSearchCategoryPrompt(
         quickReply: {
           items: [
             { type: 'action', action: { type: 'message', label: '⭐ お気に入り', text: 'お気に入り' } },
-            { type: 'action', action: { type: 'message', label: '🔁 よく作る', text: 'よく作る' } },
+            { type: 'action', action: { type: 'message', label: '🔁 よく見る', text: 'よく見る' } },
             { type: 'action', action: { type: 'message', label: '📦 材料少なめ', text: '材料少なめ' } },
             { type: 'action', action: { type: 'message', label: '⏱ 時短', text: '時短' } },
           ],
@@ -89,7 +89,7 @@ export async function handleYokuTsukuru(
       await replyText(client, replyToken, 'まだ閲覧履歴がありません。レシピを見てみましょう！')
       return
     }
-    await replyWithRecipes(client, replyToken, recipes, '🔁 よく作るレシピ')
+    await replyWithRecipes(client, replyToken, recipes, '🔁 よく見るレシピ')
   } catch (err) {
     console.error('[LINE Webhook] handleYokuTsukuru error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
