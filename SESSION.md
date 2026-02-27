@@ -1,42 +1,40 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-27 (「探す」クイックリプライ機能を実装・PR #11 作成)
+2026-02-27 (クイックリプライ関連の修正・バグ修正 PR #11〜#14 マージ済み)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **「探す」案内文改善・お気に入り除去（PR #14）**
+  - キーワード検索の説明を先に表示
+  - Quick Reply を3択（よく見る / 材料少なめ / 時短）に整理
+  - お気に入りは favorites epic ごと保留
+- [x] **cooking_time_minutes 保存バグ修正（PR #13）**
+  - LINE Bot・テストスクリプト両方で `cookingTimeMinutes` を渡し忘れていた
+- [x] **「よく作る」→「よく見る」リネーム（PR #12）**
 - [x] **「探す」クイックリプライ実装（PR #11）**
-  - 「探す」→ Quick Reply 4択（よく作る / 材料少なめ / 時短 / お気に入り）
+  - 「探す」→ Quick Reply 3択（よく見る / 材料少なめ / 時短）
   - RPC関数追加（ingredients_raw 配列長 / cooking_time_minutes）
   - category-handler.ts・url-handler.ts を新規作成
-- [x] **よく作る - 調理回数カウント実装**
 - [x] **「最近見た」「よく見る」レシピ機能を追加**
-  - `POST /api/track/recipe/[id]`（LIFF用：閲覧記録）
-  - `GET /api/track/recipe/[id]`（LINE用：閲覧記録 + 元サイトへリダイレクト）
-  - `GET /api/recipes/[id]` から `recordRecipeView` を削除（リロードでカウントが増える問題を解消）
-  - LINE キーワード「最近見た」「よく見る」で対応レシピを Flex Message で返す
-  - LINE 検索結果カードのURLをトラッキング経由に変更
-  - `createVerticalListMessage` に `headerText` オプション追加
-- [x] **ドキュメント整理・スキル追加**（前セッション）
-- [x] **LINE検索結果のリンクを元サイトURLに変更**（前セッション）
 - [x] **cooking_time_minutes 実装（PR #10 マージ済み）**（前セッション）
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **PR #11 マージ後 LINE 実機確認**（「探す」クイックリプライ動作テスト）
+- [ ] **LINE 実機確認**（「探す」クイックリプライ動作テスト）
+- [ ] **既存レシピの cooking_time_minutes バックフィル**（20件全部 NULL のため）
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **OGP画像の作成**（1200×630px）
-- [ ] **エピック実装（詳細は `docs/backlogs/README.md` 参照）**
-  - ~~探す体験の改善 - クイックリプライ（search-ux.md）~~ ✅
-  - お気に入り（favorites.md）
-  - ~~よく作る - 調理回数カウント（cook-count.md）~~ ✅
+
+## 保留エピック
+- お気に入り（favorites.md）- 「よく見る」と役割が被るため保留
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
@@ -46,6 +44,7 @@
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
+- **cooking_time_minutes**: PR #13 修正後の新規登録レシピから保存される。既存20件は NULL
 - **NEXT_PUBLIC_APP_URL**: Vercel の環境変数設定済み。ローカルは `.env.local` に `http://localhost:3000`
 - **Edge Functions の JWT 検証:**
   - `config.toml` で `verify_jwt = false` を設定済み
@@ -71,11 +70,10 @@
 
 ## コミット履歴（直近）
 ```
-f970ec0 test: test-bot.ts に新キーワードのルーティングを追加
-3cfc930 feat: 「探す」キーワードでカテゴリ選択クイックリプライを追加
-b968dbb feat: 「最近見た」「よく見る」レシピ機能を追加
-195f8cf docs: ドキュメント整理・start-session スキル追加
-16fbc15 docs: cooking_time_minutes をDB設計・要件定義に追記
+7a211d4 fix: 「探す」の案内文を改善・お気に入りをQuick Replyから除去
+87b55ea fix: レシピ登録時に cooking_time_minutes が保存されないバグを修正
+bf59fe9 fix: クイックリプライの「よく作る」を「よく見る」に変更
+2b46123 feat: 「探す」キーワードでカテゴリ選択クイックリプライを追加
 ```
 
 ## GitHubリポジトリ
@@ -86,11 +84,8 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
-- `docs/backlogs/search-ux.md` - 探す体験（クイックリプライ）方針
-- `docs/backlogs/favorites.md` - お気に入りバックログ
-- `docs/backlogs/cook-count.md` - よく作る（調理回数）バックログ
-- `supabase/config.toml` - Edge Functions の verify_jwt 設定
-- `src/lib/line/flex-message.ts` - LINE Flex Message 生成ロジック
+- `src/lib/line/category-handler.ts` - カテゴリ選択 Quick Reply ロジック
+- `src/lib/line/url-handler.ts` - URL処理（レシピ保存）ロジック
 - `src/lib/line/search-handler.ts` - LINE キーワードハンドラー
 - `src/app/api/track/recipe/[id]/route.ts` - トラッキングエンドポイント
 - `scripts/preview-flex.ts` - Flex Message プレビュー用スクリプト
