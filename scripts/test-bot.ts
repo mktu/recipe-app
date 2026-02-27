@@ -36,8 +36,11 @@ async function main() {
   // 環境変数設定後に動的import
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const lineBotSdk = await import('@line/bot-sdk')
-  const { isIngredientSearchKeyword, handleIngredientSearchPrompt, handleSearch } = await import(
+  const { isIngredientSearchKeyword, handleIngredientSearchPrompt, handleSearch, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } = await import(
     '../src/lib/line/search-handler'
+  )
+  const { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites } = await import(
+    '../src/lib/line/category-handler'
   )
 
   type MessagingApiClient = lineBotSdk.messagingApi.MessagingApiClient
@@ -160,8 +163,29 @@ AIが自動で食材を解析して保存します。
       return
     }
 
-    // 食材検索キーワードの場合
-    if (isIngredientSearchKeyword(text)) {
+    // カテゴリ系キーワード
+    if (isSearchKeyword(text)) {
+      console.log('\n🔀 Route: Search Category Prompt')
+      await handleSearchCategoryPrompt(client, replyToken)
+    } else if (isOkiniiriKeyword(text)) {
+      console.log('\n🔀 Route: Favorites')
+      await handleFavorites(client, replyToken)
+    } else if (isYokuTsukuruKeyword(text)) {
+      console.log('\n🔀 Route: Yoku Tsukuru')
+      await handleYokuTsukuru(client, replyToken, LINE_USER_ID)
+    } else if (isFewIngredientsKeyword(text)) {
+      console.log('\n🔀 Route: Few Ingredients')
+      await handleFewIngredients(client, replyToken, LINE_USER_ID)
+    } else if (isShortCookingTimeKeyword(text)) {
+      console.log('\n🔀 Route: Short Cooking Time')
+      await handleShortCookingTime(client, replyToken, LINE_USER_ID)
+    } else if (isRecentlyViewedKeyword(text)) {
+      console.log('\n🔀 Route: Recently Viewed')
+      await handleRecentlyViewed(client, replyToken, LINE_USER_ID)
+    } else if (isMostViewedKeyword(text)) {
+      console.log('\n🔀 Route: Most Viewed')
+      await handleMostViewed(client, replyToken, LINE_USER_ID)
+    } else if (isIngredientSearchKeyword(text)) {
       console.log('\n🔀 Route: Ingredient Search Prompt')
       await handleIngredientSearchPrompt(client, replyToken, LINE_USER_ID)
     } else {
