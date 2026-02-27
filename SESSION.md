@@ -1,12 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-26 (「最近見た」「よく見る」レシピ機能を実装・コミット済み)
+2026-02-27 (「探す」クイックリプライ機能を実装・PR #11 作成)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **「探す」クイックリプライ実装（PR #11）**
+  - 「探す」→ Quick Reply 4択（よく作る / 材料少なめ / 時短 / お気に入り）
+  - RPC関数追加（ingredients_raw 配列長 / cooking_time_minutes）
+  - category-handler.ts・url-handler.ts を新規作成
+- [x] **よく作る - 調理回数カウント実装**
 - [x] **「最近見た」「よく見る」レシピ機能を追加**
   - `POST /api/track/recipe/[id]`（LIFF用：閲覧記録）
   - `GET /api/track/recipe/[id]`（LINE用：閲覧記録 + 元サイトへリダイレクト）
@@ -22,16 +27,16 @@
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **LINE 実機確認**（「最近見た」「よく見る」キーワード送信テスト）
+- [ ] **PR #11 マージ後 LINE 実機確認**（「探す」クイックリプライ動作テスト）
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
   - `docs/EMBEDDING_BATCH_SETUP.md` に沿って設定
 - [ ] **OGP画像の作成**（1200×630px）
 - [ ] **エピック実装（詳細は `docs/backlogs/README.md` 参照）**
-  - 探す体験の改善 - クイックリプライ（search-ux.md）
+  - ~~探す体験の改善 - クイックリプライ（search-ux.md）~~ ✅
   - お気に入り（favorites.md）
-  - よく作る - 調理回数カウント（cook-count.md）
+  - ~~よく作る - 調理回数カウント（cook-count.md）~~ ✅
 
 ## 検討事項（次回以降）
 - `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
@@ -66,11 +71,11 @@
 
 ## コミット履歴（直近）
 ```
+f970ec0 test: test-bot.ts に新キーワードのルーティングを追加
+3cfc930 feat: 「探す」キーワードでカテゴリ選択クイックリプライを追加
 b968dbb feat: 「最近見た」「よく見る」レシピ機能を追加
 195f8cf docs: ドキュメント整理・start-session スキル追加
 16fbc15 docs: cooking_time_minutes をDB設計・要件定義に追記
-6facf71 docs: update SESSION.md for session handoff
-15dc8dd feat: LINE検索結果のレシピリンクを元サイトURLに変更
 ```
 
 ## GitHubリポジトリ

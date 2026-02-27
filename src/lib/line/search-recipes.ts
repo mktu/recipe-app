@@ -131,6 +131,26 @@ export async function fetchMostViewedForBot(lineUserId: string, limit = 5): Prom
   return (data ?? []).map(toResult)
 }
 
+/** 材料少なめレシピ（ingredients_raw 配列長 ASC） */
+export async function fetchFewIngredientsForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
+  const supabase = createServerClient()
+  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
+  if (!user) return []
+
+  const { data } = await supabase.rpc('get_recipes_few_ingredients', { p_user_id: user.id, p_limit: limit })
+  return (data ?? []).map(toResult)
+}
+
+/** 時短レシピ（cooking_time_minutes ASC、NULL除外） */
+export async function fetchShortCookingTimeForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
+  const supabase = createServerClient()
+  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
+  if (!user) return []
+
+  const { data } = await supabase.rpc('get_recipes_short_cooking_time', { p_user_id: user.id, p_limit: limit })
+  return (data ?? []).map(toResult)
+}
+
 /** Bot用ハイブリッド検索 */
 async function searchRecipesHybridForBot(
   supabase: ReturnType<typeof createServerClient>, userId: string, searchQuery: string, recipeIds: string[] | null, limit: number

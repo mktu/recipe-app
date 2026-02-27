@@ -268,6 +268,26 @@ export type Database = {
           recipe_count: number
         }[]
       }
+      get_recipes_few_ingredients: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          id: string
+          image_url: string
+          source_name: string
+          title: string
+          url: string
+        }[]
+      }
+      get_recipes_short_cooking_time: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          id: string
+          image_url: string
+          source_name: string
+          title: string
+          url: string
+        }[]
+      }
       get_unmatched_ingredient_counts: {
         Args: { limit_count?: number }
         Returns: {
