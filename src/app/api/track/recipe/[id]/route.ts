@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createServerClient } from '@/lib/db/client'
 import { recordRecipeView } from '@/lib/db/queries/recipes'
 
@@ -21,8 +21,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'レシピが見つかりません' }, { status: 404 })
   }
 
-  // 閲覧数を記録（fire-and-forget）
-  recordRecipeView(id).catch(console.error)
+  // レスポンス後に関数を生存させてバックグラウンド実行
+  after(() => recordRecipeView(id).catch(console.error))
 
   return NextResponse.redirect(recipe.url, 302)
 }

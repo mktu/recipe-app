@@ -19,7 +19,7 @@ description: セッションを終了する前に SESSION.md を更新
 | `supabase/functions/` | `docs/EDGE_FUNCTIONS.md`, `docs/ARCHITECTURE.md` |
 | `src/lib/line/` | `docs/ARCHITECTURE.md` |
 | `src/app/api/` | `docs/ARCHITECTURE.md`（API構成セクション） |
-| バックログのエピックが完了 | 該当の `docs/backlogs/*.md` |
+| バックログのエピックに関連する実装をした場合 | 該当の `docs/backlogs/*.md`（タスクの完了状態・実装メモを更新） |
 
 更新が必要なドキュメントがあれば、SESSION.md 更新の前にユーザーに確認する。
 

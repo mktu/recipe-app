@@ -33,7 +33,7 @@ export async function replyTest(client: MessagingApiClient, replyToken: string, 
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
   const recipeCards: RecipeCardData[] = recipes.map((r) => ({
     title: r.title,
-    url: `https://liff.line.me/${liffId}/recipes/${r.id}`,
+    url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/track/recipe/${r.id}`,
     imageUrl: r.image_url,
     sourceName: r.source_name,
   }))
