@@ -26,11 +26,17 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 const LINE_USER_ID = process.env.LINE_USER_ID || 'dev-user-001'
 const URL_LIST_FILE = path.join(__dirname, '../seed/test-recipe-urls.txt')
 
+interface IngredientRaw {
+  name: string
+  amount: string
+}
+
 interface ParsedRecipe {
   title: string
   sourceName: string
   imageUrl: string
   ingredientIds: string[]
+  ingredientsRaw?: IngredientRaw[]
   memo: string
   cookingTimeMinutes?: number | null
 }
@@ -146,6 +152,7 @@ async function registerRecipe(
       sourceName: parsed.sourceName,
       imageUrl: parsed.imageUrl,
       ingredientIds: parsed.ingredientIds,
+      ingredientsRaw: parsed.ingredientsRaw,
       memo: parsed.memo,
       cookingTimeMinutes: parsed.cookingTimeMinutes ?? null,
     }),
