@@ -1,26 +1,24 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-28 (view_count が記録されないバグ修正・after() 対応)
+2026-02-28 (材料少なめカード改善・PR #15 マージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **view_count が記録されないバグ修正**
-  - Vercel サーバーレス関数はレスポンス返却後に終了するため fire-and-forget が完走しなかった
-  - `GET /api/track/recipe/[id]` の `recordRecipeView` 呼び出しを `after()` でラップ（Next.js 15.1+）
-  - `replyTest` のカード URL も `/api/track/recipe/[id]` 経由に修正（直リンクだったため view_count が増えなかった）
-- [x] **end-session スキル更新**（バックログ関連実装時の更新タイミングを明確化）
+- [x] **材料少なめカード改善（PR #15）**
+  - 各カードに「材料 X品」をアンバー色で表示
+  - ヘッダーを「📦 材料X品以下のレシピに絞りました！」に変更
+  - SQL RPC に `ingredient_count` を追加、`ingredients_raw IS NOT NULL` のみ対象に
+- [x] **view_count が記録されないバグ修正**（前セッション）
 - [x] **「探す」案内文改善・お気に入り除去（PR #14）**（前セッション）
-- [x] **cooking_time_minutes 保存バグ修正（PR #13）**（前セッション）
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
 - [ ] **LINE 実機確認**（view_count 修正後の動作確認）
-- [ ] **既存レシピの cooking_time_minutes バックフィル**（20件全部 NULL のため）
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
@@ -38,7 +36,6 @@
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 
 ## ブロッカー・注意点
-- **cooking_time_minutes**: PR #13 修正後の新規登録レシピから保存される。既存20件は NULL
 - **NEXT_PUBLIC_APP_URL**: Vercel の環境変数設定済み。ローカルは `.env.local` に `http://localhost:3000`
 - **Edge Functions の JWT 検証:**
   - `config.toml` で `verify_jwt = false` を設定済み
@@ -64,11 +61,10 @@
 
 ## コミット履歴（直近）
 ```
+93459c8 Merge pull request #15 from mktu/feature/improve-few-ingredients-card
+1ae5806 feat: 材料少なめカードに材料数バッジと温かいヘッダーメッセージを追加
+af11fc2 docs: update SESSION.md for session handoff
 aa75389 fix: view_countが記録されないバグを修正
-01cd25e docs: バックログを更新（search-ux完了・favorites保留）
-890e1f5 docs: SESSION.md を更新（PR #11〜#14 完了）
-7a211d4 Merge pull request #14 from mktu/feature/improve-search-prompt
-9135a56 fix: 「探す」の案内文を改善・お気に入りをQuick Replyから除去
 ```
 
 ## GitHubリポジトリ
