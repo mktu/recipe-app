@@ -1,31 +1,25 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-27 (クイックリプライ関連の修正・バグ修正 PR #11〜#14 マージ済み)
+2026-02-28 (view_count が記録されないバグ修正・after() 対応)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **「探す」案内文改善・お気に入り除去（PR #14）**
-  - キーワード検索の説明を先に表示
-  - Quick Reply を3択（よく見る / 材料少なめ / 時短）に整理
-  - お気に入りは favorites epic ごと保留
-- [x] **cooking_time_minutes 保存バグ修正（PR #13）**
-  - LINE Bot・テストスクリプト両方で `cookingTimeMinutes` を渡し忘れていた
-- [x] **「よく作る」→「よく見る」リネーム（PR #12）**
-- [x] **「探す」クイックリプライ実装（PR #11）**
-  - 「探す」→ Quick Reply 3択（よく見る / 材料少なめ / 時短）
-  - RPC関数追加（ingredients_raw 配列長 / cooking_time_minutes）
-  - category-handler.ts・url-handler.ts を新規作成
-- [x] **「最近見た」「よく見る」レシピ機能を追加**
-- [x] **cooking_time_minutes 実装（PR #10 マージ済み）**（前セッション）
+- [x] **view_count が記録されないバグ修正**
+  - Vercel サーバーレス関数はレスポンス返却後に終了するため fire-and-forget が完走しなかった
+  - `GET /api/track/recipe/[id]` の `recordRecipeView` 呼び出しを `after()` でラップ（Next.js 15.1+）
+  - `replyTest` のカード URL も `/api/track/recipe/[id]` 経由に修正（直リンクだったため view_count が増えなかった）
+- [x] **end-session スキル更新**（バックログ関連実装時の更新タイミングを明確化）
+- [x] **「探す」案内文改善・お気に入り除去（PR #14）**（前セッション）
+- [x] **cooking_time_minutes 保存バグ修正（PR #13）**（前セッション）
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **LINE 実機確認**（「探す」クイックリプライ動作テスト）
+- [ ] **LINE 実機確認**（view_count 修正後の動作確認）
 - [ ] **既存レシピの cooking_time_minutes バックフィル**（20件全部 NULL のため）
 - [ ] **本番環境のSupabaseプロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
@@ -70,10 +64,11 @@
 
 ## コミット履歴（直近）
 ```
-7a211d4 fix: 「探す」の案内文を改善・お気に入りをQuick Replyから除去
-87b55ea fix: レシピ登録時に cooking_time_minutes が保存されないバグを修正
-bf59fe9 fix: クイックリプライの「よく作る」を「よく見る」に変更
-2b46123 feat: 「探す」キーワードでカテゴリ選択クイックリプライを追加
+aa75389 fix: view_countが記録されないバグを修正
+01cd25e docs: バックログを更新（search-ux完了・favorites保留）
+890e1f5 docs: SESSION.md を更新（PR #11〜#14 完了）
+7a211d4 Merge pull request #14 from mktu/feature/improve-search-prompt
+9135a56 fix: 「探す」の案内文を改善・お気に入りをQuick Replyから除去
 ```
 
 ## GitHubリポジトリ

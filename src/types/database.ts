@@ -273,6 +273,7 @@ export type Database = {
         Returns: {
           id: string
           image_url: string
+          ingredient_count: number
           source_name: string
           title: string
           url: string

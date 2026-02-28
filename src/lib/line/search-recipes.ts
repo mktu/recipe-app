@@ -10,6 +10,7 @@ export interface SearchRecipeResult {
   url: string
   imageUrl: string | null
   sourceName: string | null
+  ingredientCount?: number | null
 }
 
 /**
@@ -138,7 +139,14 @@ export async function fetchFewIngredientsForBot(lineUserId: string, limit = 5): 
   if (!user) return []
 
   const { data } = await supabase.rpc('get_recipes_few_ingredients', { p_user_id: user.id, p_limit: limit })
-  return (data ?? []).map(toResult)
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    url: r.url,
+    imageUrl: r.image_url,
+    sourceName: r.source_name,
+    ingredientCount: r.ingredient_count,
+  }))
 }
 
 /** 時短レシピ（cooking_time_minutes ASC、NULL除外） */

@@ -126,7 +126,22 @@ export async function handleFewIngredients(
       await replyText(client, replyToken, 'レシピがまだ登録されていません。\nURLを送ってレシピを保存しましょう！')
       return
     }
-    await replyWithRecipes(client, replyToken, recipes, '📦 材料少なめレシピ')
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const cards: RecipeCardData[] = recipes.map((r) => ({
+      title: r.title,
+      url: `${baseUrl}/api/track/recipe/${r.id}`,
+      imageUrl: r.imageUrl,
+      sourceName: r.sourceName,
+      ingredientCount: r.ingredientCount,
+    }))
+    const counts = recipes.flatMap((r) => (r.ingredientCount != null ? [r.ingredientCount] : []))
+    const maxCount = counts.length > 0 ? Math.max(...counts) : null
+    const headerText = maxCount != null ? `📦 材料${maxCount}品以下のレシピに絞りました！` : '📦 材料少なめレシピ'
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+    await client.replyMessage({
+      replyToken,
+      messages: [createVerticalListMessage(cards, `https://liff.line.me/${liffId}`, cards.length, headerText)],
+    })
   } catch (err) {
     console.error('[LINE Webhook] handleFewIngredients error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
