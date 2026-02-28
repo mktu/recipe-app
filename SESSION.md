@@ -1,18 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-28 (材料少なめカード改善・PR #15 マージ)
+2026-02-28 (材料少なめカード改善・ingredients_raw 保存バグ修正)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **ingredients_raw 保存バグ修正**
+  - スクレイパーが取得した食材情報が DB に保存されておらず常に `[]` だった
+  - `ParsedRecipe` / `CreateRecipeInput` に `ingredientsRaw` を追加し全経路で保存
 - [x] **材料少なめカード改善（PR #15）**
   - 各カードに「材料 X品」をアンバー色で表示
   - ヘッダーを「📦 材料X品以下のレシピに絞りました！」に変更
-  - SQL RPC に `ingredient_count` を追加、`ingredients_raw IS NOT NULL` のみ対象に
+  - SQL RPC に `ingredient_count` を追加
 - [x] **view_count が記録されないバグ修正**（前セッション）
-- [x] **「探す」案内文改善・お気に入り除去（PR #14）**（前セッション）
 
 ## 進行中のタスク
 （なし）
@@ -61,10 +63,10 @@
 
 ## コミット履歴（直近）
 ```
+800cc39 fix: テストスクリプトに ingredientsRaw を追加
+99896df fix: ingredients_raw を保存するようにデータフローを修正
+96ee173 docs: SESSION.md を更新（PR #15 完了）
 93459c8 Merge pull request #15 from mktu/feature/improve-few-ingredients-card
-1ae5806 feat: 材料少なめカードに材料数バッジと温かいヘッダーメッセージを追加
-af11fc2 docs: update SESSION.md for session handoff
-aa75389 fix: view_countが記録されないバグを修正
 ```
 
 ## GitHubリポジトリ
