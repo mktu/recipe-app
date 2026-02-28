@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { supabase, createServerClient } from '@/lib/db/client'
-import type { Database, Tables, TablesInsert } from '@/types/database'
+import type { Database, Json, Tables, TablesInsert } from '@/types/database'
 import type { SortOrder, RecipeWithIngredients, RecipeIngredient, CreateRecipeInput } from '@/types/recipe'
 import { getVectorSearchIds } from './recipe-embedding'
 
@@ -201,6 +201,7 @@ async function insertRecipe(client: TypedSupabaseClient, userId: string, input: 
     source_name: input.sourceName || null,
     image_url: input.imageUrl || null,
     memo: input.memo || null,
+    ingredients_raw: (input.ingredientsRaw ?? []) as unknown as Json,
     // 食材マッチングが完了している場合は true
     ingredients_linked: input.ingredientIds.length > 0,
     cooking_time_minutes: input.cookingTimeMinutes ?? null,

@@ -38,11 +38,12 @@ export function RecipeConfirmForm({ url, initialValues, ingredientCategories }: 
       sourceName: data.sourceName || undefined,
       imageUrl: data.imageUrl || undefined,
       ingredientIds: data.ingredientIds,
+      ingredientsRaw: initialValues.ingredientsRaw,
       memo: data.memo || undefined,
     }
     const result = await createRecipe(input)
     if (result) router.push('/')
-  }, [user, url, createRecipe, router])
+  }, [user, url, createRecipe, router, initialValues])
 
   if (authLoading) return <CenteredMessage>読み込み中...</CenteredMessage>
   if (!user) return <CenteredMessage>ログインが必要です</CenteredMessage>

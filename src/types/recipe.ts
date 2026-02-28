@@ -41,6 +41,7 @@ export interface ParsedRecipe {
   sourceName: string
   imageUrl: string
   ingredientIds: string[]
+  ingredientsRaw?: IngredientRaw[]
   memo: string
   cookingTimeMinutes?: number | null
 }
@@ -53,6 +54,7 @@ export interface CreateRecipeInput {
   sourceName?: string
   imageUrl?: string
   ingredientIds: string[]
+  ingredientsRaw?: IngredientRaw[]
   memo?: string
   cookingTimeMinutes?: number | null
 }

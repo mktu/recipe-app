@@ -47,6 +47,7 @@ async function buildParsedRecipe(
     sourceName: extraction.sourceName,
     imageUrl: extraction.imageUrl,
     ingredientIds: matchedIngredients.map((m) => m.ingredientId),
+    ingredientsRaw: extraction.ingredients.map((name) => ({ name, amount: '' })),
     memo: '',
     cookingTimeMinutes: extraction.cookingTimeMinutes ?? null,
   }
@@ -106,6 +107,7 @@ async function parseWithJinaGemini(url: string): Promise<ParsedRecipe | null> {
     sourceName: extraction.sourceName || extractDomainName(url),
     imageUrl: extraction.imageUrl || '',
     ingredientIds: matchedIngredients.map((m) => m.ingredientId),
+    ingredientsRaw: extraction.mainIngredients.map((name) => ({ name, amount: '' })),
     memo: '',
     cookingTimeMinutes: extraction.cookingTimeMinutes ?? null,
   }
