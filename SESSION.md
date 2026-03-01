@@ -1,12 +1,15 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-02-28 (材料少なめカード改善・ingredients_raw バグ修正・staging バックフィル完了)
+2026-03-01 (材料少なめカードのヘッダー文言修正)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **材料少なめカードのヘッダー文言修正**
+  - 「材料X品以下のレシピに絞りました」→「材料少なめで作れるレシピ」に変更
+  - 実態と合わない counts / maxCount 計算も削除
 - [x] **材料少なめカード改善（PR #15）**
   - 各カードに「材料 X品」をアンバー色で表示
   - ヘッダーを「📦 材料X品以下のレシピに絞りました！」に変更
@@ -67,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+b0f7a1c fix: 材料少なめカードのヘッダー文言を実態に合った表現に修正
+ae4b911 docs: update SESSION.md for session handoff
 4f38e3f docs: SESSION.md を更新
 800cc39 fix: テストスクリプトに ingredientsRaw を追加
 99896df fix: ingredients_raw を保存するようにデータフローを修正
-96ee173 docs: SESSION.md を更新（PR #15 完了）
-93459c8 Merge pull request #15 from mktu/feature/improve-few-ingredients-card
 ```
 
 ## GitHubリポジトリ
