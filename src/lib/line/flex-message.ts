@@ -6,6 +6,7 @@ export interface RecipeCardData {
   imageUrl?: string | null
   sourceName?: string | null
   ingredientCount?: number | null
+  cookingTimeMinutes?: number | null
 }
 
 type FlexMessage = messagingApi.FlexMessage
@@ -129,6 +130,9 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
   }
   if (recipe.ingredientCount != null) {
     textContents.push({ type: 'text', text: `材料 ${recipe.ingredientCount}品`, size: 'xs', color: COLORS.primary, margin: 'sm' })
+  }
+  if (recipe.cookingTimeMinutes != null) {
+    textContents.push({ type: 'text', text: `⏱ ${recipe.cookingTimeMinutes}分`, size: 'xs', color: COLORS.primary, margin: 'sm' })
   }
   return {
     type: 'box',

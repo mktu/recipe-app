@@ -107,7 +107,20 @@ export async function handleShortCookingTime(
       await replyText(client, replyToken, '調理時間が登録されたレシピがまだありません。\nレシピ登録時に自動で取得されます。')
       return
     }
-    await replyWithRecipes(client, replyToken, recipes, '⏱ 時短レシピ')
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+    const cards: RecipeCardData[] = recipes.map((r) => ({
+      title: r.title,
+      url: `${baseUrl}/api/track/recipe/${r.id}`,
+      imageUrl: r.imageUrl,
+      sourceName: r.sourceName,
+      cookingTimeMinutes: r.cookingTimeMinutes,
+    }))
+    const headerText = '⏱ 短時間で作れるレシピ'
+    await client.replyMessage({
+      replyToken,
+      messages: [createVerticalListMessage(cards, `https://liff.line.me/${liffId}`, cards.length, headerText)],
+    })
   } catch (err) {
     console.error('[LINE Webhook] handleShortCookingTime error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')

@@ -287,6 +287,7 @@ export type Database = {
           source_name: string
           title: string
           url: string
+          cooking_time_minutes: number
         }[]
       }
       get_unmatched_ingredient_counts: {
