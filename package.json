@@ -15,6 +15,7 @@
     "preview:flex": "tsx scripts/preview-flex.ts",
     "collect:urls": "tsx scripts/collect-recipe-urls.ts",
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
+    "backfill:cooking-time": "tsx scripts/backfill-cooking-time.ts",
     "functions:build": "tsx scripts/build-edge-functions.ts",
     "functions:serve": "supabase functions serve --env-file .env.local",
     "functions:invoke": "curl -X POST http://localhost:54321/functions/v1/generate-embeddings -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'",

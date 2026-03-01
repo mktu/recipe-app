@@ -40,6 +40,7 @@ export function RecipeConfirmForm({ url, initialValues, ingredientCategories }: 
       ingredientIds: data.ingredientIds,
       ingredientsRaw: initialValues.ingredientsRaw,
       memo: data.memo || undefined,
+      cookingTimeMinutes: initialValues.cookingTimeMinutes ?? null,
     }
     const result = await createRecipe(input)
     if (result) router.push('/')
