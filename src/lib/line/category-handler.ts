@@ -134,9 +134,7 @@ export async function handleFewIngredients(
       sourceName: r.sourceName,
       ingredientCount: r.ingredientCount,
     }))
-    const counts = recipes.flatMap((r) => (r.ingredientCount != null ? [r.ingredientCount] : []))
-    const maxCount = counts.length > 0 ? Math.max(...counts) : null
-    const headerText = maxCount != null ? `📦 材料${maxCount}品以下のレシピに絞りました！` : '📦 材料少なめレシピ'
+    const headerText = '📦 材料少なめで作れるレシピ'
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
     await client.replyMessage({
       replyToken,
