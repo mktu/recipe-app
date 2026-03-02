@@ -26,10 +26,18 @@ LINE カード（時短 5件）
 
 ## 実装内容
 
-### ① LINE カードにフッターボタンを常時表示
+### ① LINE カードのフッターボタン表示条件
 
-`createVerticalListMessage`（`flex-message.ts`）のフッター表示条件を変更。
-カテゴリカードは常にフッターを表示するよう `forceShowFooter` オプションを追加。
+RPC が返した件数 = 上限（5件）のときのみ「さらに表示」を表示する。
+5件未満の場合は全件表示済みのためボタン不要。
+
+```
+cards.length >= 5 → フッターボタン表示（もっとある可能性あり）
+cards.length < 5  → フッターボタン非表示（全件収まっている）
+```
+
+`createVerticalListMessage` の呼び出し時に `totalCount = cards.length + 1`（cards.length が 5 のとき）を渡すか、
+`forceShowFooter` オプションをカテゴリハンドラー側で制御する。
 
 ### ② フロントエンド: ?sort= クエリパラメータ対応
 
