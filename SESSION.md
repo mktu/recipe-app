@@ -1,32 +1,32 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-01 (材料少なめカードのヘッダー文言修正)
+2026-03-02 (cooking_time_minutes バグ修正・時短カード改善)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **材料少なめカードのヘッダー文言修正**
-  - 「材料X品以下のレシピに絞りました」→「材料少なめで作れるレシピ」に変更
-  - 実態と合わない counts / maxCount 計算も削除
-- [x] **材料少なめカード改善（PR #15）**
-  - 各カードに「材料 X品」をアンバー色で表示
-  - ヘッダーを「📦 材料X品以下のレシピに絞りました！」に変更
-  - SQL RPC に `ingredient_count` を追加（`ingredients_raw IS NOT NULL` のみ対象）
-  - DB型定義を再生成
-- [x] **ingredients_raw 保存バグ修正**
-  - スクレイパーが取得した食材情報が DB に保存されていなかった根本原因を修正
-  - `ParsedRecipe` / `CreateRecipeInput` に `ingredientsRaw` を追加し全経路（LINE bot・Web アプリ）で保存
-- [x] **staging の既存20件を ingredients_raw バックフィル**
-  - 一時スクリプトで全20件を再スクレイプ → 全件成功（スクリプトは用途を果たし削除）
-- [x] **view_count が記録されないバグ修正**（前セッション）
+- [x] **cooking_time_minutes バグ修正（Web アプリ）**
+  - `recipe-confirm-form.tsx` で `cookingTimeMinutes` が `createRecipe` に渡されていなかった
+  - Web アプリ経由のレシピ登録で調理時間が常に null になっていた問題を修正
+- [x] **staging 既存レシピの cooking_time_minutes バックフィル**
+  - `scripts/backfill-cooking-time.ts` を作成・実行
+  - staging の全 20 件を再スクレイプして更新（全件成功）
+- [x] **時短レシピカードの改善**
+  - 各カードに「⏱ X分」をアンバー色で表示
+  - ヘッダーを「時短レシピ」→「短時間で作れるレシピ」に変更
+  - RPC `get_recipes_short_cooking_time` に `cooking_time_minutes` を追加
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **LINE 実機確認**（材料少なめカードの見た目・品数バッジ確認）
+- [ ] **LINE カテゴリカードから LIFF 絞り込みページへの誘導**
+  - 詳細は `docs/backlogs/liff-category-filter.md` を参照
+  - カードに「さらに表示」ボタンを常時表示し、カテゴリ別 LIFF URL（`?sort=xxx`）に遷移
+  - 影響ファイル: flex-message.ts, category-handler.ts, page.tsx, use-recipe-filters.ts, sort-select.tsx, API, Edge Function
+- [ ] **LINE 実機確認**（時短カードの調理時間バッジ確認）
 - [ ] **本番環境の Supabase プロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
@@ -70,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+1526c35 feat: 時短レシピカードに調理時間バッジを追加・ヘッダー文言を改善
+c70ccec fix: Web アプリ経由のレシピ登録で cooking_time_minutes が保存されないバグを修正
+6fbfec8 docs: update SESSION.md for session handoff
 b0f7a1c fix: 材料少なめカードのヘッダー文言を実態に合った表現に修正
 ae4b911 docs: update SESSION.md for session handoff
-4f38e3f docs: SESSION.md を更新
-800cc39 fix: テストスクリプトに ingredientsRaw を追加
-99896df fix: ingredients_raw を保存するようにデータフローを修正
 ```
 
 ## GitHubリポジトリ
@@ -85,10 +85,9 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
-- `src/lib/line/category-handler.ts` - カテゴリ選択 Quick Reply ロジック・材料少なめハンドラー
-- `src/lib/line/flex-message.ts` - Flex Message 生成（RecipeCardData・ingredientCount バッジ）
-- `src/lib/line/search-recipes.ts` - レシピ検索クエリ（fetchFewIngredientsForBot）
-- `src/lib/recipe/parse-recipe.ts` - レシピ解析（ingredientsRaw を ParsedRecipe に含む）
-- `src/lib/db/queries/recipes.ts` - レシピ作成クエリ（ingredients_raw 保存）
-- `src/types/recipe.ts` - ParsedRecipe / CreateRecipeInput 型定義
-- `supabase/migrations/20260228000000_update_few_ingredients_rpc.sql` - 材料少なめ RPC 更新
+- `docs/backlogs/liff-category-filter.md` - 次の実装タスク詳細
+- `src/lib/line/category-handler.ts` - カテゴリ選択 Quick Reply ロジック
+- `src/lib/line/flex-message.ts` - Flex Message 生成（バッジ表示含む）
+- `src/lib/line/search-recipes.ts` - レシピ検索クエリ
+- `src/components/features/add-recipe/recipe-confirm-form.tsx` - Web アプリのレシピ登録フォーム
+- `scripts/backfill-cooking-time.ts` - 調理時間バックフィルスクリプト
