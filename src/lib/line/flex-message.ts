@@ -183,8 +183,9 @@ export function createVerticalListMessage(
         footer: {
           type: 'box',
           layout: 'vertical',
+          paddingAll: 'sm',
           contents: [
-            { type: 'button', action: { type: 'uri', label: '📖 一覧をアプリで見る', uri: listUrl }, style: 'primary', color: COLORS.primary },
+            { type: 'text', text: 'さらに見る →', size: 'sm', color: COLORS.primary, align: 'end', action: { type: 'uri', label: 'さらに見る', uri: listUrl } },
           ],
         },
       }),
