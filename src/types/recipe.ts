@@ -1,7 +1,7 @@
 import type { Tables } from '@/types/database'
 
 /** ソート順 */
-export type SortOrder = 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed'
+export type SortOrder = 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed' | 'shortest_cooking' | 'fewest_ingredients'
 
 /** 食材 */
 export interface Ingredient {

@@ -67,12 +67,16 @@ async function replyWithRecipes(
   client: MessagingApiClient,
   replyToken: string,
   recipes: SearchRecipeResult[],
-  headerText: string
+  headerText: string,
+  sortParam?: string
 ): Promise<void> {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+  const liffUrl = sortParam
+    ? `https://liff.line.me/${liffId}?sort=${sortParam}`
+    : `https://liff.line.me/${liffId}`
   await client.replyMessage({
     replyToken,
-    messages: [createVerticalListMessage(recipes.map(toCard), `https://liff.line.me/${liffId}`, recipes.length, headerText)],
+    messages: [createVerticalListMessage(recipes.map(toCard), liffUrl, recipes.length, headerText, recipes.length >= 5)],
   })
 }
 
@@ -88,7 +92,7 @@ export async function handleYokuTsukuru(
       await replyText(client, replyToken, 'まだ閲覧履歴がありません。レシピを見てみましょう！')
       return
     }
-    await replyWithRecipes(client, replyToken, recipes, '🔁 よく見るレシピ')
+    await replyWithRecipes(client, replyToken, recipes, '🔁 よく見るレシピ', 'most_viewed')
   } catch (err) {
     console.error('[LINE Webhook] handleYokuTsukuru error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
@@ -117,9 +121,10 @@ export async function handleShortCookingTime(
       cookingTimeMinutes: r.cookingTimeMinutes,
     }))
     const headerText = '⏱ 短時間で作れるレシピ'
+    const liffUrl = `https://liff.line.me/${liffId}?sort=shortest_cooking`
     await client.replyMessage({
       replyToken,
-      messages: [createVerticalListMessage(cards, `https://liff.line.me/${liffId}`, cards.length, headerText)],
+      messages: [createVerticalListMessage(cards, liffUrl, cards.length, headerText, cards.length >= 5)],
     })
   } catch (err) {
     console.error('[LINE Webhook] handleShortCookingTime error:', err)
@@ -140,6 +145,7 @@ export async function handleFewIngredients(
       return
     }
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
     const cards: RecipeCardData[] = recipes.map((r) => ({
       title: r.title,
       url: `${baseUrl}/api/track/recipe/${r.id}`,
@@ -148,10 +154,10 @@ export async function handleFewIngredients(
       ingredientCount: r.ingredientCount,
     }))
     const headerText = '📦 材料少なめで作れるレシピ'
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+    const liffUrl = `https://liff.line.me/${liffId}?sort=fewest_ingredients`
     await client.replyMessage({
       replyToken,
-      messages: [createVerticalListMessage(cards, `https://liff.line.me/${liffId}`, cards.length, headerText)],
+      messages: [createVerticalListMessage(cards, liffUrl, cards.length, headerText, cards.length >= 5)],
     })
   } catch (err) {
     console.error('[LINE Webhook] handleFewIngredients error:', err)

@@ -13,7 +13,7 @@ interface GetRecipesRequest {
   lineUserId: string
   searchQuery?: string
   ingredientIds?: string[]
-  sortOrder?: 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed'
+  sortOrder?: 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed' | 'shortest_cooking' | 'fewest_ingredients'
 }
 
 interface RecipeIngredient {
@@ -33,6 +33,8 @@ interface Recipe {
   last_viewed_at: string | null
   created_at: string
   updated_at: string
+  cooking_time_minutes: number | null
+  ingredients_raw: unknown
 }
 
 interface RecipeWithIngredients extends Recipe {
@@ -40,13 +42,15 @@ interface RecipeWithIngredients extends Recipe {
 }
 
 type SortOrder = GetRecipesRequest['sortOrder']
+type DbSortOrder = Exclude<NonNullable<SortOrder>, 'fewest_ingredients'>
 
-// Sort configuration
-const sortConfig: Record<NonNullable<SortOrder>, [string, { ascending: boolean }]> = {
+// Sort configuration (fewest_ingredients はJS側でソートするため除外)
+const sortConfig: Record<DbSortOrder, [string, { ascending: boolean }]> = {
   newest: ['created_at', { ascending: false }],
   oldest: ['created_at', { ascending: true }],
   most_viewed: ['view_count', { ascending: false }],
   recently_viewed: ['last_viewed_at', { ascending: false }],
+  shortest_cooking: ['cooking_time_minutes', { ascending: true }],
 }
 
 // Helper functions
@@ -75,12 +79,25 @@ async function fetchRecipes(
     query = query.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
   }
 
-  const [col, opt] = sortConfig[sortOrder]
+  // fewest_ingredients はJS側でソートするため、DBはデフォルト順で取得
+  const dbSortOrder: DbSortOrder = sortOrder === 'fewest_ingredients' ? 'newest' : sortOrder
+  const [col, opt] = sortConfig[dbSortOrder]
   query = query.order(col, opt)
 
   const { data, error } = await query
   if (error) throw error
-  return (data ?? []) as Recipe[]
+
+  const recipes = (data ?? []) as Recipe[]
+
+  if (sortOrder === 'fewest_ingredients') {
+    return recipes.sort((a, b) => {
+      const aLen = Array.isArray(a.ingredients_raw) ? (a.ingredients_raw as unknown[]).length : 999
+      const bLen = Array.isArray(b.ingredients_raw) ? (b.ingredients_raw as unknown[]).length : 999
+      return aLen - bLen
+    })
+  }
+
+  return recipes
 }
 
 async function fetchRecipeIngredients(

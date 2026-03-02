@@ -161,11 +161,12 @@ export function createVerticalListMessage(
   recipes: RecipeCardData[],
   listUrl: string,
   totalCount: number,
-  headerText?: string
+  headerText?: string,
+  showFooter?: boolean
 ): FlexMessage {
   const header = headerText ?? `🔍 ${totalCount}件見つかりました`
   const altText = headerText ?? `${totalCount}件のレシピが見つかりました`
-  const hasMore = recipes.length < totalCount
+  const hasMore = showFooter !== undefined ? showFooter : recipes.length < totalCount
   return {
     type: 'flex',
     altText,

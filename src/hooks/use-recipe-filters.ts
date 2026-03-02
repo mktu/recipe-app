@@ -22,6 +22,7 @@ export interface RecipeFiltersActions {
 export interface InitialFilters {
   searchQuery: string
   ingredientIds: string[]
+  sortOrder?: SortOrder
 }
 
 export function useRecipeFilters(
@@ -30,7 +31,7 @@ export function useRecipeFilters(
 ): RecipeFiltersState & RecipeFiltersActions {
   const [searchQuery, setSearchQuery] = useState(initialFilters?.searchQuery ?? '')
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>(initialFilters?.ingredientIds ?? [])
-  const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initialFilters?.sortOrder ?? 'newest')
 
   const ingredientNameMap = useMemo(() => {
     const map = new Map<string, string>()

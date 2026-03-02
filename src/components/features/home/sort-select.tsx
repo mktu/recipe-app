@@ -19,6 +19,8 @@ const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: 'oldest', label: '古い順' },
   { value: 'most_viewed', label: 'よく見た順' },
   { value: 'recently_viewed', label: '最近見た順' },
+  { value: 'shortest_cooking', label: '調理時間が短い順' },
+  { value: 'fewest_ingredients', label: '材料が少ない順' },
 ]
 
 export function SortSelect({ value, onChange }: SortSelectProps) {

@@ -127,17 +127,19 @@ async function fetchRecipesFromDb(
   searchQuery: string | undefined,
   sortOrder: SortOrder
 ): Promise<Tables<'recipes'>[]> {
-  // 検索クエリがない場合は通常の取得
+  let recipes: Tables<'recipes'>[]
+
   if (!searchQuery?.trim()) {
     let query = supabase.from('recipes').select('*').eq('user_id', userId)
     query = applySortOrder(query, sortOrder)
     const { data, error } = await query
     if (error) throw error
-    return (data ?? []) as Tables<'recipes'>[]
+    recipes = (data ?? []) as Tables<'recipes'>[]
+  } else {
+    recipes = await searchRecipesHybrid(userId, searchQuery.trim(), sortOrder)
   }
 
-  // ハイブリッド検索
-  return searchRecipesHybrid(userId, searchQuery.trim(), sortOrder)
+  return sortOrder === 'fewest_ingredients' ? sortByIngredientCount(recipes) : recipes
 }
 
 /** ハイブリッド検索: ILIKE優先、結果が少ない場合はベクトル検索で補完 */
@@ -161,16 +163,29 @@ async function searchRecipesHybrid(userId: string, searchQuery: string, sortOrde
   return ilikeRecipes
 }
 
+type DbSortOrder = Exclude<SortOrder, 'fewest_ingredients'>
+
+const DB_SORT_OPTS: Record<DbSortOrder, [string, object]> = {
+  newest: ['created_at', { ascending: false }],
+  oldest: ['created_at', { ascending: true }],
+  most_viewed: ['view_count', { ascending: false }],
+  recently_viewed: ['last_viewed_at', { ascending: false, nullsFirst: false }],
+  shortest_cooking: ['cooking_time_minutes', { ascending: true, nullsFirst: false }],
+}
+
 function applySortOrder<T>(query: T, sortOrder: SortOrder): T {
   const q = query as { order: (col: string, opts: object) => T }
-  const opts: Record<SortOrder, [string, object]> = {
-    newest: ['created_at', { ascending: false }],
-    oldest: ['created_at', { ascending: true }],
-    most_viewed: ['view_count', { ascending: false }],
-    recently_viewed: ['last_viewed_at', { ascending: false, nullsFirst: false }],
-  }
-  const [col, opt] = opts[sortOrder]
+  const dbSortOrder: DbSortOrder = sortOrder === 'fewest_ingredients' ? 'newest' : sortOrder
+  const [col, opt] = DB_SORT_OPTS[dbSortOrder]
   return q.order(col, opt)
+}
+
+function sortByIngredientCount(recipes: Tables<'recipes'>[]): Tables<'recipes'>[] {
+  return [...recipes].sort((a, b) => {
+    const aLen = Array.isArray(a.ingredients_raw) ? a.ingredients_raw.length : 999
+    const bLen = Array.isArray(b.ingredients_raw) ? b.ingredients_raw.length : 999
+    return aLen - bLen
+  })
 }
 
 async function fetchIngredientMap(recipeIds: string[]): Promise<Map<string, RecipeIngredient[]>> {
