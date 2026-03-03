@@ -1,32 +1,29 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-02 (cooking_time_minutes バグ修正・時短カード改善)
+2026-03-03 (LINEカテゴリ→LIFF誘導実装・UIチューニング)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **cooking_time_minutes バグ修正（Web アプリ）**
-  - `recipe-confirm-form.tsx` で `cookingTimeMinutes` が `createRecipe` に渡されていなかった
-  - Web アプリ経由のレシピ登録で調理時間が常に null になっていた問題を修正
-- [x] **staging 既存レシピの cooking_time_minutes バックフィル**
-  - `scripts/backfill-cooking-time.ts` を作成・実行
-  - staging の全 20 件を再スクレイプして更新（全件成功）
-- [x] **時短レシピカードの改善**
-  - 各カードに「⏱ X分」をアンバー色で表示
-  - ヘッダーを「時短レシピ」→「短時間で作れるレシピ」に変更
-  - RPC `get_recipes_short_cooking_time` に `cooking_time_minutes` を追加
+- [x] **LINE カテゴリカードから LIFF 絞り込みページへの誘導**
+  - `SortOrder` に `shortest_cooking` / `fewest_ingredients` を追加
+  - Edge Function・DB クエリ層で新ソートに対応
+  - `sort-select.tsx` に「調理時間が短い順」「材料が少ない順」を追加
+  - `page.tsx` で `?sort=` クエリパラメータを受け取り初期ソートに反映
+  - LINE カテゴリハンドラーで LIFF URL に `?sort=xxx` を付与
+  - 5件以上のときフッター「さらに見る →」テキストリンクを表示
+- [x] **Flex Message のUIチューニング**
+  - フッターボタン → 小さいテキストリンク（`style: link` → `type: text`）に変更
+  - リストアイテムの縦余白を `paddingAll: md` → `paddingTop/Bottom: lg` に拡大
+  - フッター余白を `paddingAll: sm` → `paddingAll: lg` に拡大
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **LINE カテゴリカードから LIFF 絞り込みページへの誘導**
-  - 詳細は `docs/backlogs/liff-category-filter.md` を参照
-  - カードに「さらに表示」ボタンを常時表示し、カテゴリ別 LIFF URL（`?sort=xxx`）に遷移
-  - 影響ファイル: flex-message.ts, category-handler.ts, page.tsx, use-recipe-filters.ts, sort-select.tsx, API, Edge Function
-- [ ] **LINE 実機確認**（時短カードの調理時間バッジ確認）
+- [ ] **LINE 実機確認**（時短カード・材料少なめカードの「さらに見る →」動作確認）
 - [ ] **本番環境の Supabase プロジェクト作成**
   - **東京リージョン（Northeast Asia - Tokyo）で作成すること**
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
@@ -70,11 +67,11 @@
 
 ## コミット履歴（直近）
 ```
-1526c35 feat: 時短レシピカードに調理時間バッジを追加・ヘッダー文言を改善
-c70ccec fix: Web アプリ経由のレシピ登録で cooking_time_minutes が保存されないバグを修正
-6fbfec8 docs: update SESSION.md for session handoff
-b0f7a1c fix: 材料少なめカードのヘッダー文言を実態に合った表現に修正
-ae4b911 docs: update SESSION.md for session handoff
+cf668e7 fix: セパレーターを復元し「さらに見る」フッターの余白を拡大
+0b8b1b2 fix: レシピリストのセパレーターを削除して余白で区切る
+5f9c26e fix: レシピリストアイテムの縦余白を拡大して窮屈さを解消
+d4656af fix: フッターの「さらに見る」をボタンからテキストリンクに変更
+b724d12 feat: LINEカテゴリカードからLIFF絞り込みページへの誘導を実装
 ```
 
 ## GitHubリポジトリ
@@ -85,9 +82,9 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
-- `docs/backlogs/liff-category-filter.md` - 次の実装タスク詳細
-- `src/lib/line/category-handler.ts` - カテゴリ選択 Quick Reply ロジック
-- `src/lib/line/flex-message.ts` - Flex Message 生成（バッジ表示含む）
-- `src/lib/line/search-recipes.ts` - レシピ検索クエリ
-- `src/components/features/add-recipe/recipe-confirm-form.tsx` - Web アプリのレシピ登録フォーム
-- `scripts/backfill-cooking-time.ts` - 調理時間バックフィルスクリプト
+- `src/lib/line/flex-message.ts` - Flex Message 生成（リストUI）
+- `src/lib/line/category-handler.ts` - カテゴリ選択ハンドラー（LIFF URL生成）
+- `src/types/recipe.ts` - SortOrder 型定義
+- `src/hooks/use-recipe-filters.ts` - フィルター状態管理（InitialFilters）
+- `src/app/(protected)/page.tsx` - ?sort= クエリパラメータ受け取り
+- `supabase/functions/get-recipes/index.ts` - レシピ一覧取得 Edge Function
