@@ -138,7 +138,10 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
     type: 'box',
     layout: 'horizontal',
     spacing: 'md',
-    paddingAll: 'md',
+    paddingTop: 'lg',
+    paddingBottom: 'lg',
+    paddingStart: 'md',
+    paddingEnd: 'md',
     action: { type: 'uri', label: recipe.title, uri: recipe.url },
     contents: [
       { type: 'image', url: recipe.imageUrl || DEFAULT_IMAGE, size: 'sm', aspectRatio: '1:1', aspectMode: 'cover', flex: 0 },
