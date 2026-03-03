@@ -151,7 +151,12 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
 }
 
 function buildListItems(recipes: RecipeCardData[]): messagingApi.FlexComponent[] {
-  return recipes.map(createListItemBox)
+  const items: messagingApi.FlexComponent[] = []
+  recipes.forEach((recipe, index) => {
+    if (index > 0) items.push({ type: 'separator' })
+    items.push(createListItemBox(recipe))
+  })
+  return items
 }
 
 /** 縦リスト型 Flex Message（1バブルに複数レシピを縦並び） */
@@ -181,7 +186,7 @@ export function createVerticalListMessage(
         footer: {
           type: 'box',
           layout: 'vertical',
-          paddingAll: 'sm',
+          paddingAll: 'lg',
           contents: [
             { type: 'text', text: 'さらに見る →', size: 'sm', color: COLORS.primary, align: 'end', action: { type: 'uri', label: 'さらに見る', uri: listUrl } },
           ],
