@@ -151,12 +151,7 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
 }
 
 function buildListItems(recipes: RecipeCardData[]): messagingApi.FlexComponent[] {
-  const items: messagingApi.FlexComponent[] = []
-  recipes.forEach((recipe, index) => {
-    if (index > 0) items.push({ type: 'separator' })
-    items.push(createListItemBox(recipe))
-  })
-  return items
+  return recipes.map(createListItemBox)
 }
 
 /** 縦リスト型 Flex Message（1バブルに複数レシピを縦並び） */
