@@ -1,23 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-03 (LINEカテゴリ→LIFF誘導実装・UIチューニング)
+2026-03-04 (レシピカードに調理時間・材料数を表示)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **LINE カテゴリカードから LIFF 絞り込みページへの誘導**
-  - `SortOrder` に `shortest_cooking` / `fewest_ingredients` を追加
-  - Edge Function・DB クエリ層で新ソートに対応
-  - `sort-select.tsx` に「調理時間が短い順」「材料が少ない順」を追加
-  - `page.tsx` で `?sort=` クエリパラメータを受け取り初期ソートに反映
-  - LINE カテゴリハンドラーで LIFF URL に `?sort=xxx` を付与
-  - 5件以上のときフッター「さらに見る →」テキストリンクを表示
-- [x] **Flex Message のUIチューニング**
-  - フッターボタン → 小さいテキストリンク（`style: link` → `type: text`）に変更
-  - リストアイテムの縦余白を `paddingAll: md` → `paddingTop/Bottom: lg` に拡大
-  - フッター余白を `paddingAll: sm` → `paddingAll: lg` に拡大
+- [x] **レシピカードに調理時間・材料数を表示**
+  - `Clock` / `Utensils` アイコン付きで調理時間（分）と材料数（品）を表示
+  - `cooking_time_minutes`（DBカラム）と `ingredients_raw.length` を利用
+  - ソースなし・値なしの場合は非表示
+  - `RecipeMeta` コンポーネントに切り出して ESLint max-lines-per-function をクリア
 
 ## 進行中のタスク
 （なし）
@@ -42,6 +36,7 @@
 - **ingredients_raw の amount を正しくパース** - 現状は name に量も含む文字列で amount は空。JSON-LD の recipeIngredient から量と名前を分離する改善
 
 ## ブロッカー・注意点
+- **ローカル開発でのレシピ取得:** `supabase functions serve` を別ターミナルで起動する必要あり（Edge Function ランタイムが `supabase start` では自動起動しない）
 - **NEXT_PUBLIC_APP_URL**: Vercel の環境変数設定済み。ローカルは `.env.local` に `http://localhost:3000`
 - **Edge Functions の JWT 検証:**
   - `config.toml` で `verify_jwt = false` を設定済み
@@ -67,11 +62,11 @@
 
 ## コミット履歴（直近）
 ```
+18ce8fa feat: レシピカードに調理時間と材料数を表示
+39ed253 docs: update SESSION.md for session handoff
 cf668e7 fix: セパレーターを復元し「さらに見る」フッターの余白を拡大
 0b8b1b2 fix: レシピリストのセパレーターを削除して余白で区切る
 5f9c26e fix: レシピリストアイテムの縦余白を拡大して窮屈さを解消
-d4656af fix: フッターの「さらに見る」をボタンからテキストリンクに変更
-b724d12 feat: LINEカテゴリカードからLIFF絞り込みページへの誘導を実装
 ```
 
 ## GitHubリポジトリ
@@ -82,6 +77,7 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
+- `src/components/features/home/recipe-card.tsx` - レシピカード（調理時間・材料数表示）
 - `src/lib/line/flex-message.ts` - Flex Message 生成（リストUI）
 - `src/lib/line/category-handler.ts` - カテゴリ選択ハンドラー（LIFF URL生成）
 - `src/types/recipe.ts` - SortOrder 型定義
