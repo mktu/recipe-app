@@ -136,10 +136,15 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
   if (recipe.sourceName) {
     textContents.push({ type: 'text', text: recipe.sourceName, size: 'xs', color: COLORS.textMuted, margin: 'sm' })
   }
-  const countText = recipe.ingredientCount != null ? `${recipe.ingredientCount}品` : '-'
-  textContents.push({ type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, margin: 'sm' })
   const timeText = recipe.cookingTimeMinutes != null ? `${recipe.cookingTimeMinutes}分` : '-'
-  textContents.push({ type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, margin: 'sm' })
+  const countText = recipe.ingredientCount != null ? `${recipe.ingredientCount}品` : '-'
+  textContents.push({
+    type: 'box', layout: 'horizontal', margin: 'sm',
+    contents: [
+      { type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, flex: 1 },
+      { type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, flex: 1 },
+    ],
+  })
   return {
     type: 'box',
     layout: 'horizontal',

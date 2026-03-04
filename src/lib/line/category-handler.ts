@@ -119,6 +119,7 @@ export async function handleShortCookingTime(
       imageUrl: r.imageUrl,
       sourceName: r.sourceName,
       cookingTimeMinutes: r.cookingTimeMinutes,
+      ingredientCount: r.ingredientCount,
     }))
     const headerText = '⏱ 短時間で作れるレシピ'
     const liffUrl = `https://liff.line.me/${liffId}?sort=shortest_cooking`
@@ -152,6 +153,7 @@ export async function handleFewIngredients(
       imageUrl: r.imageUrl,
       sourceName: r.sourceName,
       ingredientCount: r.ingredientCount,
+      cookingTimeMinutes: r.cookingTimeMinutes,
     }))
     const headerText = '📦 材料少なめで作れるレシピ'
     const liffUrl = `https://liff.line.me/${liffId}?sort=fewest_ingredients`
