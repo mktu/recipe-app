@@ -1,5 +1,6 @@
 'use client'
 
+import { Clock, Utensils } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { RecipeWithIngredients } from '@/types/recipe'
@@ -11,9 +12,30 @@ interface RecipeCardProps {
 
 const badgeClass = 'rounded-full px-2.5 py-0.5 text-xs font-normal'
 
+function RecipeMeta({ cookingTime, ingredientCount }: { cookingTime: number | null; ingredientCount: number | null }) {
+  if (!cookingTime && !ingredientCount) return null
+  return (
+    <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
+      {cookingTime && (
+        <span className="flex items-center gap-0.5">
+          <Clock className="h-3 w-3" />
+          {cookingTime}分
+        </span>
+      )}
+      {ingredientCount && (
+        <span className="flex items-center gap-0.5">
+          <Utensils className="h-3 w-3" />
+          {ingredientCount}品
+        </span>
+      )}
+    </div>
+  )
+}
+
 export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
   const displayIngredients = recipe.mainIngredients.slice(0, 3)
   const extraCount = recipe.mainIngredients.length - 3
+  const ingredientCount = Array.isArray(recipe.ingredients_raw) ? recipe.ingredients_raw.length : null
 
   return (
     <Card className="cursor-pointer p-4 transition-colors hover:bg-muted/50" onClick={onClick}>
@@ -32,12 +54,13 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
             {recipe.source_name && (
               <p className="mt-1 text-sm text-muted-foreground">{recipe.source_name}</p>
             )}
+            <RecipeMeta cookingTime={recipe.cooking_time_minutes} ingredientCount={ingredientCount} />
           </div>
           {displayIngredients.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5 overflow-hidden">
               {displayIngredients.map((ing) => (
                 <Badge key={ing.id} variant="secondary" className={badgeClass}>
-                  <span className="max-w-[80px] truncate">{ing.name}</span>
+                  <span className="max-w-20 truncate">{ing.name}</span>
                 </Badge>
               ))}
               {extraCount > 0 && (
