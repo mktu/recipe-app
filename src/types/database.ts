@@ -271,6 +271,7 @@ export type Database = {
       get_recipes_few_ingredients: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
+          cooking_time_minutes: number
           id: string
           image_url: string
           ingredient_count: number
@@ -282,12 +283,13 @@ export type Database = {
       get_recipes_short_cooking_time: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
+          cooking_time_minutes: number
           id: string
           image_url: string
+          ingredient_count: number
           source_name: string
           title: string
           url: string
-          cooking_time_minutes: number
         }[]
       }
       get_unmatched_ingredient_counts: {

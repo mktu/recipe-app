@@ -147,6 +147,7 @@ export async function fetchFewIngredientsForBot(lineUserId: string, limit = 5): 
     imageUrl: r.image_url,
     sourceName: r.source_name,
     ingredientCount: r.ingredient_count,
+    cookingTimeMinutes: r.cooking_time_minutes,
   }))
 }
 
@@ -164,6 +165,7 @@ export async function fetchShortCookingTimeForBot(lineUserId: string, limit = 5)
     imageUrl: r.image_url,
     sourceName: r.source_name,
     cookingTimeMinutes: r.cooking_time_minutes,
+    ingredientCount: r.ingredient_count,
   }))
 }
 
