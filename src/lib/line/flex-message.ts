@@ -24,13 +24,21 @@ function createHeroImage(imageUrl: string | null | undefined): messagingApi.Flex
   return { type: 'image', url: imageUrl || DEFAULT_IMAGE, size: 'full', aspectRatio: '20:13', aspectMode: 'cover' }
 }
 
-function createBodyContents(title: string, sourceName?: string | null): messagingApi.FlexComponent[] {
+function createBodyContents(
+  title: string,
+  sourceName?: string | null,
+  cookingTimeMinutes?: number | null,
+  ingredientCount?: number | null,
+): messagingApi.FlexComponent[] {
   const contents: messagingApi.FlexComponent[] = [
     { type: 'text', text: title, weight: 'bold', size: 'md', wrap: true, maxLines: 2 },
   ]
   if (sourceName) {
     contents.push({ type: 'text', text: sourceName, size: 'xs', color: COLORS.textMuted, margin: 'sm' })
   }
+  const timeText = cookingTimeMinutes != null ? `${cookingTimeMinutes}分` : '-'
+  const countText = ingredientCount != null ? `${ingredientCount}品` : '-'
+  contents.push({ type: 'text', text: `⏱ ${timeText}　🍴 ${countText}`, size: 'xs', color: COLORS.primary, margin: 'sm' })
   return contents
 }
 
@@ -48,7 +56,7 @@ function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
     type: 'bubble',
     size: 'kilo',
     hero: createHeroImage(recipe.imageUrl),
-    body: { type: 'box', layout: 'vertical', contents: createBodyContents(recipe.title, recipe.sourceName) },
+    body: { type: 'box', layout: 'vertical', contents: createBodyContents(recipe.title, recipe.sourceName, recipe.cookingTimeMinutes, recipe.ingredientCount) },
     footer: createFooterButton(recipe.url),
   }
 }
@@ -128,12 +136,10 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
   if (recipe.sourceName) {
     textContents.push({ type: 'text', text: recipe.sourceName, size: 'xs', color: COLORS.textMuted, margin: 'sm' })
   }
-  if (recipe.ingredientCount != null) {
-    textContents.push({ type: 'text', text: `材料 ${recipe.ingredientCount}品`, size: 'xs', color: COLORS.primary, margin: 'sm' })
-  }
-  if (recipe.cookingTimeMinutes != null) {
-    textContents.push({ type: 'text', text: `⏱ ${recipe.cookingTimeMinutes}分`, size: 'xs', color: COLORS.primary, margin: 'sm' })
-  }
+  const countText = recipe.ingredientCount != null ? `${recipe.ingredientCount}品` : '-'
+  textContents.push({ type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, margin: 'sm' })
+  const timeText = recipe.cookingTimeMinutes != null ? `${recipe.cookingTimeMinutes}分` : '-'
+  textContents.push({ type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, margin: 'sm' })
   return {
     type: 'box',
     layout: 'horizontal',
