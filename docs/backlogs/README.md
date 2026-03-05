@@ -9,7 +9,7 @@
 | よく作る → 閲覧履歴トラッキング | [cook-count.md](./cook-count.md) | ✅ 完了 |
 | 調理時間データ取得 | [cooking-time.md](./cooking-time.md) | ✅ 完了 |
 | LINEチャットのレシピリスト改善 | [line-recipe-list.md](./line-recipe-list.md) | ✅ 完了 |
-| LINE カテゴリカードから LIFF 絞り込みページへの誘導 | [liff-category-filter.md](./liff-category-filter.md) | 🔲 未着手 |
+| LINE カテゴリカードから LIFF 絞り込みページへの誘導 | [liff-category-filter.md](./liff-category-filter.md) | ✅ 完了 |
 
 ## ステータス凡例
 
