@@ -125,12 +125,20 @@ export async function fetchMostViewedForBot(lineUserId: string, limit = 5): Prom
 
   const { data } = await supabase
     .from('recipes')
-    .select('id, title, url, image_url, source_name')
+    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
     .eq('user_id', user.id)
     .gt('view_count', 0)
     .order('view_count', { ascending: false })
     .limit(limit)
-  return (data ?? []).map(toResult)
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    url: r.url,
+    imageUrl: r.image_url,
+    sourceName: r.source_name,
+    cookingTimeMinutes: r.cooking_time_minutes,
+    ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null,
+  }))
 }
 
 /** 材料少なめレシピ（ingredients_raw 配列長 ASC） */

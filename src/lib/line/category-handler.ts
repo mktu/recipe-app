@@ -1,15 +1,8 @@
 import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage, RecipeCardData } from './flex-message'
-import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, SearchRecipeResult } from './search-recipes'
+import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot } from './search-recipes'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
-
-const toCard = (r: SearchRecipeResult): RecipeCardData => ({
-  title: r.title,
-  url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/track/recipe/${r.id}`,
-  imageUrl: r.imageUrl,
-  sourceName: r.sourceName,
-})
 
 /** 「探す」キーワードかどうかを判定 */
 export function isSearchKeyword(text: string): boolean {
@@ -63,23 +56,6 @@ async function replyText(client: MessagingApiClient, replyToken: string, text: s
   await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
 }
 
-async function replyWithRecipes(
-  client: MessagingApiClient,
-  replyToken: string,
-  recipes: SearchRecipeResult[],
-  headerText: string,
-  sortParam?: string
-): Promise<void> {
-  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-  const liffUrl = sortParam
-    ? `https://liff.line.me/${liffId}?sort=${sortParam}`
-    : `https://liff.line.me/${liffId}`
-  await client.replyMessage({
-    replyToken,
-    messages: [createVerticalListMessage(recipes.map(toCard), liffUrl, recipes.length, headerText, recipes.length >= 5)],
-  })
-}
-
 /** よく作るレシピを返す（view_count 上位） */
 export async function handleYokuTsukuru(
   client: MessagingApiClient,
@@ -92,7 +68,21 @@ export async function handleYokuTsukuru(
       await replyText(client, replyToken, 'まだ閲覧履歴がありません。レシピを見てみましょう！')
       return
     }
-    await replyWithRecipes(client, replyToken, recipes, '🔁 よく見るレシピ', 'most_viewed')
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+    const cards: RecipeCardData[] = recipes.map((r) => ({
+      title: r.title,
+      url: `${baseUrl}/api/track/recipe/${r.id}`,
+      imageUrl: r.imageUrl,
+      sourceName: r.sourceName,
+      cookingTimeMinutes: r.cookingTimeMinutes,
+      ingredientCount: r.ingredientCount,
+    }))
+    const liffUrl = `https://liff.line.me/${liffId}?sort=most_viewed`
+    await client.replyMessage({
+      replyToken,
+      messages: [createVerticalListMessage(cards, liffUrl, cards.length, '🔁 よく見るレシピ', cards.length >= 5)],
+    })
   } catch (err) {
     console.error('[LINE Webhook] handleYokuTsukuru error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
