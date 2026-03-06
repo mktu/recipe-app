@@ -1,18 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-04 (LINEカードに調理時間・材料数を常時表示)
+2026-03-06 (よく見る一覧カードに調理時間・材料数を表示)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **レシピカードに調理時間・材料数を表示（web版）**
-  - `Clock` / `Utensils` アイコン付きで調理時間（分）と材料数（品）を表示
-  - `cooking_time_minutes`（DBカラム）と `ingredients_raw.length` を利用
-  - ソースなし・値なしの場合は非表示
-  - `RecipeMeta` コンポーネントに切り出して ESLint max-lines-per-function をクリア
-- [x] **LINEカードに調理時間・材料数を常時表示**
+- [x] **よく見る一覧カードに調理時間・材料数を表示**
+  - `fetchMostViewedForBot` で `cooking_time_minutes` / `ingredients_raw` を取得
+  - `handleYokuTsukuru` のカードマッピングに `cookingTimeMinutes` / `ingredientCount` を追加
+  - 時短・材料少なめカードと同じ表示スタイルに統一
+- [x] **LINEカードに調理時間・材料数を常時表示**（前セッション）
   - バブルカード：`⏱ X分　🍴 X品` を1行で追加（値なしは `-`）
   - 縦リスト：`材料 X品` → `🍴 X品` に変更、常時表示（値なしは `-`）
 
@@ -65,11 +64,11 @@
 
 ## コミット履歴（直近）
 ```
-3df4d02 feat: LINEカードに調理時間・材料数を常時表示
-1eec2a5 docs: update SESSION.md for session handoff
-18ce8fa feat: レシピカードに調理時間と材料数を表示
-39ed253 docs: update SESSION.md for session handoff
-cf668e7 fix: セパレーターを復元し「さらに見る」フッターの余白を拡大
+49e7585 fix: よく見る一覧カードに調理時間と材料数を表示
+8cbc03a docs: バックログ README のLIFF絞り込みエピックを完了に更新
+b06cf7d Merge pull request #16 from mktu/feature/fix-line-card-cross-fields
+5ef3df5 fix: LINEカードの時短・材料少なめで両フィールドを表示し横並びに変更
+1ea5e5e docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
@@ -80,9 +79,10 @@ https://github.com/mktu/recipe-app
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
 - `docs/backlogs/README.md` - エピック一覧
-- `src/components/features/home/recipe-card.tsx` - レシピカード（調理時間・材料数表示）
+- `src/lib/line/search-recipes.ts` - Bot用レシピ取得クエリ（よく見る・時短・材料少なめ等）
+- `src/lib/line/category-handler.ts` - カテゴリ選択ハンドラー（よく見る・時短・材料少なめ）
 - `src/lib/line/flex-message.ts` - Flex Message 生成（リストUI）
-- `src/lib/line/category-handler.ts` - カテゴリ選択ハンドラー（LIFF URL生成）
+- `src/components/features/home/recipe-card.tsx` - レシピカード（調理時間・材料数表示）
 - `src/types/recipe.ts` - SortOrder 型定義
 - `src/hooks/use-recipe-filters.ts` - フィルター状態管理（InitialFilters）
 - `src/app/(protected)/page.tsx` - ?sort= クエリパラメータ受け取り
