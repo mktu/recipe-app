@@ -10,6 +10,7 @@
 | 調理時間データ取得 | [cooking-time.md](./cooking-time.md) | ✅ 完了 |
 | LINEチャットのレシピリスト改善 | [line-recipe-list.md](./line-recipe-list.md) | ✅ 完了 |
 | LINE カテゴリカードから LIFF 絞り込みページへの誘導 | [liff-category-filter.md](./liff-category-filter.md) | ✅ 完了 |
+| オンボーディングチャット - 初回レシピ一括登録 | [onboarding-chat.md](./onboarding-chat.md) | 📋 未着手 |
 
 ## ステータス凡例
 
