@@ -141,8 +141,8 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
   textContents.push({
     type: 'box', layout: 'horizontal', margin: 'sm',
     contents: [
-      { type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, flex: 1 },
-      { type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, flex: 1 },
+      { type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, flex: 0 },
+      { type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, flex: 0, margin: 'md' },
     ],
   })
   return {
