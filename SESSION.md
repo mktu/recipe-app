@@ -1,28 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-07 (オンボーディングチャット機能のバックログ作成・事前確認完了)
+2026-03-08 (「探す」クイックリストに最近追加を追加・カード余白修正)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **オンボーディングチャット機能のバックログ作成**
-  - `docs/backlogs/onboarding-chat.md` を新規作成
-  - 初回レシピ登録障壁の解決策を議論・設計
-  - バックグラウンド収集 + LINE 通知方式に決定
-- [x] **スクレイピング検証**
-  - `scripts/test-onboarding-scrape.ts` を作成・実行
-  - DELISH KITCHEN (`?q=`) / Nadia (`?keyword=`) の検索URLを確認
-  - 両サービスとも 2秒以内で5件取得可能と確認
-- [x] **事前確認事項をすべて解決・決定**
-  - Edge Function 非同期実行: `EdgeRuntime.waitUntil()` で対応可能（Free プラン 150秒以内に収まる）
-  - LINE User ID: `users.line_user_id` に保存済みで追加対応不要
-  - スキップ時: 案A（`onboarding_completed_at` 設定）+ 「レシピを探してもらう」再実行機能
-  - 既存ユーザー: マイグレーションで完了済み扱いに一括更新（案B）
-  - 期限切れ: 「もう一度試してください」表示 → オンボーディングトップへ誘導
-  - Nadia 検索精度: ミスマッチは許容範囲
-  - robots.txt: 両サービスとも問題なし（Nadia は AI クローラーブロックあるが Browser UA のため非該当）
+- [x] **「探す」クイックリストに「🆕 最近追加」を追加**
+  - `fetchRecentlyAddedForBot`（created_at DESC）を `search-recipes.ts` に追加
+  - `isRecentlyAddedKeyword` / `handleRecentlyAdded` を `category-handler.ts` に追加
+  - クイックリプライ先頭に `🆕 最近追加` を追加（計4択）
+  - webhook ルートにハンドラーを登録
+- [x] **レシピカードの調理時間・品数の余白を修正**
+  - `flex: 1` → `flex: 0` + `margin: 'md'` でコンテンツ幅に詰める
+- [x] **オンボーディングチャット機能のバックログ作成**（前セッション）
 - [x] **よく見る一覧カードに調理時間・材料数を表示**（前セッション）
 
 ## 進行中のタスク
@@ -79,11 +71,11 @@
 
 ## コミット履歴（直近）
 ```
+60a5190 fix: レシピカードの調理時間と品数の間の余白を詰める
+2ee7c16 feat: 「探す」クイックリストに最近追加したレシピを追加
+65edea1 docs: update SESSION.md and add onboarding-chat backlog
 20e19b3 docs: update SESSION.md for session handoff
 49e7585 fix: よく見る一覧カードに調理時間と材料数を表示
-8cbc03a docs: バックログ README のLIFF絞り込みエピックを完了に更新
-b06cf7d Merge pull request #16 from mktu/feature/fix-line-card-cross-fields
-5ef3df5 fix: LINEカードの時短・材料少なめで両フィールドを表示し横並びに変更
 ```
 
 ## GitHubリポジトリ
@@ -91,12 +83,11 @@ https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `docs/backlogs/onboarding-chat.md` - オンボーディングチャット機能のバックログ（事前確認事項含む）
-- `scripts/test-onboarding-scrape.ts` - スクレイピング検証スクリプト
+- `src/lib/line/category-handler.ts` - 「探す」クイックリプライ・カテゴリハンドラー
+- `src/lib/line/search-recipes.ts` - LINE Bot 用レシピ取得クエリ
+- `src/lib/line/flex-message.ts` - LINE Flex Message 生成
+- `src/app/api/webhook/line/route.ts` - LINE Webhook エントリポイント
 - `docs/backlogs/README.md` - エピック一覧
 - `requirements.md` - プロダクト要件（ユースケース・機能要件）
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
-- `src/lib/scraper/html-fetcher.ts` - HTML 取得（Browser UA 設定）
-- `src/lib/scraper/json-ld-extractor.ts` - DELISH KITCHEN 向け JSON-LD 抽出
-- `src/lib/scraper/next-data-extractor.ts` - Nadia 向け __NEXT_DATA__ 抽出
-- `supabase/functions/generate-embeddings/index.ts` - Edge Function の実装パターン参考
