@@ -159,6 +159,29 @@ export async function fetchFewIngredientsForBot(lineUserId: string, limit = 5): 
   }))
 }
 
+/** 最近追加したレシピ（created_at DESC） */
+export async function fetchRecentlyAddedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
+  const supabase = createServerClient()
+  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('recipes')
+    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    url: r.url,
+    imageUrl: r.image_url,
+    sourceName: r.source_name,
+    cookingTimeMinutes: r.cooking_time_minutes,
+    ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null,
+  }))
+}
+
 /** 時短レシピ（cooking_time_minutes ASC、NULL除外） */
 export async function fetchShortCookingTimeForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
   const supabase = createServerClient()

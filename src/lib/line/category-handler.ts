@@ -1,6 +1,6 @@
 import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage, RecipeCardData } from './flex-message'
-import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot } from './search-recipes'
+import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './search-recipes'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
@@ -24,6 +24,11 @@ export function isFewIngredientsKeyword(text: string): boolean {
   return ['材料少なめ', '材料少ない', '少ない材料'].includes(text.trim())
 }
 
+/** 「最近追加」キーワードかどうかを判定 */
+export function isRecentlyAddedKeyword(text: string): boolean {
+  return ['最近追加', '最近追加したもの', '新着', '新しく追加'].includes(text.trim())
+}
+
 /** 「お気に入り」キーワードかどうかを判定 */
 export function isOkiniiriKeyword(text: string): boolean {
   return ['お気に入り', 'おきにいり', 'お気に入りレシピ'].includes(text.trim())
@@ -42,6 +47,7 @@ export async function handleSearchCategoryPrompt(
         text: '🔍 レシピを探す\n\n食材名やレシピ名をそのまま入力して検索できます。\n例：「鶏肉 玉ねぎ」「パスタ」\n\nよく使う絞り込み👇',
         quickReply: {
           items: [
+            { type: 'action', action: { type: 'message', label: '🆕 最近追加', text: '最近追加' } },
             { type: 'action', action: { type: 'message', label: '🔁 よく見る', text: 'よく見る' } },
             { type: 'action', action: { type: 'message', label: '📦 材料少なめ', text: '材料少なめ' } },
             { type: 'action', action: { type: 'message', label: '⏱ 時短', text: '時短' } },
@@ -153,6 +159,39 @@ export async function handleFewIngredients(
     })
   } catch (err) {
     console.error('[LINE Webhook] handleFewIngredients error:', err)
+    await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
+  }
+}
+
+/** 最近追加したレシピを返す（created_at DESC） */
+export async function handleRecentlyAdded(
+  client: MessagingApiClient,
+  replyToken: string,
+  lineUserId: string
+): Promise<void> {
+  try {
+    const recipes = await fetchRecentlyAddedForBot(lineUserId)
+    if (recipes.length === 0) {
+      await replyText(client, replyToken, 'まだレシピが登録されていません。\nURLを送ってレシピを保存しましょう！')
+      return
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
+    const cards: RecipeCardData[] = recipes.map((r) => ({
+      title: r.title,
+      url: `${baseUrl}/api/track/recipe/${r.id}`,
+      imageUrl: r.imageUrl,
+      sourceName: r.sourceName,
+      cookingTimeMinutes: r.cookingTimeMinutes,
+      ingredientCount: r.ingredientCount,
+    }))
+    const liffUrl = `https://liff.line.me/${liffId}?sort=newest`
+    await client.replyMessage({
+      replyToken,
+      messages: [createVerticalListMessage(cards, liffUrl, cards.length, '🆕 最近追加したレシピ', cards.length >= 5)],
+    })
+  } catch (err) {
+    console.error('[LINE Webhook] handleRecentlyAdded error:', err)
     await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
   }
 }

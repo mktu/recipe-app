@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from '@line/bot-sdk'
 import { createServerClient } from '@/lib/db/client'
 import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } from '@/lib/line/search-handler'
-import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites } from '@/lib/line/category-handler'
+import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, isRecentlyAddedKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites, handleRecentlyAdded } from '@/lib/line/category-handler'
 import { replyTest, processUrl } from '@/lib/line/url-handler'
 
 const config = {
@@ -79,6 +79,7 @@ function buildKeywordHandlers(replyToken: string, userId: string): KeywordEntry[
     [isHelpKeyword, () => replyHelp(replyToken)],
     [isSearchKeyword, () => handleSearchCategoryPrompt(client, replyToken)],
     [isOkiniiriKeyword, () => handleFavorites(client, replyToken)],
+    [isRecentlyAddedKeyword, () => handleRecentlyAdded(client, replyToken, userId)],
     [isYokuTsukuruKeyword, () => handleYokuTsukuru(client, replyToken, userId)],
     [isFewIngredientsKeyword, () => handleFewIngredients(client, replyToken, userId)],
     [isShortCookingTimeKeyword, () => handleShortCookingTime(client, replyToken, userId)],
