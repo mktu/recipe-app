@@ -70,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+2c43f29 docs: 認証フロー図をユーザー登録タイミングの実態に合わせて更新
 5882c56 feat: 友達追加時にユーザー登録とウェルカムメッセージを送信
 cb19009 docs: update SESSION.md for session handoff
 60a5190 fix: レシピカードの調理時間と品数の間の余白を詰める
 2ee7c16 feat: 「探す」クイックリストに最近追加したレシピを追加
-65edea1 docs: update SESSION.md and add onboarding-chat backlog
 ```
 
 ## GitHubリポジトリ
