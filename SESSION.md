@@ -1,21 +1,19 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-08 (「探す」クイックリストに最近追加を追加・カード余白修正)
+2026-03-09 (友達追加時のユーザー登録・ウェルカムメッセージ実装)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **「探す」クイックリストに「🆕 最近追加」を追加**
-  - `fetchRecentlyAddedForBot`（created_at DESC）を `search-recipes.ts` に追加
-  - `isRecentlyAddedKeyword` / `handleRecentlyAdded` を `category-handler.ts` に追加
-  - クイックリプライ先頭に `🆕 最近追加` を追加（計4択）
-  - webhook ルートにハンドラーを登録
-- [x] **レシピカードの調理時間・品数の余白を修正**
-  - `flex: 1` → `flex: 0` + `margin: 'md'` でコンテンツ幅に詰める
-- [x] **オンボーディングチャット機能のバックログ作成**（前セッション）
-- [x] **よく見る一覧カードに調理時間・材料数を表示**（前セッション）
+- [x] **友達追加時のユーザー登録・ウェルカムメッセージ実装**
+  - `handleFollowEvent` を `route.ts` に追加（`follow` イベント処理）
+  - 友達追加時に `ensureUser()` でユーザー登録 → `pushMessage` でウェルカムメッセージ送信
+  - 「友達追加 = アプリ登録」という自然なUXを実現（オンボーディング実装の前提）
+  - 実機テストは次回以降
+- [x] **「探す」クイックリストに「🆕 最近追加」を追加**（前セッション）
+- [x] **レシピカードの調理時間・品数の余白を修正**（前セッション）
 
 ## 進行中のタスク
 （なし）
@@ -28,7 +26,8 @@
   - 収集ジョブ起動 API（`/api/onboarding/start`）
   - バックグラウンドスクレイピング Edge Function（`EdgeRuntime.waitUntil()`）
   - LINE 通知 → 候補選択 UI → 一括登録
-- [ ] **LINE 実機確認**（時短カード・材料少なめカードの「さらに見る →」動作確認）
+  - ウェルカムメッセージをオンボーディング誘導に更新（`route.ts` の `welcomeText`）
+- [ ] **LINE 実機確認**（友達追加時のユーザー登録・ウェルカムメッセージ / 時短カード・材料少なめカードの「さらに見る →」動作確認）
 - [ ] **本番環境の Supabase プロジェクト作成**（東京リージョン）
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
 - [ ] **OGP 画像の作成**（1200×630px）
@@ -71,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+5882c56 feat: 友達追加時にユーザー登録とウェルカムメッセージを送信
+cb19009 docs: update SESSION.md for session handoff
 60a5190 fix: レシピカードの調理時間と品数の間の余白を詰める
 2ee7c16 feat: 「探す」クイックリストに最近追加したレシピを追加
 65edea1 docs: update SESSION.md and add onboarding-chat backlog
-20e19b3 docs: update SESSION.md for session handoff
-49e7585 fix: よく見る一覧カードに調理時間と材料数を表示
 ```
 
 ## GitHubリポジトリ
@@ -83,10 +82,10 @@ https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `docs/backlogs/onboarding-chat.md` - オンボーディングチャット機能のバックログ（事前確認事項含む）
+- `src/app/api/webhook/line/route.ts` - LINE Webhook エントリポイント（`handleFollowEvent` 追加済み）
 - `src/lib/line/category-handler.ts` - 「探す」クイックリプライ・カテゴリハンドラー
 - `src/lib/line/search-recipes.ts` - LINE Bot 用レシピ取得クエリ
 - `src/lib/line/flex-message.ts` - LINE Flex Message 生成
-- `src/app/api/webhook/line/route.ts` - LINE Webhook エントリポイント
 - `docs/backlogs/README.md` - エピック一覧
 - `requirements.md` - プロダクト要件（ユースケース・機能要件）
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
