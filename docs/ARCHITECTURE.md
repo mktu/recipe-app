@@ -381,15 +381,35 @@ graph TB
     LINELogin --> LINEUser["LINE User"]
 ```
 
+### ユーザー登録フロー
+
+ユーザーは **LINE Bot を友達追加したタイミング**で登録される。
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant LINE as LINE Platform
+    participant Webhook as Webhook API
+    participant DB as Supabase
+
+    User->>LINE: 友達追加
+    LINE->>Webhook: follow イベント
+    Webhook->>LINE: getProfile()
+    LINE-->>Webhook: displayName
+    Webhook->>DB: INSERT users
+    Webhook->>LINE: pushMessage (ウェルカムメッセージ)
+    LINE-->>User: ウェルカムメッセージ
+```
+
 ### LINE LIFF 認証フロー
+
+LIFF アクセス時はユーザー登録は行わず、LINE SDK から profile を取得してメモリ上で保持する。
 
 ```mermaid
 sequenceDiagram
     participant User as User
     participant LIFF as LIFF App
     participant LINE as LINE Platform
-    participant API as Next.js API
-    participant DB as Supabase
 
     User->>LIFF: Open app
     LIFF->>LINE: liff.init()
@@ -403,12 +423,8 @@ sequenceDiagram
     end
 
     LIFF->>LINE: liff.getProfile()
-    LINE-->>LIFF: User profile
-
-    LIFF->>API: POST /api/auth/ensure-user
-    API->>DB: UPSERT users
-    DB-->>API: User info
-    API-->>LIFF: Auth complete
+    LINE-->>LIFF: User profile (lineUserId, displayName)
+    Note over LIFF: DB への登録は友達追加時に完了済み
 ```
 
 ---
