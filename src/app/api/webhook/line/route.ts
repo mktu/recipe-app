@@ -98,6 +98,22 @@ async function handleKeyword(text: string, replyToken: string, userId: string): 
   return true
 }
 
+/** 友達追加・ブロック解除イベントを処理 */
+async function handleFollowEvent(event: WebhookEvent): Promise<void> {
+  if (event.type !== 'follow' || !event.source?.userId) return
+  const { userId } = event.source
+
+  await ensureUser(userId)
+
+  const welcomeText = `RecipeHub へようこそ！🎉
+
+レシピサイトの URL をこのトークに送るだけで、食材タグつきで自動保存できます。
+
+まずは「使い方」と送ってみてください 👋`
+
+  await client.pushMessage({ to: userId, messages: [{ type: 'text', text: welcomeText }] })
+}
+
 /** メッセージイベントを処理 */
 async function handleMessageEvent(event: WebhookEvent): Promise<void> {
   if (event.type !== 'message' || event.message.type !== 'text') return
@@ -131,7 +147,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = JSON.parse(bodyText) as { events: WebhookEvent[] }
-  await Promise.all(body.events.map((event) => handleMessageEvent(event)))
+  await Promise.all(body.events.map((event) => Promise.all([
+    handleFollowEvent(event),
+    handleMessageEvent(event),
+  ])))
 
   return NextResponse.json({ status: 'ok' })
 }
