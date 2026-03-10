@@ -24,6 +24,9 @@
 - `last_viewed_at`: Timestamp (最終閲覧日時)
 - `cooking_time_minutes`: Integer (調理時間・分。不明の場合は NULL)
 - `ingredients_linked`: Boolean (食材マッチング完了フラグ、デフォルト false)
+- `title_embedding`: vector(3072) (タイトルの埋め込みベクトル。pgvector)
+- `embedding_generated_at`: Timestamp (埋め込み生成日時)
+- `embedding_retry_count`: Integer (埋め込み生成失敗回数。3回以上でスキップ、デフォルト 0)
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
 
@@ -40,6 +43,8 @@
 
 - `alias`: String (Primary Key) -- "茄子", "ナス"
 - `ingredient_id`: UUID (Foreign Key → ingredients.id)
+- `auto_generated`: Boolean (LLM による自動生成フラグ、デフォルト false)
+- `created_at`: Timestamp
 
 ### `recipe_ingredients` テーブル（中間テーブル）
 
@@ -47,6 +52,16 @@
 - `ingredient_id`: UUID (Foreign Key → ingredients.id)
 - `is_main`: Boolean (メイン食材かどうか、デフォルト false)
 - PRIMARY KEY (`recipe_id`, `ingredient_id`)
+
+### `unmatched_ingredients` テーブル（未マッチ食材キュー）
+
+- `id`: UUID (Primary Key)
+- `raw_name`: String (LLM が出力した生の食材名)
+- `normalized_name`: String (正規化後の食材名)
+- `recipe_id`: UUID (Foreign Key → recipes.id ON DELETE CASCADE)
+- `created_at`: Timestamp
+
+バッチ処理（`auto-alias` Edge Function）の処理待ちキュー。マッチング成功または新規食材追加後に削除される。
 
 ## ER図（概要）
 
@@ -169,3 +184,15 @@ recipe_ingredients に紐づけを保存
 - 初期データとして DB に投入
 - AI が新規食材を出力した場合は自動追加（`needs_review` フラグ付き）
 - 定期的にレビューして整理
+
+## RPC 関数
+
+PostgreSQL ストアドプロシージャ（Supabase RPC）として定義された関数。
+
+| 関数名 | 説明 | 主な用途 |
+|--------|------|---------|
+| `get_frequent_ingredients(p_user_id, p_limit)` | ユーザーがよく使う食材を頻度順で取得 | レシピ一覧の食材フィルター候補表示 |
+| `search_recipes_by_embedding(p_user_id, p_query_embedding, p_match_threshold, p_match_count)` | コサイン類似度によるベクトル検索 | セマンティック検索（pgvector `<=>` 演算子） |
+| `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
+| `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |
+| `get_recipes_short_cooking_time(p_user_id, p_limit)` | 調理時間が短いレシピ取得 | LINE Bot のカテゴリ検索 |

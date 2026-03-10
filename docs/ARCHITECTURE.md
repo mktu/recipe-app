@@ -94,6 +94,7 @@ recipe-app/
 │   │   └── providers/        # Context プロバイダー
 │   ├── hooks/                # カスタム hooks
 │   ├── lib/
+│   │   ├── async/            # レスポンス後バックグラウンド処理ユーティリティ
 │   │   ├── auth/             # 認証プロバイダー (LIFF / Dev)
 │   │   ├── batch/            # Edge Functions 共有ロジック（Node.js）
 │   │   ├── db/               # Supabase クライアント・クエリ
