@@ -1,19 +1,19 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-09 (友達追加時のユーザー登録・ウェルカムメッセージ実装)
+2026-03-10 (アーキテクチャ・DBドキュメント整備、doc-check スラッシュコマンド追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **友達追加時のユーザー登録・ウェルカムメッセージ実装**
-  - `handleFollowEvent` を `route.ts` に追加（`follow` イベント処理）
-  - 友達追加時に `ensureUser()` でユーザー登録 → `pushMessage` でウェルカムメッセージ送信
-  - 「友達追加 = アプリ登録」という自然なUXを実現（オンボーディング実装の前提）
-  - 実機テストは次回以降
-- [x] **「探す」クイックリストに「🆕 最近追加」を追加**（前セッション）
-- [x] **レシピカードの調理時間・品数の余白を修正**（前セッション）
+- [x] **ドキュメントと実装の乖離チェック・修正**
+  - `docs/ARCHITECTURE.md`: `src/lib/async/` をディレクトリ構造に追記
+  - `docs/DATABASE_DESIGN.md`: `recipes` の埋め込み関連カラム3件追記、`ingredient_aliases` の2カラム追記、`unmatched_ingredients` テーブル定義追加、RPC関数セクション新設
+- [x] **doc-check スラッシュコマンド追加**（`.claude/commands/`）
+  - `/doc-check-structure`: 構造レベルの乖離チェック
+  - `/doc-check-logic [セクション名]`: フローチャート・説明文の意味的検証（git diff から自動推論）
+- [x] **友達追加時のユーザー登録・ウェルカムメッセージ実装**（前セッション）
 
 ## 進行中のタスク
 （なし）
@@ -70,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+337d040 docs: アーキテクチャ・DB設計ドキュメントを実装と同期
+0ca1837 docs: update SESSION.md for session handoff
 2c43f29 docs: 認証フロー図をユーザー登録タイミングの実態に合わせて更新
 5882c56 feat: 友達追加時にユーザー登録とウェルカムメッセージを送信
 cb19009 docs: update SESSION.md for session handoff
-60a5190 fix: レシピカードの調理時間と品数の間の余白を詰める
-2ee7c16 feat: 「探す」クイックリストに最近追加したレシピを追加
 ```
 
 ## GitHubリポジトリ
@@ -82,11 +82,12 @@ https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
 - `docs/backlogs/onboarding-chat.md` - オンボーディングチャット機能のバックログ（事前確認事項含む）
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造（今セッションで更新済み）
+- `docs/DATABASE_DESIGN.md` - DBスキーマ詳細（今セッションで更新済み）
+- `.claude/commands/doc-check-structure.md` - 構造乖離チェックコマンド
+- `.claude/commands/doc-check-logic.md` - ロジック意味的検証コマンド
 - `src/app/api/webhook/line/route.ts` - LINE Webhook エントリポイント（`handleFollowEvent` 追加済み）
 - `src/lib/line/category-handler.ts` - 「探す」クイックリプライ・カテゴリハンドラー
-- `src/lib/line/search-recipes.ts` - LINE Bot 用レシピ取得クエリ
-- `src/lib/line/flex-message.ts` - LINE Flex Message 生成
 - `docs/backlogs/README.md` - エピック一覧
 - `requirements.md` - プロダクト要件（ユースケース・機能要件）
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造
