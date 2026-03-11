@@ -234,24 +234,57 @@ export type Database = {
           },
         ]
       }
+      onboarding_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          preferences: Json
+          candidates: Json | null
+          status: string
+          created_at: string | null
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          preferences: Json
+          candidates?: Json | null
+          status?: string
+          created_at?: string | null
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          preferences?: Json
+          candidates?: Json | null
+          status?: string
+          created_at?: string | null
+          expires_at?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
           display_name: string
           id: string
           line_user_id: string
+          onboarding_completed_at: string | null
         }
         Insert: {
           created_at?: string | null
           display_name: string
           id?: string
           line_user_id: string
+          onboarding_completed_at?: string | null
         }
         Update: {
           created_at?: string | null
           display_name?: string
           id?: string
           line_user_id?: string
+          onboarding_completed_at?: string | null
         }
         Relationships: []
       }

@@ -105,13 +105,50 @@ async function handleFollowEvent(event: WebhookEvent): Promise<void> {
 
   await ensureUser(userId)
 
-  const welcomeText = `RecipeHub へようこそ！🎉
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const onboardingUrl = liffId
+    ? `https://liff.line.me/${liffId}/onboarding`
+    : `${appUrl}/onboarding`
 
-レシピサイトの URL をこのトークに送るだけで、食材タグつきで自動保存できます。
-
-まずは「使い方」と送ってみてください 👋`
-
-  await client.pushMessage({ to: userId, messages: [{ type: 'text', text: welcomeText }] })
+  await client.pushMessage({
+    to: userId,
+    messages: [
+      {
+        type: 'flex',
+        altText: 'RecipeHub へようこそ！まず好みのレシピを探してみましょう。',
+        contents: {
+          type: 'bubble',
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              { type: 'text', text: 'RecipeHub へようこそ！🍳', weight: 'bold', size: 'lg' },
+              {
+                type: 'text',
+                text: 'まず、好みに合ったレシピを一緒に探してみましょう。\n下のボタンからはじめてください👇',
+                size: 'sm',
+                color: '#666666',
+                margin: 'md',
+                wrap: true,
+              },
+            ],
+          },
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                style: 'primary',
+                action: { type: 'uri', label: 'レシピを探す', uri: onboardingUrl },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  })
 }
 
 /** メッセージイベントを処理 */
