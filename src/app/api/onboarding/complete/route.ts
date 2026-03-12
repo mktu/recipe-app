@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/db/client'
-import { createRecipe } from '@/lib/db/queries/recipes'
-import type { CreateRecipeInput } from '@/types/recipe'
+import type { Json, TablesInsert } from '@/types/database'
 
 interface RecipeCandidate {
   url: string
@@ -24,24 +23,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing lineUserId' }, { status: 400 })
   }
 
-  // 選択されたレシピを順次登録
-  for (const candidate of selectedCandidates) {
-    const input: CreateRecipeInput = {
-      lineUserId,
-      url: candidate.url,
-      title: candidate.title,
-      imageUrl: candidate.imageUrl,
-      ingredientIds: [],
-      ingredientsRaw: candidate.ingredientsRaw ?? [],
-      cookingTimeMinutes: candidate.cookingTimeMinutes ?? null,
-    }
-    const { error } = await createRecipe(input)
+  const supabase = createServerClient()
+
+  // userId を1回だけ取得
+  const { data: user } = await supabase
+    .from('users')
+    .select('id')
+    .eq('line_user_id', lineUserId)
+    .maybeSingle()
+
+  if (user && selectedCandidates.length > 0) {
+    const rows: TablesInsert<'recipes'>[] = selectedCandidates.map((c) => ({
+      user_id: user.id,
+      url: c.url,
+      title: c.title,
+      image_url: c.imageUrl ?? null,
+      cooking_time_minutes: c.cookingTimeMinutes ?? null,
+      ingredients_raw: (c.ingredientsRaw ?? []) as unknown as Json,
+      ingredients_linked: false,
+    }))
+
+    const { error } = await supabase.from('recipes').insert(rows)
     if (error) {
-      console.error('[onboarding/complete] createRecipe error:', error)
+      console.error('[onboarding/complete] Bulk insert error:', error)
     }
   }
-
-  const supabase = createServerClient()
 
   // onboarding_completed_at を更新
   const { error: updateError } = await supabase
@@ -54,10 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   // onboarding_sessions を削除（一時データ破棄）
-  await supabase
-    .from('onboarding_sessions')
-    .delete()
-    .eq('user_id', lineUserId)
+  await supabase.from('onboarding_sessions').delete().eq('user_id', lineUserId)
 
   return NextResponse.json({ success: true })
 }
