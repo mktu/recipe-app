@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/lib/auth'
@@ -59,23 +58,9 @@ export function RecipeCandidates() {
   const { user } = useAuth()
   const router = useRouter()
   const session = useOnboardingSession(user?.lineUserId)
-  // null = not yet customized (all selected by default); Set = user customized
-  const [customSelected, setCustomSelected] = useState<Set<string> | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const candidates = session?.status === 'completed' ? (session.candidates ?? []) : []
-  // Default: all selected. Custom selection overrides.
-  const selected = customSelected ?? new Set(candidates.map((c) => c.url))
-
-  function toggleCandidate(url: string) {
-    const next = new Set(selected)
-    if (next.has(url)) {
-      next.delete(url)
-    } else {
-      next.add(url)
-    }
-    setCustomSelected(next)
-  }
 
   async function handleComplete(toRegister: RecipeCandidate[]) {
     if (!user) return
@@ -89,7 +74,6 @@ export function RecipeCandidates() {
   }
 
   if (session === undefined) return <LoadingView message="確認中..." />
-
   if (session === null) {
     return (
       <CenterView>
@@ -98,9 +82,7 @@ export function RecipeCandidates() {
       </CenterView>
     )
   }
-
   if (session.status === 'pending') return <LoadingView message="バックグラウンドで探しています..." />
-
   if (session.status === 'failed' || candidates.length === 0) {
     return (
       <CenterView>
@@ -108,6 +90,33 @@ export function RecipeCandidates() {
         <Button variant="outline" onClick={() => handleComplete([])} disabled={submitting}>スキップして始める</Button>
       </CenterView>
     )
+  }
+
+  return (
+    <CandidatesView
+      candidates={candidates}
+      submitting={submitting}
+      onComplete={handleComplete}
+      onSkip={() => handleComplete([])}
+    />
+  )
+}
+
+interface CandidatesViewProps {
+  candidates: RecipeCandidate[]
+  submitting: boolean
+  onComplete: (selected: RecipeCandidate[]) => void
+  onSkip: () => void
+}
+
+function CandidatesView({ candidates, submitting, onComplete, onSkip }: CandidatesViewProps) {
+  const [customSelected, setCustomSelected] = useState<Set<string> | null>(null)
+  const selected = customSelected ?? new Set(candidates.map((c) => c.url))
+
+  function toggleCandidate(url: string) {
+    const next = new Set(selected)
+    if (next.has(url)) { next.delete(url) } else { next.add(url) }
+    setCustomSelected(next)
   }
 
   return (
@@ -122,16 +131,10 @@ export function RecipeCandidates() {
         ))}
       </div>
       <div className="mt-6 space-y-2">
-        <Button
-          className="w-full"
-          onClick={() => handleComplete(candidates.filter((c) => selected.has(c.url)))}
-          disabled={submitting || selected.size === 0}
-        >
+        <Button className="w-full" onClick={() => onComplete(candidates.filter((c) => selected.has(c.url)))} disabled={submitting || selected.size === 0}>
           {submitting ? '登録中…' : `まとめて登録する（${selected.size}件）`}
         </Button>
-        <Button variant="ghost" className="w-full" onClick={() => handleComplete([])} disabled={submitting}>
-          スキップして始める
-        </Button>
+        <Button variant="ghost" className="w-full" onClick={onSkip} disabled={submitting}>スキップして始める</Button>
       </div>
     </div>
   )
@@ -142,8 +145,9 @@ function CandidateCard({ candidate, checked, onToggle }: { candidate: RecipeCand
     <div className="flex items-start gap-3 rounded-lg border p-3">
       <Checkbox id={candidate.url} checked={checked} onCheckedChange={onToggle} className="mt-1" />
       {candidate.imageUrl && (
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded">
-          <Image src={candidate.imageUrl} alt={candidate.title} fill className="object-cover" unoptimized />
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={candidate.imageUrl} alt={candidate.title} className="h-full w-full object-cover" />
         </div>
       )}
       <label htmlFor={candidate.url} className="flex-1 cursor-pointer space-y-0.5">
