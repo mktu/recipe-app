@@ -372,6 +372,9 @@ verify_jwt = false
 [functions.auto-alias]
 verify_jwt = false
 
+[functions.onboarding-scrape]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
