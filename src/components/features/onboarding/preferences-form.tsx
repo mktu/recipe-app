@@ -92,7 +92,7 @@ export function PreferencesForm() {
               onChange={(v) => setForm((f) => ({ ...f, searchKeywords: v }))}
               placeholder="例: 鶏肉、パスタ、時短…"
             />
-            <p className="text-xs text-muted-foreground">Enter または候補をタップで追加</p>
+            <p className="text-xs text-muted-foreground">候補から選んでください（Enter で先頭候補を追加）</p>
           </div>
           <div className="space-y-2">
             <Label>苦手な食材（任意）</Label>

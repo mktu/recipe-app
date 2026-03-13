@@ -41,6 +41,7 @@ function useSuggestIngredients(query: string, selected: string[]) {
 export function IngredientSuggestInput({ value, onChange, placeholder }: IngredientSuggestInputProps) {
   const [query, setQuery] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [isComposing, setIsComposing] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const suggestions = useSuggestIngredients(query, value)
   const showDropdown = dropdownOpen && suggestions.length > 0
@@ -55,10 +56,9 @@ export function IngredientSuggestInput({ value, onChange, placeholder }: Ingredi
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  function addItem(name: string) {
-    const trimmed = name.trim()
-    if (!trimmed || value.includes(trimmed)) return
-    onChange([...value, trimmed])
+  function addFromSuggestion(name: string) {
+    if (value.includes(name)) return
+    onChange([...value, name])
     setQuery('')
     setDropdownOpen(false)
   }
@@ -73,9 +73,13 @@ export function IngredientSuggestInput({ value, onChange, placeholder }: Ingredi
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && query.trim()) {
+    // IME確定中のEnterは無視（日本語入力対応）
+    if (e.key === 'Enter' && !isComposing) {
       e.preventDefault()
-      addItem(query)
+      // 完全一致優先、なければ先頭候補
+      const exact = suggestions.find((s) => s.name === query.trim())
+      const toAdd = exact ?? (suggestions.length > 0 ? suggestions[0] : null)
+      if (toAdd) addFromSuggestion(toAdd.name)
     }
     if (e.key === 'Backspace' && !query && value.length > 0) {
       onChange(value.slice(0, -1))
@@ -98,6 +102,8 @@ export function IngredientSuggestInput({ value, onChange, placeholder }: Ingredi
           value={query}
           onChange={handleQueryChange}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
           placeholder={value.length === 0 ? placeholder : ''}
         />
       </div>
@@ -108,7 +114,7 @@ export function IngredientSuggestInput({ value, onChange, placeholder }: Ingredi
               <button
                 type="button"
                 className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-                onMouseDown={(e) => { e.preventDefault(); addItem(s.name) }}
+                onMouseDown={(e) => { e.preventDefault(); addFromSuggestion(s.name) }}
               >
                 {s.name}
               </button>
