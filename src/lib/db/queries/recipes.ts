@@ -1,206 +1,17 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { supabase, createServerClient } from '@/lib/db/client'
-import type { Database, Json, Tables, TablesInsert } from '@/types/database'
-import type { SortOrder, RecipeWithIngredients, RecipeIngredient, CreateRecipeInput } from '@/types/recipe'
-import { getVectorSearchIds } from './recipe-embedding'
-
-const MIN_ILIKE_RESULTS = 3
+import { createServerClient } from '@/lib/db/client'
+import type { Database, Json, TablesInsert } from '@/types/database'
+import type { CreateRecipeInput } from '@/types/recipe'
 
 type TypedSupabaseClient = SupabaseClient<Database>
 
-export interface FetchRecipesParams {
-  userId: string
-  searchQuery?: string
-  ingredientIds?: string[]
-  sortOrder?: SortOrder
-}
-
-type RecipeIngredientRow = {
-  recipe_id: string
-  ingredient_id: string
-  is_main: boolean
-  ingredients: { id: string; name: string } | null
-}
-
-/** レシピごとの食材マップを構築 */
-function buildIngredientMap(rows: RecipeIngredientRow[]): Map<string, RecipeIngredient[]> {
-  const map = new Map<string, RecipeIngredient[]>()
-  for (const ri of rows) {
-    if (!ri.ingredients) continue
-    const list = map.get(ri.recipe_id) || []
-    list.push({ id: ri.ingredients.id, name: ri.ingredients.name, isMain: ri.is_main })
-    map.set(ri.recipe_id, list)
-  }
-  return map
-}
-
-type IngredientWithParent = {
-  id: string
-  parent_id: string | null
-}
-
-/**
- * 食材IDとその子食材IDを取得（親子展開）
- * 例: 「豚肉」のIDを渡すと、「豚肉」「豚バラ肉」「豚こま切れ肉」等のIDを返す
- */
-async function getIngredientAndChildIds(ingredientIds: string[]): Promise<Map<string, string[]>> {
-  if (ingredientIds.length === 0) return new Map()
-
-  const { data, error } = await supabase
-    .from('ingredients')
-    .select('id, parent_id')
-    .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
-
-  if (error) {
-    console.error('[getIngredientAndChildIds] Error:', error)
-    return new Map(ingredientIds.map((id) => [id, [id]]))
-  }
-
-  const rows = (data ?? []) as IngredientWithParent[]
-
-  // 各検索食材IDに対して、マッチするID一覧を構築
-  const result = new Map<string, string[]>()
-  for (const searchId of ingredientIds) {
-    const matchingIds = rows
-      .filter((row) => row.id === searchId || row.parent_id === searchId)
-      .map((row) => row.id)
-    // 自分自身も含める
-    if (!matchingIds.includes(searchId)) {
-      matchingIds.push(searchId)
-    }
-    result.set(searchId, matchingIds)
-  }
-  return result
-}
-
-/** 食材IDでフィルタリング（AND ロジック + 親子展開） */
-async function filterByIngredients(
-  recipes: RecipeWithIngredients[],
-  ingredientIds: string[]
-): Promise<RecipeWithIngredients[]> {
-  if (ingredientIds.length === 0) return recipes
-
-  // 各検索食材について、その食材+子食材のIDを取得
-  const expandedIdsMap = await getIngredientAndChildIds(ingredientIds)
-
-  return recipes.filter((recipe) => {
-    const recipeIngredientIds = recipe.mainIngredients.map((i) => i.id)
-
-    // 全ての検索食材について、その食材か子食材がレシピに含まれているか
-    return ingredientIds.every((searchId) => {
-      const expandedIds = expandedIdsMap.get(searchId) || [searchId]
-      return expandedIds.some((id) => recipeIngredientIds.includes(id))
-    })
-  })
-}
-
-/** ユーザーのレシピ一覧を取得 */
-export async function fetchRecipes(
-  params: FetchRecipesParams
-): Promise<{ data: RecipeWithIngredients[]; error: Error | null }> {
-  const { userId: lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } = params
-
-  try {
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('line_user_id', lineUserId)
-      .single()
-
-    if (!user) return { data: [], error: null }
-
-    const userId = (user as { id: string }).id
-    const recipes = await fetchRecipesFromDb(userId, searchQuery, sortOrder)
-    if (recipes.length === 0) return { data: [], error: null }
-
-    const ingredientMap = await fetchIngredientMap(recipes.map((r) => r.id))
-    const result = recipes.map((r) => ({ ...r, mainIngredients: ingredientMap.get(r.id) || [] }))
-
-    return { data: await filterByIngredients(result, ingredientIds), error: null }
-  } catch (err) {
-    return { data: [], error: err instanceof Error ? err : new Error('Unknown error') }
-  }
-}
-
-async function fetchRecipesFromDb(
-  userId: string,
-  searchQuery: string | undefined,
-  sortOrder: SortOrder
-): Promise<Tables<'recipes'>[]> {
-  let recipes: Tables<'recipes'>[]
-
-  if (!searchQuery?.trim()) {
-    let query = supabase.from('recipes').select('*').eq('user_id', userId)
-    query = applySortOrder(query, sortOrder)
-    const { data, error } = await query
-    if (error) throw error
-    recipes = (data ?? []) as Tables<'recipes'>[]
-  } else {
-    recipes = await searchRecipesHybrid(userId, searchQuery.trim(), sortOrder)
-  }
-
-  return sortOrder === 'fewest_ingredients' ? sortByIngredientCount(recipes) : recipes
-}
-
-/** ハイブリッド検索: ILIKE優先、結果が少ない場合はベクトル検索で補完 */
-async function searchRecipesHybrid(userId: string, searchQuery: string, sortOrder: SortOrder): Promise<Tables<'recipes'>[]> {
-  const term = `%${searchQuery}%`
-  let query = supabase.from('recipes').select('*').eq('user_id', userId)
-    .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
-  query = applySortOrder(query, sortOrder)
-  const { data, error } = await query
-  if (error) throw error
-  const ilikeRecipes = (data ?? []) as Tables<'recipes'>[]
-  if (ilikeRecipes.length >= MIN_ILIKE_RESULTS) return ilikeRecipes
-
-  try {
-    const additionalIds = await getVectorSearchIds(supabase, userId, searchQuery, ilikeRecipes.map((r) => r.id), 20)
-    if (additionalIds.length > 0) {
-      const { data: extra } = await supabase.from('recipes').select('*').in('id', additionalIds)
-      return [...ilikeRecipes, ...((extra ?? []) as Tables<'recipes'>[])]
-    }
-  } catch (e) { console.error('[searchRecipesHybrid] Vector search failed:', e) }
-  return ilikeRecipes
-}
-
-type DbSortOrder = Exclude<SortOrder, 'fewest_ingredients'>
-
-const DB_SORT_OPTS: Record<DbSortOrder, [string, object]> = {
-  newest: ['created_at', { ascending: false }],
-  oldest: ['created_at', { ascending: true }],
-  most_viewed: ['view_count', { ascending: false }],
-  recently_viewed: ['last_viewed_at', { ascending: false, nullsFirst: false }],
-  shortest_cooking: ['cooking_time_minutes', { ascending: true, nullsFirst: false }],
-}
-
-function applySortOrder<T>(query: T, sortOrder: SortOrder): T {
-  const q = query as { order: (col: string, opts: object) => T }
-  const dbSortOrder: DbSortOrder = sortOrder === 'fewest_ingredients' ? 'newest' : sortOrder
-  const [col, opt] = DB_SORT_OPTS[dbSortOrder]
-  return q.order(col, opt)
-}
-
-function sortByIngredientCount(recipes: Tables<'recipes'>[]): Tables<'recipes'>[] {
-  return [...recipes].sort((a, b) => {
-    const aLen = Array.isArray(a.ingredients_raw) ? a.ingredients_raw.length : 999
-    const bLen = Array.isArray(b.ingredients_raw) ? b.ingredients_raw.length : 999
-    return aLen - bLen
-  })
-}
-
-async function fetchIngredientMap(recipeIds: string[]): Promise<Map<string, RecipeIngredient[]>> {
-  const { data, error } = await supabase
-    .from('recipe_ingredients')
-    .select('recipe_id, ingredient_id, is_main, ingredients(id, name)')
-    .in('recipe_id', recipeIds)
-    .eq('is_main', true)
-
-  if (error) throw error
-  return buildIngredientMap((data ?? []) as RecipeIngredientRow[])
-}
-
 export interface CreateRecipeResult {
   id: string
+}
+
+export interface CreateRecipeError {
+  message: string
+  code?: string
 }
 
 async function getUserIdByLineUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
@@ -217,7 +28,6 @@ async function insertRecipe(client: TypedSupabaseClient, userId: string, input: 
     image_url: input.imageUrl || null,
     memo: input.memo || null,
     ingredients_raw: (input.ingredientsRaw ?? []) as unknown as Json,
-    // 食材マッチングが完了している場合は true
     ingredients_linked: input.ingredientIds.length > 0,
     cooking_time_minutes: input.cookingTimeMinutes ?? null,
   }
@@ -237,11 +47,6 @@ async function insertRecipeIngredients(client: TypedSupabaseClient, recipeId: st
   if (error) console.error('[createRecipe] recipe_ingredients insert error:', error)
 }
 
-export interface CreateRecipeError {
-  message: string
-  code?: string
-}
-
 /** レシピを新規作成 */
 export async function createRecipe(input: CreateRecipeInput): Promise<{ data: CreateRecipeResult | null; error: CreateRecipeError | null }> {
   const client = createServerClient()
@@ -255,12 +60,9 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
 
     await insertRecipeIngredients(client, recipe.id, input.ingredientIds)
 
-    // 埋め込みは pg_cron + Edge Function でバッチ生成される（title_embedding = NULL で保存）
-
     return { data: { id: recipe.id }, error: null }
   } catch (err: unknown) {
     console.error('[createRecipe] Error:', err)
-    // PostgreSQLエラー（Supabaseから返される形式）を保持
     if (err && typeof err === 'object' && 'code' in err) {
       const pgError = err as { code: string; message?: string }
       return { data: null, error: { message: pgError.message || 'Database error', code: pgError.code } }
@@ -269,5 +71,8 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
   }
 }
 
-// 詳細関連のクエリは recipe-detail.ts から re-export
+// 検索・一覧取得は recipe-search.ts から re-export
+export { fetchRecipes } from './recipe-search'
+export type { FetchRecipesParams } from './recipe-search'
+// 詳細関連は recipe-detail.ts から re-export
 export { fetchRecipeById, deleteRecipe, updateRecipeMemo, recordRecipeView } from './recipe-detail'
