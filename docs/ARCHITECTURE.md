@@ -217,6 +217,8 @@ graph TB
 | `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
+| `/onboarding` | 必須 | オンボーディングフォーム（好みのヒアリング）※初回のみ |
+| `/onboarding/result` | 必須 | スクレイピング結果確認・一括登録 |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |
 | `/terms` | 不要 | 利用規約 |
@@ -228,11 +230,15 @@ graph TB
 | エンドポイント | メソッド | 説明 |
 |--------------|---------|------|
 | `/api/auth/ensure-user` | POST | ユーザー確保（LINE UserID → DB登録） |
+| `/api/auth/onboarding-status` | GET | オンボーディング完了チェック |
 | `/api/recipes` | POST | レシピ作成 |
 | `/api/recipes/[id]` | GET/PUT/DELETE | レシピ詳細取得・更新・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | URL解析（Jina + Gemini） |
 | `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
+| `/api/onboarding/start` | POST | オンボーディング収集ジョブ起動（冪等性あり） |
+| `/api/onboarding/result` | GET | スクレイピング結果取得 |
+| `/api/onboarding/complete` | POST | レシピ一括登録 + 完了フラグ更新 |
 | `/api/webhook/line` | POST | LINE Webhook |
 
 ---
@@ -278,6 +284,7 @@ graph TB
 | `get-recipes` | API Route | 同期 | レシピ一覧取得（複数クエリ） |
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
+| `onboarding-scrape` | API Route (`/api/onboarding/start`) | **非同期** | DELISH KITCHEN + Nadia スクレイピング → LINE push 通知 |
 
 ### auto-alias の非同期パターン
 
@@ -346,12 +353,13 @@ erDiagram
 
 | テーブル | 説明 |
 |---------|------|
-| `users` | LINE ユーザー情報 |
+| `users` | LINE ユーザー情報（`onboarding_completed_at` で完了管理） |
 | `recipes` | レシピ情報（タイトル、URL、画像、メモ、埋め込みベクトル） |
 | `ingredients` | 食材マスター（階層構造対応） |
 | `ingredient_aliases` | 表記ゆれ対応（LLM自動生成含む） |
 | `recipe_ingredients` | レシピ - 食材の中間テーブル |
 | `unmatched_ingredients` | バッチ処理待ちの未マッチ食材 |
+| `onboarding_sessions` | オンボーディング一時データ（TTL: 24時間） |
 
 > 詳細なスキーマは `supabase/migrations/` を参照
 

@@ -7,6 +7,7 @@
 - `id`: UUID (Primary Key)
 - `line_user_id`: String (Unique)
 - `display_name`: String
+- `onboarding_completed_at`: Timestamp (NULL = 未完了、値あり = 完了済み)
 - `created_at`: Timestamp
 
 ### `recipes` テーブル
@@ -62,6 +63,18 @@
 - `created_at`: Timestamp
 
 バッチ処理（`auto-alias` Edge Function）の処理待ちキュー。マッチング成功または新規食材追加後に削除される。
+
+### `onboarding_sessions` テーブル（オンボーディング一時データ）
+
+- `id`: UUID (Primary Key)
+- `user_id`: String (users.line_user_id)
+- `preferences`: JSONB (`{ searchQuery, dislikedIngredients, maxCookingMinutes }`)
+- `candidates`: JSONB (スクレイピング結果。完了後に格納)
+- `status`: String (`pending` / `completed` / `failed`)
+- `created_at`: Timestamp
+- `expires_at`: Timestamp (DEFAULT: 24時間後)
+
+オンボーディング時の一時保存テーブル。完了（`POST /api/onboarding/complete`）後に削除される。
 
 ## ER図（概要）
 

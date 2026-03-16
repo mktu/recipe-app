@@ -1,33 +1,34 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-10 (アーキテクチャ・DBドキュメント整備、doc-check スラッシュコマンド追加)
+2026-03-16 (オンボーディング機能 PR #17 マージ・ドキュメント更新)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **ドキュメントと実装の乖離チェック・修正**
-  - `docs/ARCHITECTURE.md`: `src/lib/async/` をディレクトリ構造に追記
-  - `docs/DATABASE_DESIGN.md`: `recipes` の埋め込み関連カラム3件追記、`ingredient_aliases` の2カラム追記、`unmatched_ingredients` テーブル定義追加、RPC関数セクション新設
-- [x] **doc-check スラッシュコマンド追加**（`.claude/commands/`）
-  - `/doc-check-structure`: 構造レベルの乖離チェック
-  - `/doc-check-logic [セクション名]`: フローチャート・説明文の意味的検証（git diff から自動推論）
-- [x] **友達追加時のユーザー登録・ウェルカムメッセージ実装**（前セッション）
+- [x] **オンボーディング機能実装・マージ**（PR #17）
+  - フォーム形式（食材サジェスト付き入力 + 調理時間 Select）
+  - Supabase Edge Function バックグラウンドスクレイピング（DELISH KITCHEN + Nadia）
+  - LINE push 通知・候補選択 UI・一括登録
+  - `OnboardingGuard` による初回リダイレクト制御
+  - `ingredient-suggest-input`: Popover + Command、バッジを入力欄の下に配置
+  - レシピ候補カード: サイト名表示 + 元ページリンク
+  - ローカル DB マイグレーション適用済み
+  - ドキュメント更新: `DATABASE_DESIGN.md`, `EDGE_FUNCTIONS.md`, `ARCHITECTURE.md`, `backlogs/onboarding-chat.md`
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **オンボーディングチャット機能の実装**（`docs/backlogs/onboarding-chat.md` 参照）
-  - DB マイグレーション（`onboarding_completed_at`、`onboarding_sessions` テーブル）
-  - チャット UI（`/onboarding` LIFF ページ、`useChat`）
-  - チャット API（`/api/onboarding/chat`、Gemini でヒアリング）
-  - 収集ジョブ起動 API（`/api/onboarding/start`）
-  - バックグラウンドスクレイピング Edge Function（`EdgeRuntime.waitUntil()`）
-  - LINE 通知 → 候補選択 UI → 一括登録
-  - ウェルカムメッセージをオンボーディング誘導に更新（`route.ts` の `welcomeText`）
-- [ ] **LINE 実機確認**（友達追加時のユーザー登録・ウェルカムメッセージ / 時短カード・材料少なめカードの「さらに見る →」動作確認）
+- [ ] **Nadia スクレイピング結果の調査・修正**（タスク #7）
+  - `supabase functions serve` ログで `nadia failed:` が出ていないか確認
+  - URL パターン `/user/\d+/recipe/\d+` の抽出精度確認
+  - `extractNextDataRecipe` の `__NEXT_DATA__` 解析が正しく動作しているか
+- [ ] **Supabase secrets に環境変数追加**（本番デプロイ時）
+  - `LINE_CHANNEL_ACCESS_TOKEN`
+  - `APP_URL`
+- [ ] **LINE 実機確認**（友達追加時のウェルカム FlexMessage / オンボーディングフロー）
 - [ ] **本番環境の Supabase プロジェクト作成**（東京リージョン）
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
 - [ ] **OGP 画像の作成**（1200×630px）
@@ -35,59 +36,42 @@
 ## 保留エピック
 - お気に入り（favorites.md）- 「よく見る」と役割が被るため保留
 
-## 検討事項（次回以降）
-- `preview:flex` に `| pbcopy` を追加してクリップボード自動コピーにする（小改善）
-
 ## 将来の改善案（実装保留）
 - **検索ログの蓄積** - ユーザーの検索入力を記録して分析に活用
 - **埋め込みに食材情報を含める** - タイトル+食材でより精度の高いセマンティック検索
 - **ingredients_raw の amount を正しくパース** - 現状は name に量も含む文字列で amount は空
 
 ## ブロッカー・注意点
-- **ローカル開発でのレシピ取得:** `supabase functions serve` を別ターミナルで起動する必要あり（Edge Function ランタイムが `supabase start` では自動起動しない）
-- **NEXT_PUBLIC_APP_URL**: Vercel の環境変数設定済み。ローカルは `.env.local` に `http://localhost:3000`
-- **Edge Functions の JWT 検証:**
-  - `config.toml` で `verify_jwt = false` を設定済み
-  - CI からのデプロイで自動的に適用される
+- **ローカル開発でのレシピ取得:** `supabase functions serve` を別ターミナルで起動する必要あり
+- **Edge Function 呼び出しの JWT:**
+  - `start/route.ts` から Edge Function を呼ぶ際は `SUPABASE_SERVICE_ROLE_KEY`（JWT 形式）を使用
+  - ローカルの値は `supabase status --output env | grep SERVICE_ROLE_KEY` で取得
+  - `sb_secret_...` 形式のキーは Edge Runtime が認識しないため使用不可
+- **LINE_CHANNEL_ACCESS_TOKEN:** ローカルでは未設定でも警告のみ、スクレイピングは継続
 - **食材エイリアス自動生成:**
   - 初回登録時は未マッチのまま（翌日以降のバッチで補完）
-  - Edge Function は非同期パターン（202 Accepted を即座に返す）
-  - ローカルテスト: `npx tsx scripts/auto-alias.ts --dry-run`
-- **Edge Function 開発:**
-  - 共有ロジック変更後は `npm run functions:build` を実行
-  - 詳細は `docs/EDGE_FUNCTIONS.md` を参照
-- **LIFF 認証:**
-  - LINE Login チャネルは「公開済み」ステータスが必要
-  - LIFF SDK には自動トークンリフレッシュ機能がない
-- **ベクトル検索閾値:** 0.75 に設定済み
-- **埋め込みバッチ処理:**
-  - レシピ登録時は `title_embedding = NULL` で保存される
-  - 5分毎に Edge Function が埋め込みを生成
 - **ローカル開発:** `.env.local` の `NEXT_PUBLIC_LIFF_ID` を空にすると LINE ログインなしで動作
-- ローカル開発時は `supabase start` で起動が必要
-- **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行（先頭行の不要な出力を削除すること）
-- **GitHub Secrets:** `SUPABASE_ACCESS_TOKEN` と `SUPABASE_PROJECT_REF` が必要（CI 用）
+- **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 
 ## コミット履歴（直近）
 ```
-337d040 docs: アーキテクチャ・DB設計ドキュメントを実装と同期
-0ca1837 docs: update SESSION.md for session handoff
-2c43f29 docs: 認証フロー図をユーザー登録タイミングの実態に合わせて更新
-5882c56 feat: 友達追加時にユーザー登録とウェルカムメッセージを送信
-cb19009 docs: update SESSION.md for session handoff
+5f837d3 feat: オンボーディング UI 改善とスクレイプ動作確認ログ追加
+bd1f581 fix: 食材サジェスト入力のIMEバグ修正・自由入力を禁止
+1301168 chore: onboarding-scrape Edge Function の config.toml 設定追加
+43d36eb refactor: recipes.ts を recipe-search.ts に分割して行数制限解消
+8699c7b perf: onboarding/complete をバルク INSERT に変更
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
-- `docs/backlogs/onboarding-chat.md` - オンボーディングチャット機能のバックログ（事前確認事項含む）
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ディレクトリ構造（今セッションで更新済み）
-- `docs/DATABASE_DESIGN.md` - DBスキーマ詳細（今セッションで更新済み）
-- `.claude/commands/doc-check-structure.md` - 構造乖離チェックコマンド
-- `.claude/commands/doc-check-logic.md` - ロジック意味的検証コマンド
-- `src/app/api/webhook/line/route.ts` - LINE Webhook エントリポイント（`handleFollowEvent` 追加済み）
-- `src/lib/line/category-handler.ts` - 「探す」クイックリプライ・カテゴリハンドラー
-- `docs/backlogs/README.md` - エピック一覧
-- `requirements.md` - プロダクト要件（ユースケース・機能要件）
+- `src/components/features/onboarding/` - オンボーディング UI コンポーネント
+- `src/app/api/onboarding/` - オンボーディング API ルート
+- `src/components/providers/onboarding-guard.tsx` - リダイレクト制御
+- `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function
+- `supabase/migrations/20260311000000_add_onboarding.sql` - オンボーディング用マイグレーション
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像
+- `docs/DATABASE_DESIGN.md` - テーブル設計
+- `docs/EDGE_FUNCTIONS.md` - Edge Functions ガイド
 - `CLAUDE.md` - 開発ルール・コマンド・スキル

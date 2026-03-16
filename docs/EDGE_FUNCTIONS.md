@@ -127,6 +127,12 @@ Edge Function で使用する環境変数は Supabase Dashboard で設定:
 **auto-alias で必要な環境変数:**
 - `GOOGLE_GENERATIVE_AI_API_KEY` - Gemini API キー
 
+**onboarding-scrape で必要な環境変数（Supabase secrets）:**
+- `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用
+- `APP_URL` - LINE 通知に含める結果ページ URL（例: `https://your-app.vercel.app`）
+
+> ローカル開発時は `LINE_CHANNEL_ACCESS_TOKEN` が未設定でも警告のみでスクレイピングは継続する。
+
 ## pg_cron との連携
 
 Edge Function を定期実行する場合、pg_cron を使用:
