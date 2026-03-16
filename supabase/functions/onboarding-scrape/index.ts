@@ -280,6 +280,7 @@ async function scrapeAndNotify(sessionId: string): Promise<void> {
     ])
 
     const all = filterCandidates([...delish, ...nadia], prefs)
+    console.log(`[onboarding-scrape] Done: delish=${delish.length}, nadia=${nadia.length}, filtered=${all.length}`)
 
     // deno-lint-ignore no-explicit-any
     await supabase

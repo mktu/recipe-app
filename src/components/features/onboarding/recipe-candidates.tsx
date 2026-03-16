@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/lib/auth'
@@ -140,7 +141,16 @@ function CandidatesView({ candidates, submitting, onComplete, onSkip }: Candidat
   )
 }
 
+function getSiteName(url: string): string {
+  if (url.includes('delishkitchen.tv')) return 'DELISH KITCHEN'
+  if (url.includes('oceans-nadia.com')) return 'Nadia'
+  if (url.includes('kurashiru.com')) return 'クラシル'
+  if (url.includes('cookpad.com')) return 'クックパッド'
+  try { return new URL(url).hostname.replace('www.', '') } catch { return '' }
+}
+
 function CandidateCard({ candidate, checked, onToggle }: { candidate: RecipeCandidate; checked: boolean; onToggle: () => void }) {
+  const siteName = getSiteName(candidate.url)
   return (
     <div className="flex items-start gap-3 rounded-lg border p-3">
       <Checkbox id={candidate.url} checked={checked} onCheckedChange={onToggle} className="mt-1" />
@@ -150,12 +160,23 @@ function CandidateCard({ candidate, checked, onToggle }: { candidate: RecipeCand
           <img src={candidate.imageUrl} alt={candidate.title} className="h-full w-full object-cover" />
         </div>
       )}
-      <label htmlFor={candidate.url} className="flex-1 cursor-pointer space-y-0.5">
-        <p className="text-sm font-medium leading-tight">{candidate.title}</p>
-        {candidate.cookingTimeMinutes && (
-          <p className="text-xs text-muted-foreground">⏱ {candidate.cookingTimeMinutes}分</p>
-        )}
-      </label>
+      <div className="flex-1 space-y-0.5">
+        <label htmlFor={candidate.url} className="block cursor-pointer text-sm font-medium leading-tight">
+          {candidate.title}
+        </label>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {siteName && <span>{siteName}</span>}
+          {candidate.cookingTimeMinutes && <span>⏱ {candidate.cookingTimeMinutes}分</span>}
+        </div>
+        <a
+          href={candidate.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-xs text-primary underline"
+        >
+          元のページを見る <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
     </div>
   )
 }
