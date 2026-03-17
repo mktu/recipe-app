@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-16 (オンボーディング機能 PR #17 マージ・ドキュメント更新)
+2026-03-17 (オンボーディングフロー図をアーキテクチャドキュメントに追記)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
@@ -16,6 +16,7 @@
   - レシピ候補カード: サイト名表示 + 元ページリンク
   - ローカル DB マイグレーション適用済み
   - ドキュメント更新: `DATABASE_DESIGN.md`, `EDGE_FUNCTIONS.md`, `ARCHITECTURE.md`, `backlogs/onboarding-chat.md`
+- [x] **アーキテクチャドキュメントにオンボーディングフロー図を追記**（mermaid sequenceDiagram）
 
 ## 進行中のタスク
 （なし）
@@ -55,11 +56,11 @@
 
 ## コミット履歴（直近）
 ```
+48bf66c docs: オンボーディングフローをアーキテクチャドキュメントに追記
+c859933 docs: update SESSION.md for session handoff
 5f837d3 feat: オンボーディング UI 改善とスクレイプ動作確認ログ追加
 bd1f581 fix: 食材サジェスト入力のIMEバグ修正・自由入力を禁止
 1301168 chore: onboarding-scrape Edge Function の config.toml 設定追加
-43d36eb refactor: recipes.ts を recipe-search.ts に分割して行数制限解消
-8699c7b perf: onboarding/complete をバルク INSERT に変更
 ```
 
 ## GitHubリポジトリ
