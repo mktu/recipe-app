@@ -284,7 +284,7 @@ graph TB
 | `get-recipes` | API Route | 同期 | レシピ一覧取得（複数クエリ） |
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
-| `onboarding-scrape` | API Route (`/api/onboarding/start`) | **非同期** | DELISH KITCHEN + Nadia スクレイピング → LINE push 通知 |
+| `onboarding-scrape` | API Route (`/api/onboarding/start`) | **非同期** | DELISH KITCHEN + クラシル スクレイピング → LINE push 通知 |
 
 ### auto-alias の非同期パターン
 
@@ -470,8 +470,8 @@ sequenceDiagram
 
     par DELISH KITCHEN
         EF->>EF: 検索ページ fetch → URL 抽出 → 各レシピ解析
-    and Nadia
-        EF->>EF: 検索ページ fetch → URL 抽出 → __NEXT_DATA__ 解析
+    and クラシル
+        EF->>EF: 検索ページ fetch → URL 抽出 → JSON-LD 解析
     end
 
     EF->>EF: dislikedIngredients / maxCookingMinutes でフィルタリング

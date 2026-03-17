@@ -22,10 +22,10 @@ const SITES = {
     urlPattern: /https:\/\/delishkitchen\.tv\/recipes\/\d+/g,
     urlPrefix: '',
   },
-  nadia: {
-    searchUrl: (q: string) => `https://oceans-nadia.com/search?keyword=${encodeURIComponent(q)}`,
-    urlPattern: /\/user\/\d+\/recipe\/\d+/g,
-    urlPrefix: 'https://oceans-nadia.com',
+  kurashiru: {
+    searchUrl: (q: string) => `https://www.kurashiru.com/search?query=${encodeURIComponent(q)}`,
+    urlPattern: /\/recipes\/[a-zA-Z0-9_-]{8,}/g,
+    urlPrefix: 'https://www.kurashiru.com',
   },
 }
 
@@ -139,41 +139,11 @@ function isRecipeType(t: unknown): boolean {
   return false
 }
 
-function extractNextDataRecipe(html: string, sourceUrl: string): RecipeCandidate | null {
-  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/i.exec(html)
-  if (!m?.[1]) return null
-  try {
-    const data = JSON.parse(m[1]) as Record<string, unknown>
-    const props = data['props'] as Record<string, unknown> | undefined
-    const pageProps = props?.['pageProps'] as Record<string, unknown> | undefined
-    const recipe = (pageProps?.['data'] as Record<string, unknown> | undefined)?.['publishedRecipe'] as Record<string, unknown> | undefined
-    if (!recipe?.['title'] || typeof recipe['title'] !== 'string') return null
-
-    const ingredients = Array.isArray(recipe['ingredients'])
-      ? (recipe['ingredients'] as Array<Record<string, unknown>>)
-          .map((i) => ({ name: String(i['name'] ?? '').replace(/\s*[\(（].*?[\)）]\s*$/, '').trim(), amount: String(i['amount'] ?? '') }))
-          .filter((i) => i.name.length > 0)
-      : []
-
-    const imageSet = Array.isArray(recipe['imageSet']) ? recipe['imageSet'] as Array<Record<string, unknown>> : []
-    const rawPath = imageSet[0]?.['path']
-    const imagePath = typeof rawPath === 'string' ? rawPath : ''
-    const imageUrl = imagePath.startsWith('http') ? imagePath : `https://asset.oceans-nadia.com${imagePath}`
-
-    return {
-      url: sourceUrl,
-      title: recipe['title'],
-      imageUrl,
-      cookingTimeMinutes: typeof recipe['cookTime'] === 'number' ? recipe['cookTime'] : null,
-      ingredientsRaw: ingredients,
-    }
-  } catch { return null }
-}
 
 async function scrapeRecipeUrl(url: string): Promise<RecipeCandidate | null> {
   try {
     const html = await fetchHtml(url)
-    return extractJsonLdRecipe(html, url) ?? extractNextDataRecipe(html, url)
+    return extractJsonLdRecipe(html, url)
   } catch { return null }
 }
 
@@ -274,13 +244,13 @@ async function scrapeAndNotify(sessionId: string): Promise<void> {
   const prefs = session.preferences as unknown as Preferences
 
   try {
-    const [delish, nadia] = await Promise.all([
+    const [delish, kurashiru] = await Promise.all([
       scrapeSite('delishkitchen', prefs.searchQuery),
-      scrapeSite('nadia', prefs.searchQuery),
+      scrapeSite('kurashiru', prefs.searchQuery),
     ])
 
-    const all = filterCandidates([...delish, ...nadia], prefs)
-    console.log(`[onboarding-scrape] Done: delish=${delish.length}, nadia=${nadia.length}, filtered=${all.length}`)
+    const all = filterCandidates([...delish, ...kurashiru], prefs)
+    console.log(`[onboarding-scrape] Done: delish=${delish.length}, kurashiru=${kurashiru.length}, filtered=${all.length}`)
 
     // deno-lint-ignore no-explicit-any
     await supabase
