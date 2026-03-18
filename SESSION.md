@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-17 (オンボーディングフロー図をアーキテクチャドキュメントに追記)
+2026-03-18 (Nadia → クラシル差し替え完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
@@ -9,7 +9,7 @@
 ## 直近の完了タスク
 - [x] **オンボーディング機能実装・マージ**（PR #17）
   - フォーム形式（食材サジェスト付き入力 + 調理時間 Select）
-  - Supabase Edge Function バックグラウンドスクレイピング（DELISH KITCHEN + Nadia）
+  - Supabase Edge Function バックグラウンドスクレイピング（DELISH KITCHEN + クラシル）
   - LINE push 通知・候補選択 UI・一括登録
   - `OnboardingGuard` による初回リダイレクト制御
   - `ingredient-suggest-input`: Popover + Command、バッジを入力欄の下に配置
@@ -17,15 +17,15 @@
   - ローカル DB マイグレーション適用済み
   - ドキュメント更新: `DATABASE_DESIGN.md`, `EDGE_FUNCTIONS.md`, `ARCHITECTURE.md`, `backlogs/onboarding-chat.md`
 - [x] **アーキテクチャドキュメントにオンボーディングフロー図を追記**（mermaid sequenceDiagram）
+- [x] **Nadia スクレイピングの調査・クラシルへ差し替え**
+  - Nadia の検索ページは SPA のため常に同一 30 件が返るバグを確認
+  - クラシル（kurashiru.com）は SSR + JSON-LD で正常動作することを検証
+  - `onboarding-scrape` Edge Function・テストスクリプト・ドキュメントを更新
 
 ## 進行中のタスク
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **Nadia スクレイピング結果の調査・修正**（タスク #7）
-  - `supabase functions serve` ログで `nadia failed:` が出ていないか確認
-  - URL パターン `/user/\d+/recipe/\d+` の抽出精度確認
-  - `extractNextDataRecipe` の `__NEXT_DATA__` 解析が正しく動作しているか
 - [ ] **Supabase secrets に環境変数追加**（本番デプロイ時）
   - `LINE_CHANNEL_ACCESS_TOKEN`
   - `APP_URL`
@@ -56,23 +56,25 @@
 
 ## コミット履歴（直近）
 ```
+bfa8df4 fix: オンボーディングスクレイピングの Nadia をクラシルに差し替え
+a7796d4 docs: update SESSION.md for session handoff
 48bf66c docs: オンボーディングフローをアーキテクチャドキュメントに追記
 c859933 docs: update SESSION.md for session handoff
 5f837d3 feat: オンボーディング UI 改善とスクレイプ動作確認ログ追加
-bd1f581 fix: 食材サジェスト入力のIMEバグ修正・自由入力を禁止
-1301168 chore: onboarding-scrape Edge Function の config.toml 設定追加
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
+- `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function（DELISH KITCHEN + クラシル）
+- `scripts/test-onboarding-scrape.ts` - スクレイピング動作確認スクリプト
 - `src/components/features/onboarding/` - オンボーディング UI コンポーネント
 - `src/app/api/onboarding/` - オンボーディング API ルート
 - `src/components/providers/onboarding-guard.tsx` - リダイレクト制御
-- `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function
 - `supabase/migrations/20260311000000_add_onboarding.sql` - オンボーディング用マイグレーション
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
 - `docs/DATABASE_DESIGN.md` - テーブル設計
 - `docs/EDGE_FUNCTIONS.md` - Edge Functions ガイド
+- `docs/backlogs/onboarding-chat.md` - オンボーディングエピック（Nadia → クラシル差し替えの経緯を記載）
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
