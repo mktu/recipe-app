@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useRecipes } from '@/hooks/use-recipes'
 import { useRecipeFilters, InitialFilters } from '@/hooks/use-recipe-filters'
@@ -26,11 +27,12 @@ function useRecipeHandlers() {
     router.push(`/recipes/${id}`)
   }, [router])
   const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
-  return { handleRecipeClick, handleAddRecipe }
+  const handleOnboarding = useCallback(() => router.push('/onboarding'), [router])
+  return { handleRecipeClick, handleAddRecipe, handleOnboarding }
 }
 
 export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
-  const { handleRecipeClick, handleAddRecipe } = useRecipeHandlers()
+  const { handleRecipeClick, handleAddRecipe, handleOnboarding } = useRecipeHandlers()
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
@@ -54,7 +56,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <Header sortOrder={filters.sortOrder} onSortChange={filters.setSortOrder} />
+      <Header sortOrder={filters.sortOrder} onSortChange={filters.setSortOrder} onOnboarding={handleOnboarding} />
       <main className="container mx-auto max-w-2xl space-y-4 p-4">
         <SearchBar value={filters.searchQuery} onChange={filters.setSearchQuery} />
         <div className="flex flex-wrap items-center gap-2">
@@ -109,14 +111,24 @@ function AuthErrorMessage({ error, onRelogin }: { error: string; onRelogin: () =
 interface HeaderProps {
   sortOrder: SortOrder
   onSortChange: (order: SortOrder) => void
+  onOnboarding: () => void
 }
 
-function Header({ sortOrder, onSortChange }: HeaderProps) {
+function Header({ sortOrder, onSortChange, onOnboarding }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex max-w-2xl items-center justify-between p-4">
         <h1 className="text-xl font-bold text-primary">RecipeHub</h1>
-        <SortSelect value={sortOrder} onChange={onSortChange} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOnboarding}
+            title="レシピを探してもらう"
+            className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <Sparkles className="h-4 w-4" />
+          </button>
+          <SortSelect value={sortOrder} onChange={onSortChange} />
+        </div>
       </div>
     </header>
   )
