@@ -23,12 +23,12 @@ const SITES = {
       `https://delishkitchen.tv/search?q=${encodeURIComponent(query)}`,
     urlPattern: /https:\/\/delishkitchen\.tv\/recipes\/\d+/g,
   },
-  nadia: {
-    name: 'Nadia',
+  kurashiru: {
+    name: 'クラシル',
     searchUrl: (query: string) =>
-      `https://oceans-nadia.com/search?keyword=${encodeURIComponent(query)}`,
-    urlPattern: /\/user\/\d+\/recipe\/\d+/g,
-    urlPrefix: 'https://oceans-nadia.com',
+      `https://www.kurashiru.com/search?query=${encodeURIComponent(query)}`,
+    urlPattern: /\/recipes\/[a-zA-Z0-9_-]{8,}/g,
+    urlPrefix: 'https://www.kurashiru.com',
   },
 }
 
@@ -89,7 +89,7 @@ async function main() {
 
   const targetSites: SiteKey[] = siteArg && siteArg in SITES
     ? [siteArg]
-    : ['delishkitchen', 'nadia']
+    : ['delishkitchen', 'kurashiru']
 
   console.log('🧪 オンボーディングスクレイピング検証')
   console.log('=====================================')

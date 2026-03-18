@@ -1,7 +1,13 @@
-# オンボーディングチャット - 初回レシピ一括登録
+# オンボーディング - 初回レシピ一括登録
 
 ## ステータス
-📋 未着手
+✅ 実装完了（2026-03-15 マージ PR #17）
+
+### 実装時の変更点（バックログとの差分）
+- チャット UI → **シンプルフォーム**に変更（Gemini チャット API 不要）
+- 食材入力は shadcn/ui Popover + Command の**サジェスト付きタグ入力**
+- 選択済みバッジは入力欄の下に配置（モバイル考慮）
+- レシピカード: サイト名表示 + 元ページリンク追加
 
 ## 背景・課題
 
@@ -294,16 +300,17 @@ Deno.serve(async (req) => {
 
 ### 🟢 軽く確認しておく（低）
 
-**⑥ Nadia 検索結果の精度 ✅ 決定済み（2026-03-07）**
-- 検証でクエリと無関係なレシピが混入していたが、許容範囲として対応しない
-- オンボーディング用途では多少のミスマッチは問題なし
+**⑥ Nadia 検索結果の精度 → クラシルへ差し替え（2026-03-18）**
+- 当初「クエリと無関係なレシピが混入しているが許容範囲」として対応しないとしていた
+- 調査の結果、Nadia の検索ページは SPA のため **クエリに関係なく常に同一の 30 件**が返ることが判明
+  - SSR の `__NEXT_DATA__` に含まれる `publishedRecipes` はデフォルト表示であり、実際の検索結果はクライアントサイドで取得される
+- **対応:** Nadia を **クラシル（kurashiru.com）** に差し替え
+  - クラシルは SSR で検索結果を返し、JSON-LD でレシピ情報も取得可能
+  - URL パターン: `https://www.kurashiru.com/search?query={query}` → `/recipes/[UUID]`
 
 **⑦ robots.txt の確認 ✅ 確認済み（2026-03-07）**
 - DELISH KITCHEN: `Disallow` 記述なし → 問題なし
-- Nadia: 検索・レシピページの `Disallow` なし → 問題なし
-  - ただし GPTBot / ClaudeBot 等 AI クローラーは明示的にブロックされている
-  - 今回は通常ブラウザ UA（`html-fetcher.ts`）を使用するため該当しない
-  - Nadia が AI アクセスに敏感な点は引き続き意識しておく
+- Nadia: 検索・レシピページの `Disallow` なし（ただしクラシルへ差し替え済みのため参考情報）
 
 ---
 
@@ -323,6 +330,6 @@ Deno.serve(async (req) => {
 ```bash
 # スクレイピング動作確認
 npx tsx scripts/test-onboarding-scrape.ts "鶏肉 簡単"
-npx tsx scripts/test-onboarding-scrape.ts "豚肉" nadia
+npx tsx scripts/test-onboarding-scrape.ts "豚肉" kurashiru
 npx tsx scripts/test-onboarding-scrape.ts "野菜炒め" delishkitchen
 ```
