@@ -16,7 +16,7 @@ interface AuthProviderProps {
   adapter: AuthProviderAdapter
 }
 
-export function AuthProvider({ children, adapter }: AuthProviderProps) {
+function useAuthUser(adapter: AuthProviderAdapter) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,10 +59,16 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
     }
   }, [adapter])
 
+  return { user, setUser, isLoading, error }
+}
+
+export function AuthProvider({ children, adapter }: AuthProviderProps) {
+  const { user, setUser, isLoading, error } = useAuthUser(adapter)
+
   const logout = useCallback(async () => {
     await adapter.logout()
     setUser(null)
-  }, [adapter])
+  }, [adapter, setUser])
 
   const relogin = useCallback(async () => {
     await adapter.relogin()

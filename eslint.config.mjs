@@ -47,6 +47,7 @@ const eslintConfig = defineConfig([
     rules: {
       "max-lines": "off",
       "max-lines-per-function": "off",
+      "complexity": "off",
     },
   },
 ]);
