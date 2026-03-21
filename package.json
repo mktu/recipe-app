@@ -19,6 +19,8 @@
     "functions:build": "tsx scripts/build-edge-functions.ts",
     "functions:serve": "supabase functions serve --env-file .env.local",
     "functions:invoke": "curl -X POST http://localhost:54321/functions/v1/generate-embeddings -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -52,10 +54,12 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "husky": "^9.1.7",
