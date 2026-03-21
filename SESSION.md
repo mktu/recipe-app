@@ -1,30 +1,22 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-18 (ホーム header にオンボーディング起動ボタン追加)
+2026-03-21 (E2E テスト基盤整備・Playwright セットアップ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
-- [x] **ホーム header にオンボーディング起動ボタン追加**
-  - Sparkles アイコンボタンをヘッダー右側（ソート選択の左隣）に配置
-  - クリックで `/onboarding` へ遷移（OnboardingGuard はパスを通過）
-  - 動作確認・再実行の入口として利用可能
+- [x] **E2E テスト基盤整備**（PR #19）
+  - Playwright セットアップ（Chromium のみ・workers=1）
+  - `dotenv` で `.env.local` 自動ロード（CI は `$GITHUB_ENV` 経由）
+  - GitHub Actions ワークフロー（`main` マージ後 + 手動トリガー）
+  - Local Supabase を使ったテスト用 DB ヘルパー（`setupUser` / `cleanUserData` / `seedRecipes`）
+  - `OnboardingGuard` の遷移テスト × 3
+  - オンボーディング フルフロー・スキップテスト × 2
+  - バックログ `docs/backlogs/e2e-testing.md` 作成
+- [x] **ホーム header にオンボーディング起動ボタン追加**（PR #18）
 - [x] **オンボーディング機能実装・マージ**（PR #17）
-  - フォーム形式（食材サジェスト付き入力 + 調理時間 Select）
-  - Supabase Edge Function バックグラウンドスクレイピング（DELISH KITCHEN + クラシル）
-  - LINE push 通知・候補選択 UI・一括登録
-  - `OnboardingGuard` による初回リダイレクト制御
-  - `ingredient-suggest-input`: Popover + Command、バッジを入力欄の下に配置
-  - レシピ候補カード: サイト名表示 + 元ページリンク
-  - ローカル DB マイグレーション適用済み
-  - ドキュメント更新: `DATABASE_DESIGN.md`, `EDGE_FUNCTIONS.md`, `ARCHITECTURE.md`, `backlogs/onboarding-chat.md`
-- [x] **アーキテクチャドキュメントにオンボーディングフロー図を追記**（mermaid sequenceDiagram）
-- [x] **Nadia スクレイピングの調査・クラシルへ差し替え**
-  - Nadia の検索ページは SPA のため常に同一 30 件が返るバグを確認
-  - クラシル（kurashiru.com）は SSR + JSON-LD で正常動作することを検証
-  - `onboarding-scrape` Edge Function・テストスクリプト・ドキュメントを更新
 
 ## 進行中のタスク
 （なし）
@@ -37,6 +29,10 @@
 - [ ] **本番環境の Supabase プロジェクト作成**（東京リージョン）
 - [ ] **本番環境の埋め込みバッチ処理セットアップ**
 - [ ] **OGP 画像の作成**（1200×630px）
+- [ ] **E2E テスト追加**（バックログ参照）
+  - ホーム画面（レシピ一覧・検索・食材フィルター）
+  - レシピ追加フロー
+  - レシピ詳細（メモ編集・削除）
 
 ## 保留エピック
 - お気に入り（favorites.md）- 「よく見る」と役割が被るため保留
@@ -52,6 +48,9 @@
   - `start/route.ts` から Edge Function を呼ぶ際は `SUPABASE_SERVICE_ROLE_KEY`（JWT 形式）を使用
   - ローカルの値は `supabase status --output env | grep SERVICE_ROLE_KEY` で取得
   - `sb_secret_...` 形式のキーは Edge Runtime が認識しないため使用不可
+- **E2E テストの DB キー:**
+  - `e2e/fixtures/db.ts` は `SUPABASE_SECRET_KEY`（`sb_secret_...` 形式）を使用
+  - `playwright.config.ts` が `.env.local` から自動ロード（CI は `$GITHUB_ENV` 経由）
 - **LINE_CHANNEL_ACCESS_TOKEN:** ローカルでは未設定でも警告のみ、スクレイピングは継続
 - **食材エイリアス自動生成:**
   - 初回登録時は未マッチのまま（翌日以降のバッチで補完）
@@ -60,26 +59,28 @@
 
 ## コミット履歴（直近）
 ```
+6688e0a Merge pull request #19 from mktu/feature/add-e2e-testing
+19124fc feat: E2E テスト基盤を整備（Playwright + OnboardingGuard + オンボーディングフロー）
+badd217 refactor: lint警告を解消（関数分割・ESLint設定調整）
+1659685 docs: update SESSION.md for session handoff
 267f6dc feat: ホーム header にオンボーディング起動ボタンを追加
-58161c7 Merge pull request #18 from mktu/feature/add-onboarding
-583e28c docs: update SESSION.md for session handoff
-bfa8df4 fix: オンボーディングスクレイピングの Nadia をクラシルに差し替え
-a7796d4 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
-- `src/components/features/home/home-client.tsx` - ホームページ（オンボーディングボタン追加済み）
-- `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function（DELISH KITCHEN + クラシル）
-- `scripts/test-onboarding-scrape.ts` - スクレイピング動作確認スクリプト
+- `playwright.config.ts` - E2E 設定（dotenv ロード・webServer 設定）
+- `e2e/fixtures/db.ts` - テスト用 DB ヘルパー
+- `e2e/fixtures/mock-data.ts` - API モック用レスポンスデータ
+- `e2e/onboarding-guard.spec.ts` - OnboardingGuard の遷移テスト
+- `e2e/onboarding.spec.ts` - オンボーディングフローテスト
+- `docs/backlogs/e2e-testing.md` - E2E テスト計画・シナリオ一覧
+- `.github/workflows/e2e.yml` - CI ワークフロー
+- `src/components/features/home/home-client.tsx` - ホームページ
+- `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function
 - `src/components/features/onboarding/` - オンボーディング UI コンポーネント
 - `src/app/api/onboarding/` - オンボーディング API ルート
 - `src/components/providers/onboarding-guard.tsx` - リダイレクト制御
-- `supabase/migrations/20260311000000_add_onboarding.sql` - オンボーディング用マイグレーション
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像
-- `docs/DATABASE_DESIGN.md` - テーブル設計
-- `docs/EDGE_FUNCTIONS.md` - Edge Functions ガイド
-- `docs/backlogs/onboarding-chat.md` - オンボーディングエピック（Nadia → クラシル差し替えの経緯を記載）
 - `CLAUDE.md` - 開発ルール・コマンド・スキル
