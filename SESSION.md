@@ -1,12 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-18 (Nadia → クラシル差し替え完了)
+2026-03-18 (ホーム header にオンボーディング起動ボタン追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **ホーム header にオンボーディング起動ボタン追加**
+  - Sparkles アイコンボタンをヘッダー右側（ソート選択の左隣）に配置
+  - クリックで `/onboarding` へ遷移（OnboardingGuard はパスを通過）
+  - 動作確認・再実行の入口として利用可能
 - [x] **オンボーディング機能実装・マージ**（PR #17）
   - フォーム形式（食材サジェスト付き入力 + 調理時間 Select）
   - Supabase Edge Function バックグラウンドスクレイピング（DELISH KITCHEN + クラシル）
@@ -56,17 +60,18 @@
 
 ## コミット履歴（直近）
 ```
+267f6dc feat: ホーム header にオンボーディング起動ボタンを追加
+58161c7 Merge pull request #18 from mktu/feature/add-onboarding
+583e28c docs: update SESSION.md for session handoff
 bfa8df4 fix: オンボーディングスクレイピングの Nadia をクラシルに差し替え
 a7796d4 docs: update SESSION.md for session handoff
-48bf66c docs: オンボーディングフローをアーキテクチャドキュメントに追記
-c859933 docs: update SESSION.md for session handoff
-5f837d3 feat: オンボーディング UI 改善とスクレイプ動作確認ログ追加
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
+- `src/components/features/home/home-client.tsx` - ホームページ（オンボーディングボタン追加済み）
 - `supabase/functions/onboarding-scrape/index.ts` - バックグラウンドスクレイピング Edge Function（DELISH KITCHEN + クラシル）
 - `scripts/test-onboarding-scrape.ts` - スクレイピング動作確認スクリプト
 - `src/components/features/onboarding/` - オンボーディング UI コンポーネント
