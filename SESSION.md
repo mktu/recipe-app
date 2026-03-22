@@ -44,12 +44,9 @@
 
 ## ブロッカー・注意点
 - **ローカル開発でのレシピ取得:** `supabase functions serve` を別ターミナルで起動する必要あり
-- **Edge Function 呼び出しの JWT:**
-  - `start/route.ts` から Edge Function を呼ぶ際は `SUPABASE_SERVICE_ROLE_KEY`（JWT 形式）を使用
-  - ローカルの値は `supabase status --output env | grep SERVICE_ROLE_KEY` で取得
-  - `sb_secret_...` 形式のキーは Edge Runtime が認識しないため使用不可
-- **E2E テストの DB キー:**
-  - `e2e/fixtures/db.ts` は `SUPABASE_SECRET_KEY`（`sb_secret_...` 形式）を使用
+- **Supabase キー:**
+  - `SUPABASE_SECRET_KEY`（`sb_secret_...` 形式）を全体で統一使用
+  - Edge Function 呼び出し・サーバークライアント・E2E テストすべてこのキーを使う
   - `playwright.config.ts` が `.env.local` から自動ロード（CI は `$GITHUB_ENV` 経由）
 - **LINE_CHANNEL_ACCESS_TOKEN:** ローカルでは未設定でも警告のみ、スクレイピングは継続
 - **食材エイリアス自動生成:**
