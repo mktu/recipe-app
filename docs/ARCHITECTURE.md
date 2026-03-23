@@ -238,7 +238,8 @@ graph TB
 | `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
 | `/api/onboarding/start` | POST | オンボーディング収集ジョブ起動（冪等性あり） |
 | `/api/onboarding/result` | GET | スクレイピング結果取得 |
-| `/api/onboarding/complete` | POST | レシピ一括登録 + 完了フラグ更新 |
+| `/api/onboarding/complete` | POST | レシピ一括登録 + 完了フラグ更新 + セッション削除 |
+| `/api/onboarding/allow-home` | POST | 完了フラグのみ更新（セッション保持・ホーム遷移用） |
 | `/api/webhook/line` | POST | LINE Webhook |
 
 ---
