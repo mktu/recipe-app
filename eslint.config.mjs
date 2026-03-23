@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Supabase Edge Functions (Deno runtime)
     "supabase/functions/**",
+    // Playwright テストレポート（自動生成）
+    "playwright-report/**",
   ]),
   // ファイルサイズ・複雑度のルール（肥大化防止）
   {
