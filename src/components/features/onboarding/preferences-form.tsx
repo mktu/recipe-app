@@ -60,8 +60,19 @@ function usePreferencesForm() {
   return { form, setForm, submitting, submitted, handleSubmit, handleSkip }
 }
 
-function SubmittedView() {
+function SubmittedView({ lineUserId }: { lineUserId: string | undefined }) {
   const router = useRouter()
+
+  async function handleGoHome() {
+    if (!lineUserId) return
+    await fetch('/api/onboarding/allow-home', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineUserId }),
+    })
+    router.replace('/')
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
       <div className="max-w-sm space-y-4">
@@ -74,6 +85,11 @@ function SubmittedView() {
         <Button variant="outline" size="sm" onClick={() => router.replace('/onboarding/result')}>
           結果を確認する
         </Button>
+        <div>
+          <button type="button" onClick={handleGoHome} className="text-xs text-muted-foreground underline">
+            ホームへ戻る
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -125,7 +141,7 @@ function PreferencesFormBody({ form, setForm, submitting, onSubmit }: {
 export function PreferencesForm() {
   const { form, setForm, submitting, submitted, handleSubmit, handleSkip } = usePreferencesForm()
 
-  if (submitted) return <SubmittedView />
+  if (submitted) return <SubmittedView lineUserId={user?.lineUserId} />
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6">
