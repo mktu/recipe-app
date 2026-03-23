@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["before 9am on Monday"],
+  "labels": ["dependencies"],
+  "automerge": false,
+  "packageRules": [
+    {
+      "description": "patch・minor は CI 通過で自動マージ",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "major は手動レビュー必須",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "コアフレームワーク・ライブラリは minor も手動レビュー（破壊的変更リスクが高い）",
+      "matchPackageNames": [
+        "next",
+        "react",
+        "react-dom",
+        "@supabase/supabase-js",
+        "ai",
+        "@ai-sdk/google"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Radix UI パッケージをグループ化",
+      "matchPackagePrefixes": ["@radix-ui/"],
+      "groupName": "Radix UI"
+    },
+    {
+      "description": "AI SDK をグループ化",
+      "matchPackageNames": ["ai", "@ai-sdk/google"],
+      "groupName": "AI SDK"
+    },
+    {
+      "description": "@types/* をグループ化",
+      "matchPackagePrefixes": ["@types/"],
+      "groupName": "TypeScript types"
+    }
+  ]
+}
