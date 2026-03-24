@@ -1,12 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-23 (オンボーディング Edge Function バグ修正・待ち画面 UX 改善)
+2026-03-24 (Renovate 自動マージ設定追加)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **Renovate 自動マージ設定を追加**（`renovate.json`）
+  - patch/minor は CI 通過で自動マージ（3日経過後）
+  - major・コアフレームワーク（next, react, supabase-js, ai SDK）は手動レビュー
+  - Radix UI / AI SDK / @types/* をグループ化
+  - GitHub App インストールと Auto-merge 有効化、ブランチ保護ルールの status check 設定が必要
 - [x] **オンボーディング Edge Function が起動しないバグを修正**
   - `start/route.ts` が `SUPABASE_SERVICE_ROLE_KEY`（未設定）を参照していたため Edge Function が silently skip されていた
   - `SUPABASE_SECRET_KEY`（`sb_secret_...` 形式）に修正
@@ -23,6 +28,10 @@
 （なし）
 
 ## 次にやること（優先度順）
+- [ ] **Renovate 有効化**（GitHub 側の設定）
+  - https://github.com/apps/renovate から App インストール
+  - リポジトリ Settings → General → "Allow auto-merge" を ON
+  - ブランチ保護ルール（main）に `lint-and-build` を required status check として追加
 - [ ] **LINE 実機確認**（ステージングでオンボーディングフロー動作確認）
   - Edge Function 起動バグを修正済みなので再テスト
 - [ ] **Supabase secrets に環境変数追加**（本番デプロイ時）
@@ -60,17 +69,18 @@
 
 ## コミット履歴（直近）
 ```
+811261d chore: Renovate の自動マージ設定を追加
+d507067 docs: update SESSION.md for session handoff
 792dbbb fix: playwright-report を ESLint の ignore 対象に追加
 d80281b feat: オンボーディング待ち画面に「ホームへ戻る」を追加
 03d9743 fix: onboarding Edge Function が起動しないバグを修正
-32857bb docs: update SESSION.md for session handoff
-6688e0a Merge pull request #19 from mktu/feature/add-e2e-testing
 ```
 
 ## GitHubリポジトリ
 https://github.com/mktu/recipe-app
 
 ## 参照すべきファイル
+- `renovate.json` - Renovate 自動マージ設定
 - `src/app/api/onboarding/start/route.ts` - Edge Function キックAPI（修正済み）
 - `src/app/api/onboarding/allow-home/route.ts` - ホーム遷移用API（新規追加）
 - `src/components/features/onboarding/preferences-form.tsx` - 待ち画面（ホームへ戻るボタン）
