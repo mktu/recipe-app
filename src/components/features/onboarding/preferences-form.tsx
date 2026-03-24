@@ -57,7 +57,7 @@ function usePreferencesForm() {
     router.replace('/')
   }
 
-  return { form, setForm, submitting, submitted, handleSubmit, handleSkip }
+  return { form, setForm, submitting, submitted, handleSubmit, handleSkip, user }
 }
 
 function SubmittedView({ lineUserId }: { lineUserId: string | undefined }) {
@@ -139,7 +139,7 @@ function PreferencesFormBody({ form, setForm, submitting, onSubmit }: {
 }
 
 export function PreferencesForm() {
-  const { form, setForm, submitting, submitted, handleSubmit, handleSkip } = usePreferencesForm()
+  const { form, setForm, submitting, submitted, handleSubmit, handleSkip, user } = usePreferencesForm()
 
   if (submitted) return <SubmittedView lineUserId={user?.lineUserId} />
 
