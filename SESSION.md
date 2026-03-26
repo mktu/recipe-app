@@ -1,12 +1,15 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-03-24 (Renovate 自動マージ設定追加)
+2026-03-25 (ビルドエラー修正・デプロイ復旧)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **ビルドエラー修正**（`preferences-form.tsx`）
+  - `usePreferencesForm` が `user` を戻り値に含めていなかったため `SubmittedView lineUserId={user?.lineUserId}` でコンパイルエラー
+  - `d80281b`（ホームへ戻る追加）で混入したバグ。修正 & push 済み（`a79d91f`）
 - [x] **Renovate 自動マージ設定を追加**（`renovate.json`）
   - patch/minor は CI 通過で自動マージ（3日経過後）
   - major・コアフレームワーク（next, react, supabase-js, ai SDK）は手動レビュー
@@ -69,11 +72,11 @@
 
 ## コミット履歴（直近）
 ```
+a79d91f fix: usePreferencesForm から user を返し SubmittedView に渡す
+febc19b docs: update SESSION.md for session handoff
 811261d chore: Renovate の自動マージ設定を追加
 d507067 docs: update SESSION.md for session handoff
 792dbbb fix: playwright-report を ESLint の ignore 対象に追加
-d80281b feat: オンボーディング待ち画面に「ホームへ戻る」を追加
-03d9743 fix: onboarding Edge Function が起動しないバグを修正
 ```
 
 ## GitHubリポジトリ
