@@ -7,6 +7,11 @@
 フェーズ 3：LINE Messaging API 連携 - **一般公開準備完了**
 
 ## 直近の完了タスク
+- [x] **LINE 実機確認**（オンボーディングフロー動作確認済み）
+- [x] **Renovate 有効化**（GitHub 側の設定完了）
+  - Renovate Only App をインストール
+  - リポジトリ Settings → Allow auto-merge を ON
+  - ブランチ保護ルール（main）に `lint-and-build` を required status check として追加
 - [x] **ビルドエラー修正**（`preferences-form.tsx`）
   - `usePreferencesForm` が `user` を戻り値に含めていなかったため `SubmittedView lineUserId={user?.lineUserId}` でコンパイルエラー
   - `d80281b`（ホームへ戻る追加）で混入したバグ。修正 & push 済み（`a79d91f`）
@@ -31,12 +36,7 @@
 （なし）
 
 ## 次にやること（優先度順）
-- [ ] **Renovate 有効化**（GitHub 側の設定）
-  - https://github.com/apps/renovate から App インストール
-  - リポジトリ Settings → General → "Allow auto-merge" を ON
-  - ブランチ保護ルール（main）に `lint-and-build` を required status check として追加
-- [ ] **LINE 実機確認**（ステージングでオンボーディングフロー動作確認）
-  - Edge Function 起動バグを修正済みなので再テスト
+- [x] **LINE 実機確認**（オンボーディングフロー動作確認済み）
 - [ ] **Supabase secrets に環境変数追加**（本番デプロイ時）
   - `LINE_CHANNEL_ACCESS_TOKEN`
   - `APP_URL`
