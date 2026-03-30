@@ -76,6 +76,8 @@
 
 オンボーディング時の一時保存テーブル。完了（`POST /api/onboarding/complete`）後に削除される。
 
+RLS 有効化済み。`service_role` のみフルアクセス可（anon / authenticated ロールはアクセス不可）。
+
 ## ER図（概要）
 
 ```
