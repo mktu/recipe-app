@@ -18,22 +18,26 @@
 
 #### LINE 本番チャネルのセットアップ（開発環境と分離）
 
-- [ ] **本番用 Messaging API チャネルを作成**
+- [x] **本番用 Messaging API チャネルを作成**
   - LINE Developers Console → プロバイダー選択 → 「チャネル作成」→「Messaging API」
   - チャネル名・説明・アイコンを本番用に設定
   - 作成後に以下を控える：
     - `Channel Secret`（→ `LINE_CHANNEL_SECRET`）
     - `Channel Access Token`（長期）（→ `LINE_CHANNEL_ACCESS_TOKEN`）
+- [ ] **プライバシーポリシー・利用規約の URL を設定**
+  - LINE Developers Console → Messaging API チャネル → チャネル基本設定
+  - プライバシーポリシー URL・利用規約 URL を入力
 
-- [ ] **本番用 LINE Login チャネルを作成（LIFF 用）**
+- [x] **本番用 LINE Login チャネルを作成（LIFF 用）**
   - LINE Developers Console → 「チャネル作成」→「LINE Login」
   - 作成後、「LIFF」タブ → 「追加」
   - LIFF 設定:
     - サイズ: Full
-    - Endpoint URL: `https://<本番ドメイン>`
+    - Endpoint URL: `https://<本番ドメイン>`（Vercel デプロイ後に設定）
     - Scope: `profile` にチェック
     - Bot リンク: 本番 Messaging API チャネルを選択
   - 作成後に `LIFF ID` を控える（→ `NEXT_PUBLIC_LIFF_ID`）
+- [ ] **LIFF の Endpoint URL を本番ドメインに更新**（Vercel デプロイ後）
 
 - [ ] **本番 Messaging API チャネルの Webhook 設定**
   - Webhook URL: `https://<本番ドメイン>/api/webhook/line`
