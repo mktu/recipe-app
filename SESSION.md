@@ -1,12 +1,15 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-04-05 (本番環境構築・staging LINE Webhook 修正・ドキュメント整備)
+2026-04-05 (本番環境 pg_cron セットアップ・cron ジョブ動作確認)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **本番環境 pg_cron セットアップ**
+  - pg_cron / pg_net 有効化
+  - generate-embeddings（5分毎）、auto-alias-daily（JST 03:00）、cleanup-cron-logs（毎日深夜）の3ジョブ登録・動作確認
 - [x] **LINE 本番チャネル作成**（Messaging API + LINE Login + LIFF）
 - [x] **Supabase 本番プロジェクト作成**（東京リージョン）
   - マイグレーション適用（17件）
@@ -28,13 +31,9 @@
   - production-launch.md: 完了済みタスクをチェック済みに更新
 
 ## 進行中のタスク
-- [ ] **PR #23（develop → main）のマージ待ち**
-  - `/api/recipes/parse` 認証チェック・ドキュメント更新を本番に反映
+なし
 
 ## 次にやること（優先度順）
-- [ ] **PR #23 をマージ**して本番に反映
-- [ ] **🟡 High: 本番環境の埋め込みバッチセットアップ**
-  - `npm run backfill:embeddings`（本番 Supabase 接続で実行）
 - [ ] **🟠 Medium: LINE Webhook「テスト」コマンドを無効化**
 - [ ] **🟠 Medium: `console.log` を本番で非表示に**
 - [ ] **🟠 Medium: API エラーレスポンスの汎用化**
@@ -58,19 +57,19 @@
 
 ## 参照すべきファイル
 - `docs/backlogs/production-launch.md` - 本番公開準備チェックリスト
+- `docs/EMBEDDING_BATCH_SETUP.md` - pg_cron / 埋め込みバッチのセットアップ手順
+- `docs/EDGE_FUNCTIONS.md` - Edge Functions 開発ガイド（auto-alias 含む）
+- `scripts/setup-cron.ts` - cron ジョブ登録用 SQL 生成スクリプト
 - `docs/LINE_SETUP.md` - LINE チャネル構成・環境別設定
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
-- `.github/workflows/supabase-migrate.yml` - DB マイグレーション CI
-- `.github/workflows/supabase-functions.yml` - Edge Functions デプロイ CI
-- `src/app/api/recipes/parse/route.ts` - 認証チェック追加済み
 
 ## コミット履歴（直近）
 ```
+074718c docs: update SESSION.md for session handoff
 3b1fb65 docs: ブランチ戦略・環境構成・LINEチャネル構成をドキュメントに反映
 4a2d2a4 fix: /api/recipes/parse に lineUserId による認証チェックを追加
 f2adcff ci: develop/main ブランチで staging/production を分離デプロイ
 5ba3084 docs: update SESSION.md for session handoff
-9f2c437 docs: 本番公開準備バックログを追加・SESSION.md を更新
 ```
 
 ## GitHubリポジトリ
