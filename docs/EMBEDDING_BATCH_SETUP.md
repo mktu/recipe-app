@@ -11,7 +11,7 @@
 
 ### 1. Edge Function のデプロイ
 
-`main` ブランチへの push 時に GitHub Actions で自動デプロイされる。
+`develop` ブランチへの push 時に staging へ、`main` ブランチへの push 時に本番へ GitHub Actions で自動デプロイされる。
 
 手動デプロイする場合:
 ```bash

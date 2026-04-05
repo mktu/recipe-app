@@ -1,7 +1,7 @@
 # 本番公開準備
 
 ## ステータス
-🚧 対応中
+✅ Critical 対応完了・本番稼働中
 
 ## 背景・課題
 
@@ -24,7 +24,7 @@
   - 作成後に以下を控える：
     - `Channel Secret`（→ `LINE_CHANNEL_SECRET`）
     - `Channel Access Token`（長期）（→ `LINE_CHANNEL_ACCESS_TOKEN`）
-- [ ] **プライバシーポリシー・利用規約の URL を設定**
+- [x] **プライバシーポリシー・利用規約の URL を設定**
   - LINE Developers Console → Messaging API チャネル → チャネル基本設定
   - プライバシーポリシー URL・利用規約 URL を入力
 
@@ -37,32 +37,24 @@
     - Scope: `profile` にチェック
     - Bot リンク: 本番 Messaging API チャネルを選択
   - 作成後に `LIFF ID` を控える（→ `NEXT_PUBLIC_LIFF_ID`）
-- [ ] **LIFF の Endpoint URL を本番ドメインに更新**（Vercel デプロイ後）
+- [x] **LIFF の Endpoint URL を本番ドメインに更新**
 
-- [ ] **本番 Messaging API チャネルの Webhook 設定**
+- [x] **本番 Messaging API チャネルの Webhook 設定**
   - Webhook URL: `https://<本番ドメイン>/api/webhook/line`
   - 「Webhook の利用」を ON
-  - 「検証」ボタンで疎通確認（Vercel デプロイ後に実施）
 
-- [ ] **本番 LIFF ID を Vercel に設定**
-  - `NEXT_PUBLIC_LIFF_ID` に本番用 LIFF ID を設定
-  - 未設定のまま本番デプロイすると全ユーザーが DevAuth（モックユーザー）でログインしてしまう
-  - 設定場所: Vercel Dashboard → Settings → Environment Variables（Production のみ）
+- [x] **本番 LIFF ID を Vercel に設定**
 
-- [ ] **LINE Secrets を Vercel に設定**
+- [x] **LINE Secrets を Vercel に設定**
   - `LINE_CHANNEL_SECRET`
   - `LINE_CHANNEL_ACCESS_TOKEN`
-  - Webhook 署名検証・Push 通知に必須
 
-- [ ] **Supabase Secrets に環境変数追加**
-  - `LINE_CHANNEL_ACCESS_TOKEN`（Edge Function から LINE Push 通知を送るため）
-  - `APP_URL`（本番ドメイン。LINE 通知内のリンク生成に使用）
-  - 設定方法: `supabase secrets set KEY=value --project-ref <ref>`
+- [x] **Supabase Secrets に環境変数追加**
+  - `LINE_CHANNEL_ACCESS_TOKEN`
+  - `APP_URL`
+  - `GOOGLE_GENERATIVE_AI_API_KEY`
 
-- [ ] **`/api/recipes/parse` に認証チェックを追加**
-  - 現状: `lineUserId` チェックなし → 誰でも呼び出せる
-  - リスク: Gemini API・Jina Reader API のコストを無制限に消費される可能性
-  - 対応: リクエストボディに `lineUserId` を必須化し、存在確認を追加
+- [x] **`/api/recipes/parse` に認証チェックを追加**
 
 ### 🟡 High（できれば対応）
 
@@ -76,13 +68,9 @@
   - `npm run backfill:embeddings`（本番 Supabase 接続で実行）
   - 初回デプロイ後に手動実行
 
-- [ ] **LINE Webhook URL を本番に切り替え**
-  - LINE Developers Console → Messaging API チャネル → Webhook URL
-  - `https://<本番ドメイン>/api/webhook/line` に設定
+- [x] **LINE Webhook URL を本番に切り替え**
 
-- [ ] **LIFF の Endpoint URL を本番に切り替え**
-  - LINE Developers Console → LIFF → Endpoint URL
-  - `https://<本番ドメイン>` に設定
+- [x] **LIFF の Endpoint URL を本番に切り替え**
 
 ### 🟠 Medium（余裕があれば）
 

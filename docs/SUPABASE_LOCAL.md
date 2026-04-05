@@ -51,7 +51,9 @@ psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
 ## 本番マイグレーション
 
-`supabase/migrations/` にファイルを追加して `main` ブランチに push すると、GitHub Actions が自動で本番 DB にマイグレーションを適用する。
+`supabase/migrations/` にファイルを追加して push すると、GitHub Actions が自動でマイグレーションを適用する。
+- `develop` ブランチへの push → staging DB に適用
+- `main` ブランチへの push → 本番 DB に適用
 
 ### 必要な GitHub Secrets
 

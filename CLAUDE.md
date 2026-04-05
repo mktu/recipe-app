@@ -32,13 +32,15 @@
 
 **ブランチ構成:**
 - `main`: 本番ブランチ（保護設定済み）
+- `develop`: ステージングブランチ
 - `feature/*`: 機能開発ブランチ
 
 **ワークフロー:**
-1. `main` から `feature/xxx` ブランチを作成
+1. `develop` から `feature/xxx` ブランチを作成
 2. 開発・コミット
-3. PR を作成（CI が自動実行）
-4. レビュー後 `main` にマージ
+3. `develop` へ PR を作成（CI が自動実行）
+4. レビュー後 `develop` にマージ → staging に自動デプロイ
+5. 動作確認後、`develop` → `main` へ PR → マージ → 本番に自動デプロイ
 
 **ブランチ命名規則:**
 - `feature/add-xxx` - 新機能追加
