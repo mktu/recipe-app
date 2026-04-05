@@ -121,13 +121,13 @@ recipe-app/
 
 ### 環境一覧
 
-| コンポーネント | Local | Staging (現在本番) | Production (未作成) |
-|--------------|-------|-------------------|-------------------|
-| **Next.js** | localhost:3000 | Vercel | Vercel |
-| **Supabase DB** | localhost:54322 | Supabase Cloud | Supabase Cloud (東京) |
-| **Edge Functions** | supabase functions serve | Supabase Cloud | Supabase Cloud |
+| コンポーネント | Local | Staging | Production |
+|--------------|-------|---------|-----------|
+| **Next.js** | localhost:3000 | Vercel (develop ブランチ) | Vercel (main ブランチ) |
+| **Supabase DB** | localhost:54322 | Supabase Cloud (staging) | Supabase Cloud (東京・本番) |
+| **Edge Functions** | supabase functions serve | Supabase Cloud (staging) | Supabase Cloud (本番) |
 | **認証** | DevAuthProvider (モック) | LIFFAuthProvider | LIFFAuthProvider |
-| **LINE Bot** | ngrok経由 | 本番Webhook | 本番Webhook |
+| **LINE Bot** | ngrok経由 | 開発用チャネル | 本番チャネル |
 
 **ローカル起動:**
 ```bash
@@ -232,7 +232,7 @@ graph TB
 | `/api/auth/ensure-user` | POST | ユーザー確保（LINE UserID → DB登録） |
 | `/api/auth/onboarding-status` | GET | オンボーディング完了チェック |
 | `/api/recipes` | POST | レシピ作成 |
-| `/api/recipes/[id]` | GET/PUT/DELETE | レシピ詳細取得・更新・削除 |
+| `/api/recipes/[id]` | GET/PATCH/DELETE | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | URL解析（Jina + Gemini） |
 | `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
@@ -547,41 +547,67 @@ graph TB
 
 ## CI/CD
 
+### ブランチ戦略
+
+```
+feature/* ─→ develop ─→ main
+              (staging)   (production)
+```
+
+| ブランチ | 役割 | デプロイ先 |
+|---------|------|----------|
+| `feature/*` | 機能開発 | Vercel Preview（PR プレビュー） |
+| `develop` | ステージング | Vercel Preview (固定URL) + staging Supabase |
+| `main` | 本番 | Vercel Production + 本番 Supabase |
+
+**開発フロー:**
+1. `feature/*` ブランチで開発
+2. `develop` へ PR → CI チェック → マージ → staging に自動デプロイ
+3. staging で動作確認後、`develop` → `main` へ PR → マージ → 本番に自動デプロイ
+
 ### ワークフロー概要
 
 ```mermaid
 graph TB
-    subgraph PR["Pull Request"]
-        Lint["Lint"]
-        Build["Build"]
-        FuncBuild["Edge Functions Build"]
-        MigTest["Migration Test"]
+    subgraph Feature["feature/* branch"]
+        PR_Dev["PR → develop"]
     end
 
-    subgraph Merge["After merge to main"]
-        Deploy["Vercel Deploy"]
-        MigPush["DB Migration Push"]
-        FuncDeploy["Edge Functions Deploy"]
+    subgraph Develop["develop branch (staging)"]
+        StagingMig["staging DB Migration"]
+        StagingFunc["staging Edge Functions Deploy"]
+        StagingVercel["Vercel Preview Deploy"]
     end
 
-    PR --> Merge
+    subgraph Main["main branch (production)"]
+        PR_Main["PR → main"]
+        ProdMig["本番 DB Migration"]
+        ProdFunc["本番 Edge Functions Deploy"]
+        ProdVercel["Vercel Production Deploy"]
+    end
+
+    PR_Dev -->|CI pass| Develop
+    Develop -->|動作確認後| PR_Main
+    PR_Main -->|CI pass| Main
 ```
 
 ### GitHub Actions ワークフロー
 
 | ワークフロー | トリガー | 処理内容 |
 |------------|---------|---------|
-| `ci.yml` | PR → main | Lint + Build + Functions Build |
+| `ci.yml` | PR → main / develop | Lint + Build + Functions Build |
 | `test-migrations.yml` | PR (migrations変更時) | マイグレーションテスト |
-| `supabase-migrate.yml` | Push → main (migrations変更時) | 本番DBマイグレーション |
-| `supabase-functions.yml` | Push → main (functions変更時) | Edge Functionsデプロイ |
+| `supabase-migrate.yml` | Push → develop | staging DB マイグレーション |
+| `supabase-migrate.yml` | Push → main | 本番 DB マイグレーション |
+| `supabase-functions.yml` | Push → develop | staging Edge Functions デプロイ |
+| `supabase-functions.yml` | Push → main | 本番 Edge Functions デプロイ |
 
 ### デプロイ先
 
-| コンポーネント | デプロイ先 | 方法 |
-|--------------|----------|------|
-| Next.js App | Vercel | Git 連携 (自動) |
-| DB Migrations | Supabase | GitHub Actions |
-| Edge Functions | Supabase | GitHub Actions |
+| コンポーネント | Staging | Production | 方法 |
+|--------------|---------|-----------|------|
+| Next.js App | Vercel Preview | Vercel Production | Git 連携 (自動) |
+| DB Migrations | staging Supabase | 本番 Supabase | GitHub Actions |
+| Edge Functions | staging Supabase | 本番 Supabase | GitHub Actions |
 
 > ディレクトリ構造の詳細は `CLAUDE.md` を参照

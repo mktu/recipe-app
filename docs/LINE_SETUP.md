@@ -2,12 +2,14 @@
 
 ## チャネル構成
 
-LINE では LIFF と Messaging API で別のチャネルタイプが必要:
+LINE では LIFF と Messaging API で別のチャネルタイプが必要。開発・本番でチャネルを分離している:
 
 ```
 プロバイダー（RecipeHub）
-├── LINE Login チャネル      ← LIFF 用（ユーザー認証・アプリ）
-└── Messaging API チャネル   ← Bot 用（Webhook で URL 受信）
+├── LINE Login チャネル（開発用）      ← LIFF 開発・ステージング
+├── LINE Login チャネル（本番用）      ← LIFF 本番
+├── Messaging API チャネル（開発用）   ← Webhook 開発・ステージング
+└── Messaging API チャネル（本番用）   ← Webhook 本番
 ```
 
 同じプロバイダー内であればユーザー ID は統一される。
@@ -17,53 +19,37 @@ LINE では LIFF と Messaging API で別のチャネルタイプが必要:
 | 環境 | 用途 | LIFF | Webhook | DB |
 |------|------|------|---------|-----|
 | **ローカル + ngrok** | 機能開発 | DevAuthProvider（モック） | ngrok URL | ローカル Supabase |
-| **Vercel** | 検証・本番 | 本物の LIFF | Vercel URL | リモート Supabase |
+| **Vercel Preview（develop）** | ステージング | 開発用 LIFF | develop ブランチ URL | staging Supabase |
+| **Vercel Production（main）** | 本番 | 本番 LIFF | 本番 URL | 本番 Supabase |
+
+> **注意:** Vercel Preview の Deployment Protection（Standard Protection）を **Disabled** にしないと、LINE サーバーからの Webhook が 401 で弾かれてアプリに到達しない。
+> Vercel Dashboard → Settings → General → Deployment Protection → **Off** に設定する。
 
 ## URL 設定（LINE Developers コンソール）
 
-1チャネル運用のため、開発↔本番で URL の切り替えが必要:
+チャネルが dev/prod で分離されているため、URL の手動切り替えは不要。
 
-| 項目 | ローカル開発時 | 本番時 |
-|------|----------------|--------|
-| LIFF エンドポイント URL | （DevAuthProvider で不要） | `https://recipe-app-wine-three.vercel.app` |
-| Webhook URL | `https://xxxx.ngrok.io/api/webhook/line` | `https://recipe-app-wine-three.vercel.app/api/webhook/line` |
+| 項目 | 開発用チャネル | 本番用チャネル |
+|------|--------------|--------------|
+| LIFF エンドポイント URL | develop ブランチの Vercel URL | 本番 Vercel URL |
+| Webhook URL | `https://recipe-app-git-develop-mktus-projects.vercel.app/api/webhook/line` | `https://<本番ドメイン>/api/webhook/line` |
 
 ## ローカル開発フロー
+
+LINE Webhook のローカルテストは ngrok 経由で行う:
 
 ```bash
 # 1. ngrok でローカルを公開
 npx ngrok http 3000
 
-# 2. 表示された URL を LINE Developers の Webhook URL に設定
+# 2. 表示された URL を LINE Developers の開発用 Webhook URL に一時設定
 #    例: https://xxxx.ngrok.io/api/webhook/line
 
 # 3. 開発サーバー起動
 npm run dev
 ```
 
-**注意:** ngrok 無料プランでは URL が毎回変わるため、起動のたびに Webhook URL の更新が必要。
-
-## 将来: 本番・開発環境の分離
-
-1チャネル運用で URL 切り替えが煩雑になった場合、同じプロバイダー内にチャネルを追加して分離できる:
-
-```
-プロバイダー（RecipeHub）
-├── LINE Login チャネル（開発用）      ← LIFF 開発
-├── LINE Login チャネル（本番用）      ← LIFF 本番
-├── Messaging API チャネル（開発用）   ← Webhook 開発
-└── Messaging API チャネル（本番用）   ← Webhook 本番
-```
-
-**分離後の運用:**
-
-| 項目 | 1チャネル運用 | 分離運用 |
-|------|---------------|----------|
-| URL 切り替え | 手動で都度変更 | 不要 |
-| データ分離 | 混在 | 完全分離 |
-| 管理コスト | 少ない | チャネル4つ管理 |
-
-環境変数を `.env.local`（開発）と Vercel 環境変数（本番）で分けることで切り替え不要になる。
+**注意:** ngrok 無料プランでは URL が毎回変わるため、起動のたびに Webhook URL の更新が必要。テスト後は develop ブランチの URL に戻す。
 
 ## リッチメニュー設定
 
