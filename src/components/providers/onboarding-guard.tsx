@@ -22,7 +22,11 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         const res = await fetch(`/api/auth/onboarding-status?lineUserId=${user.lineUserId}`)
         const data = await res.json() as { completed: boolean }
         if (!data.completed) {
-          router.replace('/onboarding')
+          // アクティブなセッションがあれば result ページへ
+          // （LIFF の OAuth リダイレクトでルートに着地した場合の対策）
+          const sessionRes = await fetch(`/api/onboarding/result?lineUserId=${user.lineUserId}`)
+          const sessionData = await sessionRes.json() as { session: { status: string } | null }
+          router.replace(sessionData.session ? '/onboarding/result' : '/onboarding')
         } else {
           setChecked(true)
         }
