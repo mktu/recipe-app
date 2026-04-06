@@ -11,6 +11,7 @@
 | LINEチャットのレシピリスト改善 | [line-recipe-list.md](./line-recipe-list.md) | ✅ 完了 |
 | LINE カテゴリカードから LIFF 絞り込みページへの誘導 | [liff-category-filter.md](./liff-category-filter.md) | ✅ 完了 |
 | オンボーディングチャット - 初回レシピ一括登録 | [onboarding-chat.md](./onboarding-chat.md) | 📋 未着手 |
+| オンボーディング UX バグ修正（リリース前） | [onboarding-ux-bugs.md](./onboarding-ux-bugs.md) | 📋 未着手 |
 | E2E テスト整備 | [e2e-testing.md](./e2e-testing.md) | 📋 未着手 |
 
 ## ステータス凡例
