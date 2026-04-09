@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { IngredientSuggestInput } from './ingredient-suggest-input'
+import { IngredientChipSelector } from './ingredient-chip-selector'
 import { useAuth } from '@/lib/auth'
+import type { PopularIngredient } from '@/lib/db/queries/ingredients'
 
 interface FormState {
   searchKeywords: string[]
@@ -95,29 +96,29 @@ function SubmittedView({ lineUserId }: { lineUserId: string | undefined }) {
   )
 }
 
-function PreferencesFormBody({ form, setForm, submitting, onSubmit }: {
+function PreferencesFormBody({ form, setForm, submitting, onSubmit, popularIngredients }: {
   form: FormState
   setForm: React.Dispatch<React.SetStateAction<FormState>>
   submitting: boolean
   onSubmit: (e: React.FormEvent) => void
+  popularIngredients: PopularIngredient[]
 }) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div className="space-y-2">
         <Label>好きな食材・料理名 <span className="text-destructive">*</span></Label>
-        <IngredientSuggestInput
+        <IngredientChipSelector
+          popularIngredients={popularIngredients}
           value={form.searchKeywords}
           onChange={(v) => setForm((f) => ({ ...f, searchKeywords: v }))}
-          placeholder="例: 鶏肉、パスタ、時短…"
         />
-        <p className="text-xs text-muted-foreground">候補から選んでください（Enter で先頭候補を追加）</p>
       </div>
       <div className="space-y-2">
         <Label>苦手な食材（任意）</Label>
-        <IngredientSuggestInput
+        <IngredientChipSelector
+          popularIngredients={popularIngredients}
           value={form.dislikedIngredients}
           onChange={(v) => setForm((f) => ({ ...f, dislikedIngredients: v }))}
-          placeholder="例: セロリ、パクチー…"
         />
       </div>
       <div className="space-y-2">
@@ -138,7 +139,7 @@ function PreferencesFormBody({ form, setForm, submitting, onSubmit }: {
   )
 }
 
-export function PreferencesForm() {
+export function PreferencesForm({ popularIngredients }: { popularIngredients: PopularIngredient[] }) {
   const { form, setForm, submitting, submitted, handleSubmit, handleSkip, user } = usePreferencesForm()
 
   if (submitted) return <SubmittedView lineUserId={user?.lineUserId} />
@@ -150,7 +151,10 @@ export function PreferencesForm() {
           <h1 className="text-xl font-bold">好みを教えてください</h1>
           <p className="text-sm text-muted-foreground">あなた向けのレシピを探します</p>
         </div>
-        <PreferencesFormBody form={form} setForm={setForm} submitting={submitting} onSubmit={handleSubmit} />
+        <PreferencesFormBody
+          form={form} setForm={setForm} submitting={submitting}
+          onSubmit={handleSubmit} popularIngredients={popularIngredients}
+        />
         <div className="text-center">
           <button type="button" onClick={handleSkip} className="text-xs text-muted-foreground underline">
             スキップして始める

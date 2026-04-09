@@ -98,6 +98,36 @@ export type Database = {
           },
         ]
       }
+      onboarding_sessions: {
+        Row: {
+          candidates: Json | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          preferences: Json
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          candidates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          preferences: Json
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          candidates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          preferences?: Json
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       recipe_ingredients: {
         Row: {
           ingredient_id: string
@@ -234,36 +264,6 @@ export type Database = {
           },
         ]
       }
-      onboarding_sessions: {
-        Row: {
-          id: string
-          user_id: string
-          preferences: Json
-          candidates: Json | null
-          status: string
-          created_at: string | null
-          expires_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          preferences: Json
-          candidates?: Json | null
-          status?: string
-          created_at?: string | null
-          expires_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          preferences?: Json
-          candidates?: Json | null
-          status?: string
-          created_at?: string | null
-          expires_at?: string | null
-        }
-        Relationships: []
-      }
       users: {
         Row: {
           created_at: string | null
@@ -296,6 +296,15 @@ export type Database = {
       get_frequent_ingredients: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
+          id: string
+          name: string
+          recipe_count: number
+        }[]
+      }
+      get_popular_ingredients_for_onboarding: {
+        Args: { p_per_category?: number }
+        Returns: {
+          category: string
           id: string
           name: string
           recipe_count: number

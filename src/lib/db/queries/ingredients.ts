@@ -2,6 +2,20 @@ import { supabase } from '@/lib/db/client'
 import type { IngredientsByCategory, Ingredient } from '@/types/recipe'
 import type { Tables } from '@/types/database'
 
+export interface PopularIngredient {
+  id: string
+  name: string
+  category: string
+}
+
+/**
+ * オンボーディング用：カテゴリ別人気食材を取得
+ */
+export async function fetchPopularIngredientsForOnboarding(perCategory = 5): Promise<PopularIngredient[]> {
+  const { data } = await supabase.rpc('get_popular_ingredients_for_onboarding', { p_per_category: perCategory })
+  return (data ?? []).map(({ id, name, category }) => ({ id, name, category }))
+}
+
 /**
  * IDから食材情報を取得（needs_review関係なく取得）
  */
