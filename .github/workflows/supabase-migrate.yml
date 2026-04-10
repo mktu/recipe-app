@@ -18,8 +18,13 @@ jobs:
         with:
           version: latest
 
+      - name: Link staging project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
       - name: Push migrations to staging
-        run: supabase db push --project-ref ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+        run: supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
@@ -34,7 +39,12 @@ jobs:
         with:
           version: latest
 
+      - name: Link production project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
       - name: Push migrations to production
-        run: supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
