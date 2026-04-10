@@ -1,39 +1,27 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-04-05 (本番環境 pg_cron セットアップ・cron ジョブ動作確認)
+2026-04-08 (Issue 1: オンボーディングループ修正・staging デプロイ済み)
 
 ## 現在のフェーズ
-フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
+フェーズ 3：LINE Messaging API 連携 - **本番稼働中・リリース前バグ対応中**
 
 ## 直近の完了タスク
-- [x] **本番環境 pg_cron セットアップ**
-  - pg_cron / pg_net 有効化
-  - generate-embeddings（5分毎）、auto-alias-daily（JST 03:00）、cleanup-cron-logs（毎日深夜）の3ジョブ登録・動作確認
-- [x] **LINE 本番チャネル作成**（Messaging API + LINE Login + LIFF）
-- [x] **Supabase 本番プロジェクト作成**（東京リージョン）
-  - マイグレーション適用（17件）
-  - Edge Functions デプロイ（4関数）
-  - Secrets 設定（LINE_CHANNEL_ACCESS_TOKEN, GOOGLE_GENERATIVE_AI_API_KEY, APP_URL）
-- [x] **Vercel 環境変数設定**（Production/Preview 分離）
-- [x] **`develop` ブランチ作成**（staging ブランチ）
-- [x] **CI ワークフロー更新**（develop→staging, main→本番 の分離デプロイ）
-- [x] **`/api/recipes/parse` に認証チェックを追加**（lineUserId による認証）
-- [x] **プライバシーポリシー・利用規約 URL を LINE に設定**
-- [x] **staging LINE Webhook 修正**
-  - Vercel Preview の Deployment Protection を無効化（Standard Protection → Off）
-  - これにより LINE サーバーからの Webhook が 401 で弾かれる問題を解消
-- [x] **ドキュメント整備**
-  - ARCHITECTURE.md: staging/production 環境構成・CI/CD ブランチ戦略を更新
-  - LINE_SETUP.md: dev/prod 4チャネル構成に更新
-  - CLAUDE.md: develop ブランチを含むワークフローに更新
-  - SUPABASE_LOCAL.md / EMBEDDING_BATCH_SETUP.md: ブランチ別デプロイ先を追記
-  - production-launch.md: 完了済みタスクをチェック済みに更新
+- [x] **Issue 1: オンボーディングループ修正**（`e916238`）
+  - 原因: LINE通知タップ → LIFF OAuth リダイレクト → ルート `/` 着地 → `OnboardingGuard` が `/onboarding` にリダイレクト
+  - 修正: `completed = false` のとき、アクティブなセッションがあれば `/onboarding/result` に振り分けるよう `OnboardingGuard` を変更
+  - staging（`develop` ブランチ）で動作確認済み
+- [x] **バックログ作成**（`docs/backlogs/onboarding-ux-bugs.md`）
+  - リリース前課題 2件（オンボーディングループ・食材入力 UX）をまとめた
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
+- [ ] **🔴 Issue 2: オンボーディングの食材入力 UX 改善**（次セッションで着手）
+  - 問題 A: 自由入力に見えるが候補選択必須 → Enter を押しても何も起きない
+  - 問題 B: 完全一致しないと候補が出ない → 部分一致サジェスト + 自由入力フォールバックが必要
+  - 詳細: `docs/backlogs/onboarding-ux-bugs.md`
 - [ ] **🟠 Medium: LINE Webhook「テスト」コマンドを無効化**
 - [ ] **🟠 Medium: `console.log` を本番で非表示に**
 - [ ] **🟠 Medium: API エラーレスポンスの汎用化**
@@ -56,20 +44,19 @@
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 
 ## 参照すべきファイル
+- `docs/backlogs/onboarding-ux-bugs.md` - Issue 1（修正済み）・Issue 2（未着手）の詳細
+- `src/components/providers/onboarding-guard.tsx` - 今回修正したガードロジック
+- `src/components/features/onboarding/ingredient-suggest-input.tsx` - Issue 2 の対象コンポーネント
 - `docs/backlogs/production-launch.md` - 本番公開準備チェックリスト
-- `docs/EMBEDDING_BATCH_SETUP.md` - pg_cron / 埋め込みバッチのセットアップ手順
-- `docs/EDGE_FUNCTIONS.md` - Edge Functions 開発ガイド（auto-alias 含む）
-- `scripts/setup-cron.ts` - cron ジョブ登録用 SQL 生成スクリプト
-- `docs/LINE_SETUP.md` - LINE チャネル構成・環境別設定
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 
 ## コミット履歴（直近）
 ```
+e916238 fix: オンボーディングループを修正（LIFF OAuth リダイレクト対策）
+3f7137d docs: update SESSION.md for session handoff
 074718c docs: update SESSION.md for session handoff
 3b1fb65 docs: ブランチ戦略・環境構成・LINEチャネル構成をドキュメントに反映
 4a2d2a4 fix: /api/recipes/parse に lineUserId による認証チェックを追加
-f2adcff ci: develop/main ブランチで staging/production を分離デプロイ
-5ba3084 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
