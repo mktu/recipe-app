@@ -85,12 +85,12 @@ function IngredientDrawer({
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-4 pb-2">
           <Tabs defaultValue={categories[0]}>
-            <TabsList className="mb-3 flex h-auto flex-wrap gap-1 bg-transparent p-0">
+            <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat}
                   value={cat}
-                  className="rounded-full border text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="h-auto flex-none rounded-full border px-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   {cat}
                 </TabsTrigger>
