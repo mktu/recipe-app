@@ -35,12 +35,12 @@ function CategoryTabs({ byCategory, value, onToggle }: {
   const categories = Object.keys(byCategory)
   return (
     <Tabs defaultValue={categories[0]}>
-      <TabsList className="mb-6 h-auto w-full justify-start gap-6 overflow-x-auto border-b bg-transparent p-0">
+      <TabsList className="mb-6 h-auto w-full justify-start gap-6 overflow-x-auto overflow-y-hidden rounded-none border-b bg-transparent p-0">
         {categories.map((cat) => (
           <TabsTrigger
             key={cat}
             value={cat}
-            className="h-auto flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="h-auto flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent group-data-[variant=default]/tabs-list:data-[state=active]:shadow-none"
           >
             {cat}
           </TabsTrigger>
