@@ -23,6 +23,7 @@ interface OnboardingSession {
 }
 
 type SessionState = OnboardingSession | null | undefined
+type SubmitMode = 'idle' | 'registering' | 'skipping'
 
 const POLL_INTERVAL_MS = 3000
 
@@ -59,13 +60,13 @@ export function RecipeCandidates() {
   const { user } = useAuth()
   const router = useRouter()
   const session = useOnboardingSession(user?.lineUserId)
-  const [submitting, setSubmitting] = useState(false)
+  const [submitMode, setSubmitMode] = useState<SubmitMode>('idle')
 
   const candidates = session?.status === 'completed' ? (session.candidates ?? []) : []
 
-  async function handleComplete(toRegister: RecipeCandidate[]) {
+  async function handleComplete(toRegister: RecipeCandidate[], mode: Exclude<SubmitMode, 'idle'>) {
     if (!user) return
-    setSubmitting(true)
+    setSubmitMode(mode)
     await fetch('/api/onboarding/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -85,34 +86,30 @@ export function RecipeCandidates() {
   }
   if (session.status === 'pending') return <LoadingView message="バックグラウンドで探しています..." />
   if (session.status === 'failed' || candidates.length === 0) {
-    return (
-      <CenterView>
-        <p className="text-muted-foreground">レシピが見つかりませんでした。</p>
-        <Button variant="outline" onClick={() => handleComplete([])} disabled={submitting}>スキップして始める</Button>
-      </CenterView>
-    )
+    return <NoResultView onSkip={() => handleComplete([], 'skipping')} submitMode={submitMode} />
   }
 
   return (
     <CandidatesView
       candidates={candidates}
-      submitting={submitting}
-      onComplete={handleComplete}
-      onSkip={() => handleComplete([])}
+      submitMode={submitMode}
+      onRegister={(s) => handleComplete(s, 'registering')}
+      onSkip={() => handleComplete([], 'skipping')}
     />
   )
 }
 
 interface CandidatesViewProps {
   candidates: RecipeCandidate[]
-  submitting: boolean
-  onComplete: (selected: RecipeCandidate[]) => void
+  submitMode: SubmitMode
+  onRegister: (selected: RecipeCandidate[]) => void
   onSkip: () => void
 }
 
-function CandidatesView({ candidates, submitting, onComplete, onSkip }: CandidatesViewProps) {
+function CandidatesView({ candidates, submitMode, onRegister, onSkip }: CandidatesViewProps) {
   const [customSelected, setCustomSelected] = useState<Set<string> | null>(null)
   const selected = customSelected ?? new Set(candidates.map((c) => c.url))
+  const submitting = submitMode !== 'idle'
 
   function toggleCandidate(url: string) {
     const next = new Set(selected)
@@ -132,10 +129,12 @@ function CandidatesView({ candidates, submitting, onComplete, onSkip }: Candidat
         ))}
       </div>
       <div className="mt-6 space-y-2">
-        <Button className="w-full" onClick={() => onComplete(candidates.filter((c) => selected.has(c.url)))} disabled={submitting || selected.size === 0}>
-          {submitting ? '登録中…' : `まとめて登録する（${selected.size}件）`}
+        <Button className="w-full" onClick={() => onRegister(candidates.filter((c) => selected.has(c.url)))} disabled={submitting || selected.size === 0}>
+          {submitMode === 'registering' ? '登録中…' : `まとめて登録する（${selected.size}件）`}
         </Button>
-        <Button variant="ghost" className="w-full" onClick={onSkip} disabled={submitting}>スキップして始める</Button>
+        <Button variant="ghost" className="w-full" onClick={onSkip} disabled={submitting}>
+          {submitMode === 'skipping' ? 'スキップ中…' : 'スキップして始める'}
+        </Button>
       </div>
     </div>
   )
@@ -178,6 +177,17 @@ function CandidateCard({ candidate, checked, onToggle }: { candidate: RecipeCand
         </a>
       </div>
     </div>
+  )
+}
+
+function NoResultView({ onSkip, submitMode }: { onSkip: () => void; submitMode: SubmitMode }) {
+  return (
+    <CenterView>
+      <p className="text-muted-foreground">レシピが見つかりませんでした。</p>
+      <Button variant="outline" onClick={onSkip} disabled={submitMode !== 'idle'}>
+        {submitMode === 'skipping' ? 'スキップ中…' : 'スキップして始める'}
+      </Button>
+    </CenterView>
   )
 }
 
