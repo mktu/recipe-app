@@ -27,34 +27,69 @@ function ChipButton({ name, selected, onToggle }: { name: string; selected: bool
   )
 }
 
-function FreeTextInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const [input, setInput] = useState('')
+function CategoryTabs({ byCategory, value, onToggle }: {
+  byCategory: Record<string, PopularIngredient[]>
+  value: string[]
+  onToggle: (name: string) => void
+}) {
+  const categories = Object.keys(byCategory)
+  return (
+    <Tabs defaultValue={categories[0]}>
+      <TabsList className="mb-6 h-auto w-full justify-start gap-6 overflow-x-auto overflow-y-hidden rounded-none border-b bg-transparent p-0">
+        {categories.map((cat) => (
+          <TabsTrigger
+            key={cat}
+            value={cat}
+            className="h-auto flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent group-data-[variant=default]/tabs-list:data-[state=active]:shadow-none"
+          >
+            {cat}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {categories.map((cat) => (
+        <TabsContent key={cat} value={cat}>
+          <div className="flex min-h-[200px] flex-wrap content-start gap-2">
+            {byCategory[cat].map((ing) => (
+              <ChipButton
+                key={ing.id}
+                name={ing.name}
+                selected={value.includes(ing.name)}
+                onToggle={() => onToggle(ing.name)}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      ))}
+    </Tabs>
+  )
+}
+
+function useFreeTextCommit(value: string[], onChange: (v: string[]) => void) {
+  const [freeText, setFreeText] = useState('')
   const [isComposing, setIsComposing] = useState(false)
 
-  function addFreeText() {
-    const trimmed = input.trim()
+  function commit() {
+    const trimmed = freeText.trim()
+    setFreeText('')
     if (!trimmed || value.includes(trimmed)) return
     onChange([...value, trimmed])
-    setInput('')
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !isComposing) {
-      e.preventDefault()
-      addFreeText()
-    }
+  const inputProps = {
+    value: freeText,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFreeText(e.target.value),
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && !isComposing) {
+        e.preventDefault()
+        commit()
+      }
+    },
+    onCompositionStart: () => setIsComposing(true),
+    onCompositionEnd: () => setIsComposing(false),
+    placeholder: '任意の食材を入力',
   }
 
-  return (
-    <Input
-      value={input}
-      onChange={(e) => setInput(e.target.value)}
-      onKeyDown={handleKeyDown}
-      onCompositionStart={() => setIsComposing(true)}
-      onCompositionEnd={() => setIsComposing(false)}
-      placeholder="リストにないものを入力して Enter…"
-    />
-  )
+  return { inputProps, commit }
 }
 
 function IngredientDrawer({
@@ -66,53 +101,33 @@ function IngredientDrawer({
   value: string[]
   onChange: (v: string[]) => void
 }) {
+  const { inputProps, commit } = useFreeTextCommit(value, onChange)
+
   const byCategory = CATEGORY_ORDER.reduce<Record<string, PopularIngredient[]>>((acc, cat) => {
     const items = popularIngredients.filter((i) => i.category === cat)
     if (items.length) acc[cat] = items
     return acc
   }, {})
-  const categories = Object.keys(byCategory)
 
   function toggle(name: string) {
     onChange(value.includes(name) ? value.filter((v) => v !== name) : [...value, name])
   }
 
+  function handleOpenChange(next: boolean) {
+    if (!next) commit()
+    onOpenChange(next)
+  }
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>食材を選ぶ</DrawerTitle>
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-4 pb-2">
-          <Tabs defaultValue={categories[0]}>
-            <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
-              {categories.map((cat) => (
-                <TabsTrigger
-                  key={cat}
-                  value={cat}
-                  className="h-auto flex-none rounded-full border px-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  {cat}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {categories.map((cat) => (
-              <TabsContent key={cat} value={cat}>
-                <div className="flex flex-wrap gap-2">
-                  {byCategory[cat].map((ing) => (
-                    <ChipButton
-                      key={ing.id}
-                      name={ing.name}
-                      selected={value.includes(ing.name)}
-                      onToggle={() => toggle(ing.name)}
-                    />
-                  ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+          <CategoryTabs byCategory={byCategory} value={value} onToggle={toggle} />
           <div className="mt-4">
-            <FreeTextInput value={value} onChange={onChange} />
+            <Input {...inputProps} />
           </div>
         </div>
         <DrawerFooter>
