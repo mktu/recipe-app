@@ -1,6 +1,7 @@
 import { messagingApi } from '@line/bot-sdk'
-import { createVerticalListMessage, RecipeCardData } from './flex-message'
+import { createVerticalListMessage } from './flex-message'
 import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './search-recipes'
+import { toCard } from './recipe-card-mapper'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
@@ -74,16 +75,8 @@ export async function handleYokuTsukuru(
       await replyText(client, replyToken, 'まだ閲覧履歴がありません。レシピを見てみましょう！')
       return
     }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-    const cards: RecipeCardData[] = recipes.map((r) => ({
-      title: r.title,
-      url: `${baseUrl}/api/track/recipe/${r.id}`,
-      imageUrl: r.imageUrl,
-      sourceName: r.sourceName,
-      cookingTimeMinutes: r.cookingTimeMinutes,
-      ingredientCount: r.ingredientCount,
-    }))
+    const cards = recipes.map(toCard)
     const liffUrl = `https://liff.line.me/${liffId}?sort=most_viewed`
     await client.replyMessage({
       replyToken,
@@ -107,16 +100,8 @@ export async function handleShortCookingTime(
       await replyText(client, replyToken, '調理時間が登録されたレシピがまだありません。\nレシピ登録時に自動で取得されます。')
       return
     }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-    const cards: RecipeCardData[] = recipes.map((r) => ({
-      title: r.title,
-      url: `${baseUrl}/api/track/recipe/${r.id}`,
-      imageUrl: r.imageUrl,
-      sourceName: r.sourceName,
-      cookingTimeMinutes: r.cookingTimeMinutes,
-      ingredientCount: r.ingredientCount,
-    }))
+    const cards = recipes.map(toCard)
     const headerText = '⏱ 短時間で作れるレシピ'
     const liffUrl = `https://liff.line.me/${liffId}?sort=shortest_cooking`
     await client.replyMessage({
@@ -141,16 +126,8 @@ export async function handleFewIngredients(
       await replyText(client, replyToken, 'レシピがまだ登録されていません。\nURLを送ってレシピを保存しましょう！')
       return
     }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-    const cards: RecipeCardData[] = recipes.map((r) => ({
-      title: r.title,
-      url: `${baseUrl}/api/track/recipe/${r.id}`,
-      imageUrl: r.imageUrl,
-      sourceName: r.sourceName,
-      ingredientCount: r.ingredientCount,
-      cookingTimeMinutes: r.cookingTimeMinutes,
-    }))
+    const cards = recipes.map(toCard)
     const headerText = '📦 材料少なめで作れるレシピ'
     const liffUrl = `https://liff.line.me/${liffId}?sort=fewest_ingredients`
     await client.replyMessage({
@@ -175,16 +152,8 @@ export async function handleRecentlyAdded(
       await replyText(client, replyToken, 'まだレシピが登録されていません。\nURLを送ってレシピを保存しましょう！')
       return
     }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
-    const cards: RecipeCardData[] = recipes.map((r) => ({
-      title: r.title,
-      url: `${baseUrl}/api/track/recipe/${r.id}`,
-      imageUrl: r.imageUrl,
-      sourceName: r.sourceName,
-      cookingTimeMinutes: r.cookingTimeMinutes,
-      ingredientCount: r.ingredientCount,
-    }))
+    const cards = recipes.map(toCard)
     const liffUrl = `https://liff.line.me/${liffId}?sort=newest`
     await client.replyMessage({
       replyToken,

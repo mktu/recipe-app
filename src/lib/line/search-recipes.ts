@@ -81,7 +81,7 @@ export async function searchRecipesForBot(
   if (!query.searchQuery.trim()) {
     let recipesQuery = supabase
       .from('recipes')
-      .select('id, title, url, image_url, source_name')
+      .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -91,15 +91,15 @@ export async function searchRecipesForBot(
     const { data: recipes } = await recipesQuery
     if (!recipes) return []
 
-    return recipes.map((r) => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name }))
+    return recipes.map(toResult)
   }
 
   // ハイブリッド検索
   return searchRecipesHybridForBot(supabase, user.id, query.searchQuery.trim(), recipeIds, limit)
 }
 
-type RecipeRow = { id: string; title: string; url: string; image_url: string | null; source_name: string | null }
-const toResult = (r: RecipeRow): SearchRecipeResult => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name })
+type RecipeRow = { id: string; title: string; url: string; image_url: string | null; source_name: string | null; cooking_time_minutes: number | null; ingredients_raw: unknown }
+const toResult = (r: RecipeRow): SearchRecipeResult => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name, cookingTimeMinutes: r.cooking_time_minutes, ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null })
 
 /** 最近見たレシピ（last_viewed_at DESC, NULL除外） */
 export async function fetchRecentlyViewedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
@@ -109,7 +109,7 @@ export async function fetchRecentlyViewedForBot(lineUserId: string, limit = 5): 
 
   const { data } = await supabase
     .from('recipes')
-    .select('id, title, url, image_url, source_name')
+    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
     .eq('user_id', user.id)
     .not('last_viewed_at', 'is', null)
     .order('last_viewed_at', { ascending: false })
@@ -205,7 +205,7 @@ async function searchRecipesHybridForBot(
   supabase: ReturnType<typeof createServerClient>, userId: string, searchQuery: string, recipeIds: string[] | null, limit: number
 ): Promise<SearchRecipeResult[]> {
   const term = `%${searchQuery}%`
-  let q = supabase.from('recipes').select('id, title, url, image_url, source_name').eq('user_id', userId)
+  let q = supabase.from('recipes').select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw').eq('user_id', userId)
     .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`).order('created_at', { ascending: false }).limit(limit)
   if (recipeIds !== null) q = q.in('id', recipeIds)
   const { data } = await q
@@ -217,7 +217,7 @@ async function searchRecipesHybridForBot(
     const additionalIds = await getVectorSearchIds(supabase, userId, searchQuery, excludeIds, limit)
     const filteredIds = recipeIds ? additionalIds.filter((id) => recipeIds.includes(id)) : additionalIds
     if (filteredIds.length > 0) {
-      const { data: extra } = await supabase.from('recipes').select('id, title, url, image_url, source_name').in('id', filteredIds)
+      const { data: extra } = await supabase.from('recipes').select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw').in('id', filteredIds)
       return [...results, ...(extra ?? []).map(toResult)]
     }
   } catch (e) { console.error('[searchRecipesHybridForBot] Vector search failed:', e) }

@@ -1,8 +1,9 @@
 import { messagingApi } from '@line/bot-sdk'
-import { createVerticalListMessage, RecipeCardData } from './flex-message'
+import { createVerticalListMessage } from './flex-message'
 import { parseSearchQuery, ParsedSearchQuery } from './parse-search-query'
 import { searchRecipesForBot, fetchRecentlyViewedForBot, fetchMostViewedForBot, SearchRecipeResult } from './search-recipes'
 import { buildIngredientQuickReply } from './quick-reply'
+import { toCard } from './recipe-card-mapper'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 type ReplyParams = { client: MessagingApiClient; replyToken: string }
@@ -15,12 +16,6 @@ export function isIngredientSearchKeyword(text: string): boolean {
   return INGREDIENT_SEARCH_KEYWORDS.includes(normalizedText)
 }
 
-const toCard = (r: SearchRecipeResult): RecipeCardData => ({
-  title: r.title,
-  url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/track/recipe/${r.id}`,
-  imageUrl: r.imageUrl,
-  sourceName: r.sourceName,
-})
 
 /** 最近見たキーワードかどうかを判定 */
 export function isRecentlyViewedKeyword(text: string): boolean {
