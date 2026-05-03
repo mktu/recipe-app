@@ -20,6 +20,8 @@ const toCard = (r: SearchRecipeResult): RecipeCardData => ({
   url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/track/recipe/${r.id}`,
   imageUrl: r.imageUrl,
   sourceName: r.sourceName,
+  cookingTimeMinutes: r.cookingTimeMinutes,
+  ingredientCount: r.ingredientCount,
 })
 
 /** 最近見たキーワードかどうかを判定 */
