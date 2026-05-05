@@ -6,7 +6,7 @@
 
 **ビジョン:** 「献立の意思決定コストをゼロにする」
 
-プロダクト要件は `requirements.md` を、機能詳細は `docs/backlogs/` を、アーキテクチャ全体像は `docs/ARCHITECTURE.md` を参照。
+プロダクト要件は `requirements.md` を、アーキテクチャ全体像は `docs/ARCHITECTURE.md` を参照。タスク管理は GitHub Issues で行う。
 
 ## 技術スタック
 
@@ -24,7 +24,6 @@
 - `src/lib/` - ビジネスロジック（`auth/`, `db/`, `line/`, `scraper/`, `recipe/` 等）
 - `src/components/features/` - 機能別コンポーネント
 - `src/hooks/` - カスタム hooks
-- `docs/backlogs/` - エピック別バックログ
 
 ## 開発ルール
 
@@ -169,10 +168,9 @@ LINE_CHANNEL_ACCESS_TOKEN=
 SESSION.md を読んで現在の状態を把握してください
 ```
 
-### バックログ実装タスク着手時
+### 実装タスク着手時
 
-`docs/backlogs/` に記載されたエピックの実装に着手する場合は、
-プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
+GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
 
 ### SESSION.md の更新タイミング
 

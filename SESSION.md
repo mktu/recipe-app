@@ -1,31 +1,29 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-03 (Issue #34: LINE食材検索の調理時間・材料数表示を修正)
+2026-05-06 (Issue #40, #41 対応)
 
 ## 現在のフェーズ
-フェーズ 3：LINE Messaging API 連携 - **本番稼働中・バグ修正中**
+フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
-- [x] **Issue #34: LINE食材検索で調理時間・材料数が表示されない問題を修正**
-  - 原因1: `search-recipes.ts` の食材検索系 SELECT 文に `cooking_time_minutes`, `ingredients_raw` が未含有
-  - 原因2: `search-handler.ts` の `toCard` 関数で `cookingTimeMinutes`, `ingredientCount` をマッピングしていなかった
-  - 修正: SELECT 追加 (`10c8cdd`) → toCard マッピング追加 (`1ff71a0`)
-- [x] **リファクタリング: レシピカードマッピングの共通化** (`907239e`)
-  - `category-handler.ts` と `search-handler.ts` で重複していた `SearchRecipeResult → RecipeCardData` 変換を `recipe-card-mapper.ts` に集約
-- [x] **Issue 2: オンボーディングの食材入力 UX 改善**
-  - カテゴリ別チップ選択方式に刷新（`431ce11`, `6bec1e8`, `c7014b3`, `39d29e3`）
-  - 自由入力も Enter で追加可能に（`useFreeTextCommit`）
+- [x] **#40: LINE Webhook「テスト」コマンドを開発環境のみに制限**
+  - `isTestKeyword` に `NODE_ENV !== 'development'` チェックを追加
+- [x] **#41: クライアントサイドの console.log を削除**
+  - Auth 初期化ログ、LIFF 初期化ログ、useRecipes API呼び出しログを削除
+  - サーバーサイド（API routes, parse-recipe 等）のログは意図的に残した
 
 ## 進行中のタスク
 なし
 
-## 次にやること（優先度順）
-- [ ] **🟠 Medium: LINE Webhook「テスト」コマンドを無効化**
-- [ ] **🟠 Medium: `console.log` を本番で非表示に**
-- [ ] **🟠 Medium: API エラーレスポンスの汎用化**
-- [ ] **🟢 Low: Security Headers の追加**（`next.config.ts`）
-- [ ] **🟢 Low: OGP 画像の作成**（1200×630px）
+## 次にやること（GitHub Issues で管理）
+- [ ] **#42: API エラーレスポンスの汎用化**
+- [ ] **#43: OGP 画像の作成**
+- [ ] **#44: Security Headers の追加**
+- [ ] **#45: Vercel Analytics / Speed Insights の導入**
+- [ ] **#37: E2E: レシピ追加フローのテスト**
+- [ ] **#38: E2E: ホーム画面のテスト**
+- [ ] **#39: E2E: レシピ詳細画面のテスト**
 
 ## ブロッカー・注意点
 - **Vercel Preview の Deployment Protection は Off にしている**
@@ -43,21 +41,17 @@
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 
 ## 参照すべきファイル
-- `src/lib/line/recipe-card-mapper.ts` - レシピカード変換の共通ロジック（今回新規作成）
-- `src/lib/line/search-recipes.ts` - Bot向け検索関数（今回修正）
-- `src/lib/line/search-handler.ts` - 検索ハンドラ（今回修正）
-- `src/lib/line/category-handler.ts` - カテゴリハンドラ（今回リファクタ）
-- `docs/backlogs/onboarding-ux-bugs.md` - Issue 2（未着手）の詳細
-- `docs/backlogs/production-launch.md` - 本番公開準備チェックリスト
+- `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
+- `src/app/api/webhook/line/route.ts` - テストコマンド制限の変更箇所
 
 ## コミット履歴（直近）
 ```
-907239e refactor: レシピカードマッピングを recipe-card-mapper に集約
-1ff71a0 fix: 食材検索の toCard で調理時間・材料数をマッピングに追加
-10c8cdd fix: LINE食材検索で調理時間・材料数が表示されない問題を修正
-39d29e3 feat: オンボーディング食材チップの表示数をカテゴリあたり10件に増加
-65d2abd fix: スキップ時に登録ボタンが「登録中…」に変わる問題を修正
+206da55 fix: テストコマンドを開発環境のみに制限し、クライアントサイドの console.log を削除 (Issue #40, #41)
+496b4b4 docs: update SESSION.md for session handoff
+b1efaf7 chore: docs/backlogs/ を削除し残タスクを GitHub Issues に移行
+7767cd7 fix: IngredientSelector に重複 ID が渡された際の key 重複エラーを修正
+0e514d2 feat: レシピ情報の再取得・メイン食材編集機能を追加 (Issue #33)
 ```
 
 ## GitHubリポジトリ

@@ -25,20 +25,13 @@ function useAuthUser(adapter: AuthProviderAdapter) {
     let isMounted = true
 
     async function init() {
-      const startTime = Date.now()
       try {
-        console.log('[Auth] 初期化開始')
         await adapter.initialize()
-        console.log('[Auth] initialize完了:', Date.now() - startTime, 'ms')
-
-        const t = Date.now()
         const currentUser = await adapter.getUser()
-        console.log('[Auth] getUser完了:', Date.now() - t, 'ms')
 
         if (isMounted) {
           setUser(currentUser)
         }
-        console.log('[Auth] 初期化完了 合計:', Date.now() - startTime, 'ms')
       } catch (err) {
         console.error('[Auth] 初期化エラー:', err)
         if (isMounted) {
