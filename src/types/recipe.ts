@@ -65,6 +65,13 @@ export interface IngredientRaw {
   amount: string
 }
 
+/** レシピ更新入力 */
+export interface UpdateRecipeInput {
+  ingredientIds?: string[]
+  ingredientsRaw?: IngredientRaw[]
+  memo?: string
+}
+
 /** レシピ詳細（詳細画面用） */
 export interface RecipeDetail extends RecipeWithIngredients {
   ingredientsRaw: IngredientRaw[]

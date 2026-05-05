@@ -3,71 +3,38 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { ExternalLink, Trash2 } from 'lucide-react'
+import { ExternalLink, RefreshCw, Loader2 } from 'lucide-react'
+import { DeleteDialog } from './delete-dialog'
 
 interface RecipeActionsProps {
   url: string
+  isRescraping: boolean
+  onRescrape: () => void
   onDelete: () => Promise<void>
 }
 
-export function RecipeActions({ url, onDelete }: RecipeActionsProps) {
+export function RecipeActions({ url, isRescraping, onRescrape, onDelete }: RecipeActionsProps) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = useCallback(async () => {
     setIsDeleting(true)
-    try {
-      await onDelete()
-      router.push('/')
-    } catch {
-      setIsDeleting(false)
-    }
+    try { await onDelete(); router.push('/') } catch { setIsDeleting(false) }
   }, [onDelete, router])
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 元サイトへのリンク */}
-      <Button variant="outline" className="w-full" asChild>
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          <ExternalLink className="mr-2 h-4 w-4" />
-          元のレシピを見る
-        </a>
+      <Button variant="outline" className="w-full" onClick={onRescrape} disabled={isRescraping}>
+        {isRescraping ? (
+          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />取得中...</>
+        ) : (
+          <><RefreshCw className="mr-2 h-4 w-4" />レシピ情報を再取得</>
+        )}
       </Button>
-
-      {/* 削除ボタン */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="w-full" disabled={isDeleting}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? '削除中...' : 'レシピを削除'}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>レシピを削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              この操作は取り消せません。レシピは完全に削除されます。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              削除する
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button variant="outline" className="w-full" asChild>
+        <a href={url} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" />レシピサイトに移動</a>
+      </Button>
+      <DeleteDialog isDeleting={isDeleting} onDelete={handleDelete} />
     </div>
   )
 }

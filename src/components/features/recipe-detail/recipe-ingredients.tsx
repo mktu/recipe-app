@@ -9,7 +9,18 @@ interface RecipeIngredientsProps {
 
 export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
   if (ingredients.length === 0) {
-    return null
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">材料</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            材料情報がありません。「レシピ情報を再取得」をお試しください。
+          </p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

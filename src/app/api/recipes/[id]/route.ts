@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchRecipeById, deleteRecipe, updateRecipeMemo } from '@/lib/db/queries/recipes'
+import { fetchRecipeById, deleteRecipe, updateRecipe } from '@/lib/db/queries/recipes'
+import type { UpdateRecipeInput } from '@/types/recipe'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -67,14 +68,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const body = await request.json()
 
-  // メモの更新
-  if (typeof body.memo === 'string') {
-    const { error } = await updateRecipeMemo(lineUserId, id, body.memo)
+  const updates: UpdateRecipeInput = {}
+  if (body.ingredientIds) updates.ingredientIds = body.ingredientIds
+  if (body.ingredientsRaw) updates.ingredientsRaw = body.ingredientsRaw
+  if (typeof body.memo === 'string') updates.memo = body.memo
 
-    if (error) {
-      console.error('[PATCH /api/recipes/[id]] Error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+  const { error } = await updateRecipe(lineUserId, id, updates)
+  if (error) {
+    console.error('[PATCH /api/recipes/[id]] Error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

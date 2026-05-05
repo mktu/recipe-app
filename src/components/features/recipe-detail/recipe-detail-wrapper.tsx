@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import type { RecipeDetail } from '@/types/recipe'
 import { RecipeDetailPage } from './recipe-detail-page'
@@ -15,53 +15,37 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const fetchRecipe = useCallback(async () => {
+    if (!user) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}`, {
+        headers: { 'x-line-user-id': user.lineUserId },
+      })
+      if (!res.ok) {
+        setError(res.status === 404 ? 'レシピが見つかりません' : 'レシピの取得に失敗しました')
+        return
+      }
+      setRecipe(await res.json())
+    } catch {
+      setError('レシピの取得に失敗しました')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [recipeId, user])
+
   useEffect(() => {
     if (authLoading || !user) return
-
-    const fetchRecipe = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const res = await fetch(`/api/recipes/${recipeId}`, {
-          headers: { 'x-line-user-id': user.lineUserId },
-        })
-        if (!res.ok) {
-          if (res.status === 404) {
-            setError('レシピが見つかりません')
-          } else {
-            setError('レシピの取得に失敗しました')
-          }
-          return
-        }
-        const data = await res.json()
-        setRecipe(data)
-      } catch {
-        setError('レシピの取得に失敗しました')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     fetchRecipe()
-  }, [recipeId, user, authLoading])
+  }, [authLoading, user, fetchRecipe])
 
-  if (authLoading || isLoading) {
-    return <LoadingState />
-  }
+  if (authLoading || isLoading) return <LoadingState />
+  if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
+  if (error) return <CenteredMessage>{error}</CenteredMessage>
+  if (!recipe) return <CenteredMessage>レシピが見つかりません</CenteredMessage>
 
-  if (!isAuthenticated) {
-    return <CenteredMessage>ログインが必要です</CenteredMessage>
-  }
-
-  if (error) {
-    return <CenteredMessage>{error}</CenteredMessage>
-  }
-
-  if (!recipe) {
-    return <CenteredMessage>レシピが見つかりません</CenteredMessage>
-  }
-
-  return <RecipeDetailPage recipe={recipe} />
+  return <RecipeDetailPage recipe={recipe} onRecipeUpdated={fetchRecipe} />
 }
 
 function LoadingState() {
