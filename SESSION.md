@@ -13,15 +13,14 @@
   - 修正: SELECT 追加 (`10c8cdd`) → toCard マッピング追加 (`1ff71a0`)
 - [x] **リファクタリング: レシピカードマッピングの共通化** (`907239e`)
   - `category-handler.ts` と `search-handler.ts` で重複していた `SearchRecipeResult → RecipeCardData` 変換を `recipe-card-mapper.ts` に集約
+- [x] **Issue 2: オンボーディングの食材入力 UX 改善**
+  - カテゴリ別チップ選択方式に刷新（`431ce11`, `6bec1e8`, `c7014b3`, `39d29e3`）
+  - 自由入力も Enter で追加可能に（`useFreeTextCommit`）
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（優先度順）
-- [ ] **🔴 Issue 2: オンボーディングの食材入力 UX 改善**
-  - 問題 A: 自由入力に見えるが候補選択必須 → Enter を押しても何も起きない
-  - 問題 B: 完全一致しないと候補が出ない → 部分一致サジェスト + 自由入力フォールバックが必要
-  - 詳細: `docs/backlogs/onboarding-ux-bugs.md`
 - [ ] **🟠 Medium: LINE Webhook「テスト」コマンドを無効化**
 - [ ] **🟠 Medium: `console.log` を本番で非表示に**
 - [ ] **🟠 Medium: API エラーレスポンスの汎用化**

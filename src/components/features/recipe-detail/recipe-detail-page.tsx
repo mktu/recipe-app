@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -9,27 +9,37 @@ import { RecipeHeader } from './recipe-header'
 import { RecipeIngredients } from './recipe-ingredients'
 import { RecipeMemo } from './recipe-memo'
 import { RecipeActions } from './recipe-actions'
+import { RescrapeDialog } from './rescrape-dialog'
 import { useRecipeActions } from './use-recipe-actions'
+import { useRescrape } from './use-rescrape'
 
 interface RecipeDetailPageProps {
   recipe: RecipeDetail
+  onRecipeUpdated: () => void
 }
 
-export function RecipeDetailPage({ recipe }: RecipeDetailPageProps) {
+export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPageProps) {
   const router = useRouter()
   const { memo, updateMemo, deleteRecipe } = useRecipeActions({
     recipeId: recipe.id,
     initialMemo: recipe.memo,
   })
+  const { rescrape, isLoading: isRescraping, result: rescrapeResult } = useRescrape()
+  const [dialogOpen, setDialogOpen] = useState(false)
 
-  const handleBack = useCallback(() => router.back(), [router])
+  const handleRescrape = useCallback(async () => {
+    await rescrape(recipe.url)
+    setDialogOpen(true)
+  }, [rescrape, recipe.url])
+
+  const handleBack = useCallback(() => router.push('/'), [router])
   const createdAt = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('ja-JP') : '-'
 
   return (
     <div className="mx-auto max-w-lg p-4">
       <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
         <ArrowLeft className="mr-1 h-4 w-4" />
-        戻る
+        レシピ一覧に戻る
       </Button>
 
       <div className="space-y-6">
@@ -42,8 +52,23 @@ export function RecipeDetailPage({ recipe }: RecipeDetailPageProps) {
         <RecipeIngredients ingredients={recipe.ingredientsRaw} />
         <RecipeMemo memo={memo} onUpdate={updateMemo} />
         <p className="text-center text-sm text-muted-foreground">登録日: {createdAt}</p>
-        <RecipeActions url={recipe.url} onDelete={deleteRecipe} />
+        <RecipeActions
+          url={recipe.url}
+          isRescraping={isRescraping}
+          onRescrape={handleRescrape}
+          onDelete={deleteRecipe}
+        />
       </div>
+
+      {rescrapeResult && (
+        <RescrapeDialog
+          recipe={recipe}
+          parsed={rescrapeResult}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSaved={onRecipeUpdated}
+        />
+      )}
     </div>
   )
 }

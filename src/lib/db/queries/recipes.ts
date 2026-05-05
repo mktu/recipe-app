@@ -75,4 +75,4 @@ export async function createRecipe(input: CreateRecipeInput): Promise<{ data: Cr
 export { fetchRecipes } from './recipe-search'
 export type { FetchRecipesParams } from './recipe-search'
 // 詳細関連は recipe-detail.ts から re-export
-export { fetchRecipeById, deleteRecipe, updateRecipeMemo, recordRecipeView } from './recipe-detail'
+export { fetchRecipeById, deleteRecipe, updateRecipe, recordRecipeView } from './recipe-detail'

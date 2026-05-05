@@ -1,5 +1,9 @@
+import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
-import type { RecipeDetail, RecipeIngredient, IngredientRaw } from '@/types/recipe'
+import type { Database, Json, TablesInsert } from '@/types/database'
+import type { RecipeDetail, RecipeIngredient, IngredientRaw, UpdateRecipeInput } from '@/types/recipe'
+
+type TypedSupabaseClient = SupabaseClient<Database>
 
 type RecipeIngredientRow = {
   recipe_id: string
@@ -8,16 +12,14 @@ type RecipeIngredientRow = {
   ingredients: { id: string; name: string } | null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getUserIdByLineUserId(client: any, lineUserId: string): Promise<string | null> {
+async function getUserIdByLineUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
   const { data, error } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
   return error || !data ? null : data.id
 }
 
 /** 閲覧数をカウントアップ */
 export async function recordRecipeView(recipeId: string): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = createServerClient() as any
+  const client = createServerClient()
   const { data: recipe } = await client
     .from('recipes')
     .select('view_count')
@@ -40,8 +42,7 @@ export async function fetchRecipeById(
   lineUserId: string,
   recipeId: string
 ): Promise<{ data: RecipeDetail | null; error: Error | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = createServerClient() as any
+  const client = createServerClient()
 
   try {
     const userId = await getUserIdByLineUserId(client, lineUserId)
@@ -74,7 +75,7 @@ export async function fetchRecipeById(
       }))
 
     const ingredientsRaw: IngredientRaw[] = Array.isArray(recipe.ingredients_raw)
-      ? (recipe.ingredients_raw as IngredientRaw[])
+      ? (recipe.ingredients_raw as unknown as IngredientRaw[])
       : []
 
     return { data: { ...recipe, mainIngredients, ingredientsRaw }, error: null }
@@ -88,8 +89,7 @@ export async function deleteRecipe(
   lineUserId: string,
   recipeId: string
 ): Promise<{ error: Error | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = createServerClient() as any
+  const client = createServerClient()
 
   try {
     const userId = await getUserIdByLineUserId(client, lineUserId)
@@ -108,26 +108,48 @@ export async function deleteRecipe(
   }
 }
 
-/** レシピのメモを更新 */
-export async function updateRecipeMemo(
+async function replaceRecipeIngredients(client: TypedSupabaseClient, recipeId: string, ingredientIds: string[]): Promise<void> {
+  await client.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
+  if (ingredientIds.length === 0) return
+  const rows: TablesInsert<'recipe_ingredients'>[] = ingredientIds.map((id) => ({
+    recipe_id: recipeId,
+    ingredient_id: id,
+    is_main: true,
+  }))
+  const { error } = await client.from('recipe_ingredients').insert(rows)
+  if (error) throw error
+}
+
+/** レシピを更新（食材・メモ等） */
+export async function updateRecipe(
   lineUserId: string,
   recipeId: string,
-  memo: string
+  updates: UpdateRecipeInput
 ): Promise<{ error: Error | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = createServerClient() as any
+  const client = createServerClient()
 
   try {
     const userId = await getUserIdByLineUserId(client, lineUserId)
     if (!userId) return { error: new Error('ユーザーが見つかりません') }
 
-    const { error } = await client
+    const recipeUpdate: TablesInsert<'recipes'> & { updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    } as TablesInsert<'recipes'> & { updated_at: string }
+    if (typeof updates.memo === 'string') recipeUpdate.memo = updates.memo
+    if (updates.ingredientsRaw) recipeUpdate.ingredients_raw = updates.ingredientsRaw as unknown as Json
+    if (updates.ingredientIds) recipeUpdate.ingredients_linked = updates.ingredientIds.length > 0
+
+    const { error: updateError } = await client
       .from('recipes')
-      .update({ memo, updated_at: new Date().toISOString() })
+      .update(recipeUpdate)
       .eq('id', recipeId)
       .eq('user_id', userId)
+    if (updateError) throw updateError
 
-    if (error) throw error
+    if (updates.ingredientIds) {
+      await replaceRecipeIngredients(client, recipeId, updates.ingredientIds)
+    }
+
     return { error: null }
   } catch (err) {
     return { error: err instanceof Error ? err : new Error('Unknown error') }
