@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -65,7 +65,8 @@ interface IngredientSelectorProps {
   onSelectionChange: (ids: string[]) => void
 }
 
-export function IngredientSelector({ categories, selectedIds, onSelectionChange }: IngredientSelectorProps) {
+export function IngredientSelector({ categories, selectedIds: rawSelectedIds, onSelectionChange }: IngredientSelectorProps) {
+  const selectedIds = useMemo(() => [...new Set(rawSelectedIds)], [rawSelectedIds])
   const [open, setOpen] = useState(false)
   const { ingredients: selectedIngredients } = useSelectedIngredients(selectedIds)
 

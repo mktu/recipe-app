@@ -200,6 +200,7 @@ export async function matchIngredients(
   const allIngredients = await fetchAllIngredients(supabase)
 
   const results: MatchResult[] = []
+  const seen = new Set<string>()
   for (const name of ingredientNames) {
     if (!name.trim()) continue
 
@@ -209,7 +210,10 @@ export async function matchIngredients(
       name,
       options.recipeId
     )
-    if (result) results.push(result)
+    if (result && !seen.has(result.ingredientId)) {
+      seen.add(result.ingredientId)
+      results.push(result)
+    }
   }
 
   return results
