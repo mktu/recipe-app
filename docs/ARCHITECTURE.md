@@ -334,6 +334,7 @@ src/lib/batch/     →  npm run functions:build  →  supabase/functions/*/
 ```mermaid
 erDiagram
     users ||--o{ recipes : "has"
+    users ||--o{ onboarding_sessions : "has"
     recipes ||--o{ recipe_ingredients : "contains"
     ingredients ||--o{ recipe_ingredients : "used_in"
     ingredients ||--o{ ingredient_aliases : "has"
@@ -346,6 +347,7 @@ erDiagram
     ingredient_aliases
     recipe_ingredients
     unmatched_ingredients
+    onboarding_sessions
 ```
 
 ### テーブル概要

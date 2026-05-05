@@ -17,7 +17,7 @@
 - `title`: String
 - `url`: String (user_id + url で Unique)
 - `source_name`: String (例: クックパッド)
-- `ingredients_raw`: JSON (材料リスト。例: `[{"name": "なす", "amount": "2本"}, {"name": "鶏もも肉", "amount": "300g"}]`)
+- `ingredients_raw`: JSONB (材料リスト。例: `[{"name": "なす", "amount": "2本"}, {"name": "鶏もも肉", "amount": "300g"}]`)
 - `tags`: String[] (ジャンル等)
 - `image_url`: String
 - `memo`: String (ユーザーメモ)
@@ -211,3 +211,4 @@ PostgreSQL ストアドプロシージャ（Supabase RPC）として定義され
 | `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
 | `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |
 | `get_recipes_short_cooking_time(p_user_id, p_limit)` | 調理時間が短いレシピ取得 | LINE Bot のカテゴリ検索 |
+| `get_popular_ingredients_for_onboarding(p_per_category)` | カテゴリ別の人気食材を取得（親食材のみ） | オンボーディング UI の食材表示 |
