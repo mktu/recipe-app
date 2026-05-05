@@ -1,24 +1,22 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-05 (docs/backlogs/ 整理・GitHub Issues 移行)
+2026-05-06 (Issue #40, #41 対応)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
-- [x] **docs/backlogs/ の整理**
-  - 完了済みバックログ10件を削除（search-ux, cook-count, cooking-time, line-recipe-list, liff-category-filter, onboarding-chat, onboarding-ux-bugs, favorites, e2e-testing, production-launch）
-  - 未対応の残タスクを GitHub Issues #37〜#45 に移行
-  - CLAUDE.md, docs/ARCHITECTURE.md, requirements.md 等からバックログ参照を除去
-  - `docs/backlogs/` ディレクトリごと削除
+- [x] **#40: LINE Webhook「テスト」コマンドを開発環境のみに制限**
+  - `isTestKeyword` に `NODE_ENV !== 'development'` チェックを追加
+- [x] **#41: クライアントサイドの console.log を削除**
+  - Auth 初期化ログ、LIFF 初期化ログ、useRecipes API呼び出しログを削除
+  - サーバーサイド（API routes, parse-recipe 等）のログは意図的に残した
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **#40: LINE Webhook「テスト」コマンドを無効化**
-- [ ] **#41: console.log を本番で非表示に**
 - [ ] **#42: API エラーレスポンスの汎用化**
 - [ ] **#43: OGP 画像の作成**
 - [ ] **#44: Security Headers の追加**
@@ -43,16 +41,17 @@
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 
 ## 参照すべきファイル
-- `CLAUDE.md` - プロジェクトガイド（バックログ参照を更新済み）
+- `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
+- `src/app/api/webhook/line/route.ts` - テストコマンド制限の変更箇所
 
 ## コミット履歴（直近）
 ```
+206da55 fix: テストコマンドを開発環境のみに制限し、クライアントサイドの console.log を削除 (Issue #40, #41)
+496b4b4 docs: update SESSION.md for session handoff
 b1efaf7 chore: docs/backlogs/ を削除し残タスクを GitHub Issues に移行
 7767cd7 fix: IngredientSelector に重複 ID が渡された際の key 重複エラーを修正
 0e514d2 feat: レシピ情報の再取得・メイン食材編集機能を追加 (Issue #33)
-2d451b6 docs: update SESSION.md for session handoff
-907239e refactor: レシピカードマッピングを recipe-card-mapper に集約
 ```
 
 ## GitHubリポジトリ
