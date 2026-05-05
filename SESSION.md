@@ -47,8 +47,6 @@
 - `src/lib/line/search-recipes.ts` - Bot向け検索関数（今回修正）
 - `src/lib/line/search-handler.ts` - 検索ハンドラ（今回修正）
 - `src/lib/line/category-handler.ts` - カテゴリハンドラ（今回リファクタ）
-- `docs/backlogs/onboarding-ux-bugs.md` - Issue 2（未着手）の詳細
-- `docs/backlogs/production-launch.md` - 本番公開準備チェックリスト
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 
 ## コミット履歴（直近）

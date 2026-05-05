@@ -110,8 +110,6 @@ recipe-app/
 ├── seed/                     # シードデータ
 │   └── ingredients.json      # 食材マスター初期データ
 ├── docs/                     # ドキュメント
-│   ├── backlogs/             # エピック別バックログ
-│   └── ...
 └── scripts/                  # 開発・運用スクリプト
 ```
 
