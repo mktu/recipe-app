@@ -26,8 +26,9 @@ function isHelpKeyword(text: string): boolean {
   return keywords.some((k) => text.trim().toLowerCase() === k.toLowerCase())
 }
 
-/** テストキーワードかどうかを判定 */
+/** テストキーワードかどうかを判定（開発環境のみ有効） */
 function isTestKeyword(text: string): boolean {
+  if (process.env.NODE_ENV !== 'development') return false
   return ['テスト', 'test'].includes(text.trim().toLowerCase())
 }
 
