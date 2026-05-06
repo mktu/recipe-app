@@ -59,9 +59,9 @@
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     External Services                            │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────────┐    │
-│  │ Google Gemini │  │  Jina Reader  │  │  LINE Platform    │    │
-│  └───────────────┘  └───────────────┘  └───────────────────┘    │
+│  ┌───────────────┐  ┌───────────────────┐                       │
+│  │ Google Gemini │  │  LINE Platform    │                       │
+│  └───────────────┘  └───────────────────┘                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,7 +73,7 @@
 | UI | React, Tailwind CSS, shadcn/ui |
 | Database | Supabase (PostgreSQL) |
 | Data Fetching | SWR |
-| AI | Vercel AI SDK + Google Gemini |
+| AI | Vercel AI SDK + Google Gemini (Embedding) |
 | LINE | LIFF SDK, Messaging API SDK |
 | Validation | Zod |
 
@@ -100,9 +100,8 @@ recipe-app/
 │   │   ├── db/               # Supabase クライアント・クエリ
 │   │   ├── embedding/        # ベクトル埋め込み
 │   │   ├── line/             # LINE Bot・Flex Message
-│   │   ├── llm/              # LLM 関連 (レシピ解析)
 │   │   ├── recipe/           # レシピ処理ロジック
-│   │   └── scraper/          # JSON-LD・Jina スクレイパー
+│   │   └── scraper/          # JSON-LD・__NEXT_DATA__ スクレイパー
 │   └── types/                # 型定義
 ├── supabase/
 │   ├── functions/            # Edge Functions (Deno)
@@ -183,7 +182,6 @@ graph TB
 
     subgraph External["External Services"]
         Gemini["Gemini API"]
-        Jina["Jina Reader"]
     end
 
     LIFF --> Pages
@@ -192,8 +190,6 @@ graph TB
 
     Pages --> RecipeAPI
     RecipeAPI --> GetRecipes
-    ParseAPI --> Jina
-    ParseAPI --> Gemini
 
     GetRecipes --> DB
     GenEmbed --> DB
@@ -232,7 +228,7 @@ graph TB
 | `/api/recipes` | POST | レシピ作成 |
 | `/api/recipes/[id]` | GET/PATCH/DELETE | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
-| `/api/recipes/parse` | POST | URL解析（Jina + Gemini） |
+| `/api/recipes/parse` | POST | URL解析（JSON-LD / __NEXT_DATA__） |
 | `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
 | `/api/onboarding/start` | POST | オンボーディング収集ジョブ起動（冪等性あり） |
 | `/api/onboarding/result` | GET | スクレイピング結果取得 |
@@ -334,6 +330,7 @@ src/lib/batch/     →  npm run functions:build  →  supabase/functions/*/
 ```mermaid
 erDiagram
     users ||--o{ recipes : "has"
+    users ||--o{ onboarding_sessions : "has"
     recipes ||--o{ recipe_ingredients : "contains"
     ingredients ||--o{ recipe_ingredients : "used_in"
     ingredients ||--o{ ingredient_aliases : "has"
@@ -346,6 +343,7 @@ erDiagram
     ingredient_aliases
     recipe_ingredients
     unmatched_ingredients
+    onboarding_sessions
 ```
 
 ### テーブル概要
@@ -499,7 +497,7 @@ sequenceDiagram
 
 ## レシピ解析フロー
 
-### 解析戦略（フォールバック）
+### 解析戦略
 
 ```mermaid
 graph TB
@@ -510,9 +508,7 @@ graph TB
     Strategy1 -->|Fail| Strategy2{"__NEXT_DATA__ extract"}
 
     Strategy2 -->|Success| Result
-    Strategy2 -->|Fail| Strategy3["Jina Reader + Gemini"]
-
-    Strategy3 --> Result
+    Strategy2 -->|Fail| Empty["Empty Result（手動入力）"]
 
     Result --> Match["Ingredient Matching"]
     Match --> Save["Save to DB"]

@@ -60,7 +60,11 @@ function ExternalServicesSection() {
         </li>
         <li>
           <strong>Google（Gemini API）</strong>:
-          レシピ情報の解析のために利用（レシピURLの内容を送信）
+          レシピタイトルの検索最適化（埋め込みベクトル生成）のために利用
+        </li>
+        <li>
+          <strong>Vercel Analytics</strong>:
+          サービス改善のためのアクセス解析に利用
         </li>
       </ul>
       <p>
