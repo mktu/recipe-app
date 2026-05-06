@@ -27,12 +27,12 @@ test.describe('オンボーディング フロー', () => {
     await page.goto('/onboarding')
     await expect(page.getByRole('heading', { name: '好みを教えてください' })).toBeVisible()
 
-    // 食材を入力してサジェストから選択
-    const keywordInput = page.getByPlaceholder('例: 鶏肉、パスタ、時短…')
-    await keywordInput.click()
+    // Drawer を開いて食材を入力（「食材を選ぶ…」ボタンは2つあるので最初のものを使用）
+    await page.getByRole('button', { name: '食材を選ぶ…' }).first().click()
+    const keywordInput = page.getByPlaceholder('任意の食材を入力')
     await keywordInput.fill('鶏')
-    await expect(page.getByRole('option').first()).toBeVisible()
     await keywordInput.press('Enter')
+    await page.getByRole('button', { name: '完了' }).click()
 
     // フォーム送信
     await page.getByRole('button', { name: 'レシピを探してもらう' }).click()
