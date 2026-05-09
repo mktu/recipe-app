@@ -7,11 +7,13 @@ import type { SortOrder, RecipeWithIngredients } from '@/types/recipe'
 interface UseRecipesOptions {
   searchQuery?: string
   ingredientIds?: string[]
+  sourceNames?: string[]
   sortOrder?: SortOrder
 }
 
 interface UseRecipesReturn {
   recipes: RecipeWithIngredients[]
+  availableSourceNames: string[]
   isLoading: boolean
   isPending: boolean
   error: Error | null
@@ -22,10 +24,18 @@ interface FetchParams {
   lineUserId: string
   searchQuery: string
   ingredientIds: string[]
+  sourceNames: string[]
   sortOrder: SortOrder
 }
 
-async function fetchRecipesApi(params: FetchParams): Promise<RecipeWithIngredients[]> {
+interface FetchResult {
+  data: RecipeWithIngredients[]
+  availableSourceNames: string[]
+}
+
+const EMPTY_RESULT: FetchResult = { data: [], availableSourceNames: [] }
+
+async function fetchRecipesApi(params: FetchParams): Promise<FetchResult> {
   const response = await fetch('/api/recipes/list', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -33,17 +43,23 @@ async function fetchRecipesApi(params: FetchParams): Promise<RecipeWithIngredien
   })
   const result = await response.json()
   if (!response.ok) throw new Error(result.error || 'レシピの取得に失敗しました')
-  return result.data || []
+  return {
+    data: result.data || [],
+    availableSourceNames: result.availableSourceNames || [],
+  }
+}
+
+function buildSwrKey(
+  lineUserId: string, searchQuery: string, ingredientIds: string[], sourceNames: string[], sortOrder: SortOrder
+) {
+  return ['recipes', lineUserId, searchQuery, ingredientIds.join(','), sourceNames.join(','), sortOrder]
 }
 
 export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
-  const { searchQuery = '', ingredientIds = [], sortOrder = 'newest' } = options
+  const { searchQuery = '', ingredientIds = [], sourceNames = [], sortOrder = 'newest' } = options
   const { user } = useAuth()
 
-  // SWRのキーを生成（userがいない場合はnullでフェッチをスキップ）
-  const swrKey = user
-    ? ['recipes', user.lineUserId, searchQuery, ingredientIds.join(','), sortOrder]
-    : null
+  const swrKey = user ? buildSwrKey(user.lineUserId, searchQuery, ingredientIds, sourceNames, sortOrder) : null
 
   const { data, error, isLoading, isValidating, mutate } = useSWR(
     swrKey,
@@ -51,16 +67,21 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
       lineUserId: user!.lineUserId,
       searchQuery,
       ingredientIds,
+      sourceNames,
       sortOrder,
     }),
     {
       revalidateOnFocus: false,
-      dedupingInterval: 300, // 300ms以内の同一リクエストは重複排除
+      dedupingInterval: 300,
+      keepPreviousData: true,
     }
   )
 
+  const result = data ?? EMPTY_RESULT
+
   return {
-    recipes: data ?? [],
+    recipes: result.data,
+    availableSourceNames: result.availableSourceNames,
     isLoading,
     isPending: isValidating,
     error: error ?? null,

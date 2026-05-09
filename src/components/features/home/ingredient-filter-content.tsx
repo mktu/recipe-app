@@ -36,7 +36,7 @@ export function IngredientFilterContent({
   onClear,
 }: IngredientFilterContentProps) {
   return (
-    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pt-4 pb-4">
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pb-4">
       <SearchInput value={searchQuery} onChange={onSearchChange} />
       {selectedIngredients.length > 0 && (
         <SelectedSection ingredients={selectedIngredients} onToggle={onToggle} onClear={onClear} />

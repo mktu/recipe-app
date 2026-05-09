@@ -13,8 +13,11 @@ interface GetRecipesRequest {
   lineUserId: string
   searchQuery?: string
   ingredientIds?: string[]
+  sourceNames?: string[]
   sortOrder?: 'newest' | 'oldest' | 'most_viewed' | 'recently_viewed' | 'shortest_cooking' | 'fewest_ingredients'
 }
+
+const SOURCE_NAME_OTHER = '_other'
 
 interface RecipeIngredient {
   id: string
@@ -170,6 +173,31 @@ function filterByIngredients(
   })
 }
 
+function extractAvailableSourceNames(recipes: RecipeWithIngredients[]): string[] {
+  const names = new Set<string>()
+  for (const r of recipes) {
+    names.add(r.source_name ?? SOURCE_NAME_OTHER)
+  }
+  return [...names].sort((a, b) => {
+    if (a === SOURCE_NAME_OTHER) return 1
+    if (b === SOURCE_NAME_OTHER) return 0
+    return a.localeCompare(b, 'ja')
+  })
+}
+
+function filterBySourceNames(
+  recipes: RecipeWithIngredients[],
+  sourceNames: string[]
+): RecipeWithIngredients[] {
+  if (sourceNames.length === 0) return recipes
+  const includeOther = sourceNames.includes(SOURCE_NAME_OTHER)
+  const realNames = new Set(sourceNames.filter((n) => n !== SOURCE_NAME_OTHER))
+  return recipes.filter((r) => {
+    if (r.source_name === null) return includeOther
+    return realNames.has(r.source_name)
+  })
+}
+
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -186,7 +214,7 @@ Deno.serve(async (req) => {
   const timings: Record<string, number> = {}
 
   try {
-    const { lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } =
+    const { lineUserId, searchQuery, ingredientIds = [], sourceNames = [], sortOrder = 'newest' } =
       (await req.json()) as GetRecipesRequest
 
     if (!lineUserId) {
@@ -227,7 +255,7 @@ Deno.serve(async (req) => {
 
     if (recipes.length === 0) {
       return new Response(
-        JSON.stringify({ data: [] }),
+        JSON.stringify({ data: [], availableSourceNames: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -252,11 +280,19 @@ Deno.serve(async (req) => {
     }
     timings.filterByIngredients = Date.now() - t
 
+    // 5. Extract available source names (before source filtering)
+    const availableSourceNames = extractAvailableSourceNames(result)
+
+    // 6. Filter by source names
+    t = Date.now()
+    result = filterBySourceNames(result, sourceNames)
+    timings.filterBySourceNames = Date.now() - t
+
     timings.total = Date.now() - startTime
     console.log('[get-recipes] Timings:', timings, { recipeCount: result.length })
 
     return new Response(
-      JSON.stringify({ data: result }),
+      JSON.stringify({ data: result, availableSourceNames }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
