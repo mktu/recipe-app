@@ -9,7 +9,7 @@ const VALID_SORT_ORDERS = new Set<string>([
 ])
 
 interface HomePageProps {
-  searchParams: Promise<{ q?: string; ingredients?: string; sort?: string }>
+  searchParams: Promise<{ q?: string; ingredients?: string; sources?: string; sort?: string }>
 }
 
 export default async function Home({ searchParams }: HomePageProps) {
@@ -28,6 +28,9 @@ export default async function Home({ searchParams }: HomePageProps) {
     ingredientIds: (params.ingredients || '')
       .split(',')
       .filter((id) => id && validIngredientIds.has(id)),
+    sourceNames: (params.sources || '')
+      .split(',')
+      .filter(Boolean),
     sortOrder,
   }
 
