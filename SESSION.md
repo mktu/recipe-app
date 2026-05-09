@@ -1,25 +1,23 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-06 (法的リスク調査 & Issue #47, #48 作成)
+2026-05-09 (ドキュメント整合性チェック・修正完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
-- [x] **法的リスク調査**: スクレイピング・著作権・プライバシー・LINE規約を包括的にチェック
-  - 主要レシピサイト8件の robots.txt を調査
-  - Gemini フォールバックが最大リスクと特定
-  - LINE 規約は大きな問題なしと確認
-- [x] **#47 作成**: Jina Reader + Gemini フォールバック廃止 + プライバシーポリシー更新
-- [x] **#48 作成**: 画像ホットリンクを next/image プロキシに置き換え
-- [x] **`/legal-check` スキル作成**: アーキテクチャ・DB起点の法的リスクチェックをスキル化
+- [x] **ドキュメント整合性チェック (`/doc-check-structure`)**
+  - ER図に `onboarding_sessions` テーブルを追加
+  - `recipes.ingredients_raw` の型を JSON → JSONB に修正
+  - RPC関数一覧に `get_popular_ingredients_for_onboarding` を追加
+- [x] **#47: Jina Reader + Gemini フォールバック廃止**（PR #50、マージ済み）
+- [x] **オンボーディング E2E テストを Drawer UI に合わせて修正**
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **#47: Gemini フォールバック廃止 + プライバシーポリシー更新**（優先度: 高）
 - [ ] **#48: 画像ホットリンクを next/image プロキシに置き換え**（優先度: 中）
 - [ ] **#42: API エラーレスポンスの汎用化**
 - [ ] **#43: OGP 画像の作成**
@@ -41,27 +39,21 @@
 - **ローカル DB リセット後の注意:** `supabase db reset` で seed が適用されるが全データ消去される
 - **ローカル開発:** `.env.local` の `NEXT_PUBLIC_LIFF_ID` を空にすると LINE ログインなしで動作
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
-- **法的リスク調査メモ:**
-  - Nadia・クックパッドは robots.txt で AI ボット（ClaudeBot, GPTBot）を明確にブロック
-  - User-Agent 変更は Gemini 廃止後は優先度低（現状維持で OK）
-  - Embedding（タイトルのみ Gemini 送信）は低リスク
+- **Embedding（タイトルのみ Gemini 送信）は低リスク** — Jina+Gemini フォールバック廃止後も embedding は引き続き使用
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
-- `src/lib/recipe/parse-recipe.ts` - レシピ解析フロー（#47 の主な変更対象）
-- `src/lib/scraper/jina-reader.ts` - #47 で削除予定
-- `src/lib/llm/extract-recipe.ts` - #47 で削除予定
-- `src/components/features/legal/privacy-content.tsx` - #47 でプライバシーポリシー更新
-- `.claude/skills/legal-check/skill.md` - 法的リスクチェックスキル
+- `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
+- `src/lib/recipe/parse-recipe.ts` - レシピ解析フロー（#47 で簡素化済み）
 
 ## コミット履歴（直近）
 ```
-d03e704 feat: 法的リスクチェックのスキル (/legal-check) を追加
+4589c99 fix: オンボーディングE2Eテストを Drawer UI に合わせて修正
+7d6a1d1 docs: update SESSION.md for session handoff
+00b24f9 fix: Jina Reader + Gemini フォールバックを廃止し法的リスクを解消 (Issue #47) (#50)
 ab3dc7d docs: ARCHITECTURE.md と DATABASE_DESIGN.md の実装との乖離を修正
 e0b394b docs: update SESSION.md for session handoff
-206da55 fix: テストコマンドを開発環境のみに制限し、クライアントサイドの console.log を削除 (Issue #40, #41)
-496b4b4 docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ

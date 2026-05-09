@@ -5,6 +5,7 @@ interface ListRecipesRequest {
   lineUserId: string
   searchQuery?: string
   ingredientIds?: string[]
+  sourceNames?: string[]
   sortOrder?: SortOrder
 }
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   const body = (await request.json()) as ListRecipesRequest
-  const { lineUserId, searchQuery, ingredientIds = [], sortOrder = 'newest' } = body
+  const { lineUserId, searchQuery, ingredientIds = [], sourceNames = [], sortOrder = 'newest' } = body
 
   if (!lineUserId) {
     return NextResponse.json({ error: 'lineUserId は必須です' }, { status: 400 })
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       lineUserId,
       searchQuery,
       ingredientIds,
+      sourceNames,
       sortOrder,
     })
 

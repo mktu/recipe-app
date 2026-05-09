@@ -9,8 +9,7 @@ import { useRecipeFilters, InitialFilters } from '@/hooks/use-recipe-filters'
 export type { InitialFilters }
 import { SearchBar } from './search-bar'
 import { SortSelect } from './sort-select'
-import { IngredientFilter } from './ingredient-filter'
-import { SelectedIngredients } from './selected-ingredients'
+import { FilterBar } from './filter-bar'
 import { RecipeList } from './recipe-list'
 import { AddRecipeFAB } from './add-recipe-fab'
 import type { SortOrder, IngredientsByCategory } from '@/types/recipe'
@@ -36,9 +35,10 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
-  const { recipes, isLoading: recipesLoading } = useRecipes({
+  const { recipes, availableSourceNames, isLoading: recipesLoading } = useRecipes({
     searchQuery: filters.searchQuery,
     ingredientIds: filters.selectedIngredientIds,
+    sourceNames: filters.selectedSourceNames,
     sortOrder: filters.sortOrder,
   })
 
@@ -59,18 +59,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
       <Header sortOrder={filters.sortOrder} onSortChange={filters.setSortOrder} onOnboarding={handleOnboarding} />
       <main className="container mx-auto max-w-2xl space-y-4 p-4">
         <SearchBar value={filters.searchQuery} onChange={filters.setSearchQuery} />
-        <div className="flex flex-wrap items-center gap-2">
-          <IngredientFilter
-            categories={ingredientCategories}
-            selectedIds={filters.selectedIngredientIds}
-            onSelectionChange={filters.setSelectedIngredientIds}
-          />
-          <SelectedIngredients
-            ids={filters.selectedIngredientIds}
-            nameMap={filters.ingredientNameMap}
-            onRemove={filters.removeIngredient}
-          />
-        </div>
+        <FilterBar filters={filters} ingredientCategories={ingredientCategories} availableSourceNames={availableSourceNames} />
         <RecipeList
           recipes={recipes}
           isLoading={recipesLoading}
