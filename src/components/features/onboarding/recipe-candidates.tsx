@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth'
 interface RecipeCandidate {
   url: string
   title: string
+  sourceName?: string
   imageUrl: string
   cookingTimeMinutes: number | null
   ingredientsRaw: { name: string; amount: string }[]
