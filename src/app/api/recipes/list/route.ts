@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiServerError } from '@/lib/api/error-response'
 import type { SortOrder } from '@/types/recipe'
 
 interface ListRecipesRequest {
@@ -67,10 +68,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (err) {
-    console.error('[POST /api/recipes/list] Error:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return apiServerError(err, 'POST /api/recipes/list')
   }
 }

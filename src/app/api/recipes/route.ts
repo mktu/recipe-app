@@ -1,4 +1,5 @@
 import { createRecipe } from '@/lib/db/queries/recipes'
+import { apiServerError } from '@/lib/api/error-response'
 import type { CreateRecipeInput } from '@/types/recipe'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -28,8 +29,7 @@ export async function POST(request: NextRequest) {
     if ('code' in error && error.code === '23505') {
       return NextResponse.json({ error: 'このURLは既に登録済みです' }, { status: 409 })
     }
-    console.error('[POST /api/recipes] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiServerError(error, 'POST /api/recipes')
   }
 
   return NextResponse.json(data)

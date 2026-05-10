@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/db/client'
+import { apiServerError } from '@/lib/api/error-response'
 import type { Tables } from '@/types/database'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -40,8 +41,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[ensure-user] Update error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiServerError(error, 'ensure-user: update')
     }
     return NextResponse.json(data as User)
   }
@@ -54,8 +54,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[ensure-user] Insert error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiServerError(error, 'ensure-user: insert')
   }
 
   return NextResponse.json(data as User)
