@@ -32,7 +32,7 @@ export function IngredientFilter({ categories, selectedIds, onSelectionChange }:
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[70dvh]">
+      <SheetContent side="bottom" className="h-[70dvh]" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader>
           <SheetTitle>食材で絞り込む</SheetTitle>
         </SheetHeader>

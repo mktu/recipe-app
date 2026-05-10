@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
+
+/** ひらがな → カタカナ に正規化（大文字小文字も統一） */
+function toKatakana(str: string): string {
+  return str.replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
+}
+
 import { useIngredientHistory } from './use-ingredient-history'
 import type { IngredientsByCategory } from '@/types/recipe'
 
@@ -23,8 +29,8 @@ export function useIngredientFilter({ categories, selectedIds, onSelectionChange
 
   const filteredIngredients = useMemo(() => {
     if (!searchQuery.trim()) return []
-    const query = searchQuery.toLowerCase()
-    return allIngredients.filter((ing) => ing.name.toLowerCase().includes(query) && !selectedSet.has(ing.id))
+    const query = toKatakana(searchQuery.toLowerCase())
+    return allIngredients.filter((ing) => toKatakana(ing.name.toLowerCase()).includes(query) && !selectedSet.has(ing.id))
   }, [allIngredients, searchQuery, selectedSet])
 
   const validHistory = useMemo(() => {
