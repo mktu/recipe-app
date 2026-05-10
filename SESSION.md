@@ -1,18 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-09 (ドキュメント整合性チェック・修正完了)
+2026-05-10 (食材フィルタ UI 刷新完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
-- [x] **ドキュメント整合性チェック (`/doc-check-structure`)**
-  - ER図に `onboarding_sessions` テーブルを追加
-  - `recipes.ingredients_raw` の型を JSON → JSONB に修正
-  - RPC関数一覧に `get_popular_ingredients_for_onboarding` を追加
-- [x] **#47: Jina Reader + Gemini フォールバック廃止**（PR #50、マージ済み）
-- [x] **オンボーディング E2E テストを Drawer UI に合わせて修正**
+- [x] **#52: レシピサイトごとの絞り込み機能** (PR #53 マージ済み)
+- [x] 食材フィルタ UI 刷新
+  - アコーディオン → カテゴリタブ＋チップ選択 UI に変更（オンボーディングと統一）
+  - Sheet open 時の自動フォーカス無効化（キーボードが即出ない）
+  - ひらがな/カタカナ混在検索に対応（「おくら」→「オクラ」ヒット）
 
 ## 進行中のタスク
 なし
@@ -40,20 +39,24 @@
 - **ローカル開発:** `.env.local` の `NEXT_PUBLIC_LIFF_ID` を空にすると LINE ログインなしで動作
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 - **Embedding（タイトルのみ Gemini 送信）は低リスク** — Jina+Gemini フォールバック廃止後も embedding は引き続き使用
+- **ソースフィルタの null 扱い:** `source_name` が null のレシピは `_other` センチネル値で「その他」として表示
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 - `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
-- `src/lib/recipe/parse-recipe.ts` - レシピ解析フロー（#47 で簡素化済み）
+- `src/components/features/home/ingredient-filter.tsx` - 食材フィルタ Sheet
+- `src/components/features/home/ingredient-filter-content.tsx` - タブ＋チップ UI
+- `src/hooks/use-ingredient-filter.ts` - フィルタ状態管理（ひらがな/カタカナ正規化含む）
+- `supabase/functions/get-recipes/index.ts` - レシピ一覧取得 Edge Function（ソースフィルタ実装済み）
 
 ## コミット履歴（直近）
 ```
-4589c99 fix: オンボーディングE2Eテストを Drawer UI に合わせて修正
-7d6a1d1 docs: update SESSION.md for session handoff
-00b24f9 fix: Jina Reader + Gemini フォールバックを廃止し法的リスクを解消 (Issue #47) (#50)
-ab3dc7d docs: ARCHITECTURE.md と DATABASE_DESIGN.md の実装との乖離を修正
-e0b394b docs: update SESSION.md for session handoff
+8e69d4a fix: Sheet open時の自動フォーカス無効化 & ひらがな/カタカナ混在検索に対応
+228886b feat: 食材フィルタをカテゴリタブ+チップ選択 UI に変更
+21ffef9 fix: キーボード表示時に食材フィルタのボトムシートが隠れる問題を修正
+86e40af Merge pull request #53 from mktu/feature/add-source-site-filter
+925b3bb feat: レシピサイトごとの絞り込み機能を追加 (Issue #52)
 ```
 
 ## GitHubリポジトリ
