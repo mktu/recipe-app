@@ -42,7 +42,6 @@ export function IngredientFilter({ categories, selectedIds, onSelectionChange }:
           selectedIngredients={filter.selectedIngredients}
           selectedIds={filter.selectedIds}
           filteredIngredients={filter.filteredIngredients}
-          validHistory={filter.validHistory}
           categories={categories}
           onToggle={filter.toggleIngredient}
           onClear={filter.clearSelection}
