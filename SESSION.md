@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-10 (食材フィルタ UI 刷新完了)
+2026-05-10 (Issue #42: API エラーレスポンス汎用化 完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
@@ -12,13 +12,16 @@
   - アコーディオン → カテゴリタブ＋チップ選択 UI に変更（オンボーディングと統一）
   - Sheet open 時の自動フォーカス無効化（キーボードが即出ない）
   - ひらがな/カタカナ混在検索に対応（「おくら」→「オクラ」ヒット）
+- [x] **#42: API エラーレスポンスの汎用化**
+  - `src/lib/api/error-response.ts` に `apiServerError()` ヘルパーを新規作成
+  - Next.js API ルート 4ファイルの `error.message` 露出を修正
+  - Supabase Edge Functions 2ファイルの `error.message` 露出を修正
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
 - [ ] **#48: 画像ホットリンクを next/image プロキシに置き換え**（優先度: 中）
-- [ ] **#42: API エラーレスポンスの汎用化**
 - [ ] **#43: OGP 画像の作成**
 - [ ] **#44: Security Headers の追加**
 - [ ] **#45: Vercel Analytics / Speed Insights の導入**
@@ -45,6 +48,7 @@
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 - `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
+- `src/lib/api/error-response.ts` - API 500エラー共通ヘルパー（#42 で追加）
 - `src/components/features/home/ingredient-filter.tsx` - 食材フィルタ Sheet
 - `src/components/features/home/ingredient-filter-content.tsx` - タブ＋チップ UI
 - `src/hooks/use-ingredient-filter.ts` - フィルタ状態管理（ひらがな/カタカナ正規化含む）
@@ -52,11 +56,11 @@
 
 ## コミット履歴（直近）
 ```
+2139c44 fix: API 500エラーで内部エラーメッセージを返さないよう汎用化 (Issue #42)
+a4afe2c docs: update SESSION.md for session handoff
 8e69d4a fix: Sheet open時の自動フォーカス無効化 & ひらがな/カタカナ混在検索に対応
 228886b feat: 食材フィルタをカテゴリタブ+チップ選択 UI に変更
 21ffef9 fix: キーボード表示時に食材フィルタのボトムシートが隠れる問題を修正
-86e40af Merge pull request #53 from mktu/feature/add-source-site-filter
-925b3bb feat: レシピサイトごとの絞り込み機能を追加 (Issue #52)
 ```
 
 ## GitHubリポジトリ
