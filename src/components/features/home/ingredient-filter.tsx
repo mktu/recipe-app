@@ -32,7 +32,7 @@ export function IngredientFilter({ categories, selectedIds, onSelectionChange }:
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[70vh]">
+      <SheetContent side="bottom" className="h-[70dvh]" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader>
           <SheetTitle>食材で絞り込む</SheetTitle>
         </SheetHeader>
@@ -42,7 +42,6 @@ export function IngredientFilter({ categories, selectedIds, onSelectionChange }:
           selectedIngredients={filter.selectedIngredients}
           selectedIds={filter.selectedIds}
           filteredIngredients={filter.filteredIngredients}
-          validHistory={filter.validHistory}
           categories={categories}
           onToggle={filter.toggleIngredient}
           onClear={filter.clearSelection}
