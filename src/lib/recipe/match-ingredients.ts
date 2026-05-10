@@ -41,57 +41,50 @@ interface Ingredient {
   name: string
 }
 
-interface IngredientAlias {
-  ingredient_id: string
-}
-
 type TypedSupabaseClient = SupabaseClient<Database>
 
 /**
- * レビュー済みのマスター食材を全て取得
+ * 1食材を処理してマッチ結果を results に追加する。
+ * アンマッチの場合は未マッチ記録用の normalizedName を返す。
  */
-async function fetchAllIngredients(supabase: TypedSupabaseClient): Promise<Ingredient[]> {
-  const { data } = await supabase
-    .from('ingredients')
-    .select('id, name')
-    .eq('needs_review', false)
-
-  return (data ?? []) as Ingredient[]
+function processSingleName(
+  name: string,
+  allIngredients: Ingredient[],
+  ingredientIdMap: Map<string, Ingredient>,
+  aliasMap: Map<string, string>,
+  seen: Set<string>,
+  results: MatchResult[],
+): string | null {
+  if (!name.trim()) return null
+  const normalizedName = normalizeIngredientName(name)
+  const matched = matchSingleIngredient(allIngredients, ingredientIdMap, aliasMap, name)
+  if (matched && !seen.has(matched.id)) {
+    seen.add(matched.id)
+    results.push({ ingredientId: matched.id, name: matched.name })
+    return null
+  }
+  if (!matched && normalizedName && !isSeasoning(normalizedName)) {
+    return normalizedName
+  }
+  return null
 }
 
-async function findByAlias(
-  supabase: TypedSupabaseClient,
-  name: string
-): Promise<Ingredient | null> {
-  const { data: aliasRows } = await supabase
-    .from('ingredient_aliases')
-    .select('ingredient_id')
-    .eq('alias', name)
-    .limit(1)
+/** ingredients と ingredient_aliases を一括フェッチしてインメモリ検索用データを構築 */
+async function fetchIngredientMaps(supabase: TypedSupabaseClient): Promise<{
+  allIngredients: Ingredient[]
+  aliasMap: Map<string, string>  // alias → ingredient_id
+}> {
+  const [{ data: ingredientsData }, { data: aliasesData }] = await Promise.all([
+    supabase.from('ingredients').select('id, name').eq('needs_review', false),
+    supabase.from('ingredient_aliases').select('alias, ingredient_id'),
+  ])
 
-  const aliasRow = (aliasRows as IngredientAlias[] | null)?.[0]
-  if (!aliasRow) return null
+  const allIngredients = (ingredientsData ?? []) as Ingredient[]
+  const aliasMap = new Map<string, string>(
+    (aliasesData ?? []).map((row) => [row.alias as string, row.ingredient_id as string])
+  )
 
-  const { data: ingredientRows } = await supabase
-    .from('ingredients')
-    .select('id, name')
-    .eq('id', aliasRow.ingredient_id)
-    .limit(1)
-
-  return (ingredientRows as Ingredient[] | null)?.[0] ?? null
-}
-
-async function findByExactMatch(
-  supabase: TypedSupabaseClient,
-  name: string
-): Promise<Ingredient | null> {
-  const { data: rows } = await supabase
-    .from('ingredients')
-    .select('id, name')
-    .eq('name', name)
-    .limit(1)
-
-  return (rows as Ingredient[] | null)?.[0] ?? null
+  return { allIngredients, aliasMap }
 }
 
 /**
@@ -108,10 +101,9 @@ function findByPartialMatch(
   normalizedName: string
 ): Ingredient | null {
   // 1. マスター食材名が入力に含まれる（最長優先）
-  // 例: 「豚肉細切れ」.includes(「豚肉」) → true
   const containedMatches = allIngredients
     .filter((ing) => normalizedName.includes(ing.name))
-    .sort((a, b) => b.name.length - a.name.length) // 長い順
+    .sort((a, b) => b.name.length - a.name.length)
 
   // 最低2文字以上のマッチを要求（「肉」だけでマッチしないように）
   if (containedMatches.length > 0 && containedMatches[0].name.length >= 2) {
@@ -119,10 +111,9 @@ function findByPartialMatch(
   }
 
   // 2. 入力がマスター食材名に含まれる（最短優先）
-  // 例: 「豚肉」.includes(「豚」) → true
   const includingMatches = allIngredients
     .filter((ing) => ing.name.includes(normalizedName))
-    .sort((a, b) => a.name.length - b.name.length) // 短い順
+    .sort((a, b) => a.name.length - b.name.length)
 
   if (includingMatches.length > 0) {
     return includingMatches[0]
@@ -147,12 +138,12 @@ async function recordUnmatchedIngredient(
   })
 }
 
-async function matchSingleIngredient(
-  supabase: TypedSupabaseClient,
+function matchSingleIngredient(
   allIngredients: Ingredient[],
-  rawName: string,
-  recipeId?: string
-): Promise<MatchResult | null> {
+  ingredientIdMap: Map<string, Ingredient>,
+  aliasMap: Map<string, string>,
+  rawName: string
+): Ingredient | null {
   // Step 0: 正規化（分量・単位を除去）
   const normalizedName = normalizeIngredientName(rawName)
   if (!normalizedName) return null
@@ -160,32 +151,19 @@ async function matchSingleIngredient(
   // Step 0.5: 調味料は除外（マッチ対象外）
   if (isSeasoning(normalizedName)) return null
 
-  // Step 1: エイリアス検索
-  const aliasMatch = await findByAlias(supabase, normalizedName)
-  if (aliasMatch) {
-    return { ingredientId: aliasMatch.id, name: aliasMatch.name }
+  // Step 1: エイリアス検索（インメモリ）
+  const aliasedId = aliasMap.get(normalizedName)
+  if (aliasedId) {
+    const ing = ingredientIdMap.get(aliasedId)
+    if (ing) return ing
   }
 
-  // Step 2: 完全一致検索
-  const exactMatch = await findByExactMatch(supabase, normalizedName)
-  if (exactMatch) {
-    return { ingredientId: exactMatch.id, name: exactMatch.name }
-  }
+  // Step 2: 完全一致検索（インメモリ）
+  const exactMatch = allIngredients.find((ing) => ing.name === normalizedName) ?? null
+  if (exactMatch) return exactMatch
 
-  // Step 3: 部分一致検索
-  const partialMatch = findByPartialMatch(allIngredients, normalizedName)
-  if (partialMatch) {
-    return {
-      ingredientId: partialMatch.id,
-      name: partialMatch.name,
-    }
-  }
-
-  // Step 4: 未マッチを記録（ingredientsには追加しない）
-  // → 後からエイリアス登録やLLMフォールバックの判断材料に
-  await recordUnmatchedIngredient(supabase, rawName, normalizedName, recipeId)
-
-  return null
+  // Step 3: 部分一致検索（インメモリ）
+  return findByPartialMatch(allIngredients, normalizedName)
 }
 
 export async function matchIngredients(
@@ -196,25 +174,68 @@ export async function matchIngredients(
 
   const supabase = createServerClient()
 
-  // マスター食材を一度だけ取得して使い回す
-  const allIngredients = await fetchAllIngredients(supabase)
+  // ingredients と aliases を2クエリで一括取得
+  const { allIngredients, aliasMap } = await fetchIngredientMaps(supabase)
+
+  // id → ingredient の Map（エイリアス解決用）
+  const ingredientIdMap = new Map<string, Ingredient>(
+    allIngredients.map((ing) => [ing.id, ing])
+  )
 
   const results: MatchResult[] = []
   const seen = new Set<string>()
-  for (const name of ingredientNames) {
-    if (!name.trim()) continue
+  const unmatchedPromises: Promise<void>[] = []
 
-    const result = await matchSingleIngredient(
-      supabase,
-      allIngredients,
-      name,
-      options.recipeId
-    )
-    if (result && !seen.has(result.ingredientId)) {
-      seen.add(result.ingredientId)
-      results.push(result)
+  for (const name of ingredientNames) {
+    const unmatched = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, results)
+    if (unmatched) {
+      unmatchedPromises.push(
+        recordUnmatchedIngredient(supabase, name, unmatched, options.recipeId)
+      )
     }
   }
 
+  if (unmatchedPromises.length > 0) {
+    await Promise.all(unmatchedPromises)
+  }
+
   return results
+}
+
+/** 複数レシピ分を一括でマッチングする（DBクエリを2回のみに抑える） */
+export async function matchIngredientsForRecipes(
+  recipes: Array<{ recipeId: string; ingredientNames: string[] }>
+): Promise<Map<string, MatchResult[]>> {
+  const supabase = createServerClient()
+
+  const { allIngredients, aliasMap } = await fetchIngredientMaps(supabase)
+
+  const ingredientIdMap = new Map<string, Ingredient>(
+    allIngredients.map((ing) => [ing.id, ing])
+  )
+
+  const unmatchedPromises: Promise<void>[] = []
+  const resultMap = new Map<string, MatchResult[]>()
+
+  for (const { recipeId, ingredientNames } of recipes) {
+    const results: MatchResult[] = []
+    const seen = new Set<string>()
+
+    for (const name of ingredientNames) {
+      const unmatched = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, results)
+      if (unmatched) {
+        unmatchedPromises.push(
+          recordUnmatchedIngredient(supabase, name, unmatched, recipeId)
+        )
+      }
+    }
+
+    resultMap.set(recipeId, results)
+  }
+
+  if (unmatchedPromises.length > 0) {
+    await Promise.all(unmatchedPromises)
+  }
+
+  return resultMap
 }

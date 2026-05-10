@@ -38,6 +38,7 @@ interface Preferences {
 interface RecipeCandidate {
   url: string
   title: string
+  sourceName: string
   imageUrl: string
   cookingTimeMinutes: number | null
   ingredientsRaw: { name: string; amount: string }[]
@@ -75,6 +76,19 @@ function parseIso8601Duration(v: unknown): number | null {
   return total > 0 ? total : null
 }
 
+function extractSourceName(publisher: unknown, url: string): string {
+  if (typeof publisher === 'string' && publisher) return publisher
+  if (publisher && typeof publisher === 'object' && 'name' in publisher) {
+    const name = (publisher as Record<string, unknown>).name
+    if (typeof name === 'string' && name) return name
+  }
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 function extractImageUrl(image: unknown): string {
   if (!image) return ''
   if (typeof image === 'string') return image
@@ -103,6 +117,7 @@ function extractJsonLdRecipe(html: string, sourceUrl: string): RecipeCandidate |
         return {
           url: sourceUrl,
           title: recipe.name,
+          sourceName: extractSourceName(recipe.publisher, sourceUrl),
           imageUrl: extractImageUrl(recipe.image),
           cookingTimeMinutes: cookTime ?? null,
           ingredientsRaw: ingredients.map((name: string) => ({ name, amount: '' })),
