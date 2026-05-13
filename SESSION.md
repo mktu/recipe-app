@@ -1,28 +1,29 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-10 (Issue #42: API エラーレスポンス汎用化 完了)
+2026-05-13 (Issue #48 ペンディング判断、コメント記載)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
-- [x] **#52: レシピサイトごとの絞り込み機能** (PR #53 マージ済み)
-- [x] 食材フィルタ UI 刷新
-  - アコーディオン → カテゴリタブ＋チップ選択 UI に変更（オンボーディングと統一）
-  - Sheet open 時の自動フォーカス無効化（キーボードが即出ない）
-  - ひらがな/カタカナ混在検索に対応（「おくら」→「オクラ」ヒット）
-- [x] **#42: API エラーレスポンスの汎用化**
-  - `src/lib/api/error-response.ts` に `apiServerError()` ヘルパーを新規作成
-  - Next.js API ルート 4ファイルの `error.message` 露出を修正
-  - Supabase Edge Functions 2ファイルの `error.message` 露出を修正
+- [x] **#49: オンボーディング一括登録で食材リンクとサイト名が登録されない問題を修正**
+  - `after()` でレスポンス返却後にバックグラウンドで食材マッチング＆`recipe_ingredients`挿入を実行
+  - `match-ingredients.ts` を N+1 解消（ingredients/aliases を2クエリ一括フェッチしインメモリ解決）
+  - `matchIngredientsForRecipes()` を新規追加（複数レシピをDBクエリ2回で処理）
+  - `link-ingredients.ts` を新規追加（一括リンク処理）
+  - `onboarding-scrape` で JSON-LD の `publisher` から `source_name` を抽出・保存
+  - PR #57 → develop
+- [x] **#48: 画像ホットリンク対応をペンディング判断**
+  - 現在の利用規模（数十人程度）では `<img>` のままで実害なしと判断
+  - `next/image` 化すると Vercel Image Optimization の無料枠（1,000件/月）を消費するためメリット小
+  - Issue にコメント記載済み（利用規模が増えたときに再検討）
 
 ## 進行中のタスク
-なし
+- [ ] **PR #57 レビュー・マージ待ち**（develop → main）
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **#48: 画像ホットリンクを next/image プロキシに置き換え**（優先度: 中）
-- [ ] **#43: OGP 画像の作成**
+- [ ] **#43: OGP 画像の作成**（1200×630px、`public/og-image.png`、`app/layout.tsx` に metadata 設定）
 - [ ] **#44: Security Headers の追加**
 - [ ] **#45: Vercel Analytics / Speed Insights の導入**
 - [ ] **#37〜#39: E2E テスト**
@@ -43,24 +44,24 @@
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 - **Embedding（タイトルのみ Gemini 送信）は低リスク** — Jina+Gemini フォールバック廃止後も embedding は引き続き使用
 - **ソースフィルタの null 扱い:** `source_name` が null のレシピは `_other` センチネル値で「その他」として表示
+- **#48 画像ホットリンク:** 利用規模が数百人規模になったら `next/image` + ワイルドカード許可を再検討
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 - `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
-- `src/lib/api/error-response.ts` - API 500エラー共通ヘルパー（#42 で追加）
-- `src/components/features/home/ingredient-filter.tsx` - 食材フィルタ Sheet
-- `src/components/features/home/ingredient-filter-content.tsx` - タブ＋チップ UI
-- `src/hooks/use-ingredient-filter.ts` - フィルタ状態管理（ひらがな/カタカナ正規化含む）
-- `supabase/functions/get-recipes/index.ts` - レシピ一覧取得 Edge Function（ソースフィルタ実装済み）
+- `src/lib/recipe/match-ingredients.ts` - 食材マッチング（一括フェッチ＋インメモリ化済み）
+- `src/lib/recipe/link-ingredients.ts` - 一括食材リンク処理（#49 で追加）
+- `src/app/api/onboarding/complete/route.ts` - オンボーディング完了API（after()で非同期リンク）
+- `supabase/functions/onboarding-scrape/index.ts` - スクレイピング Edge Function（source_name抽出追加）
 
 ## コミット履歴（直近）
 ```
+30fe65e docs: update SESSION.md for session handoff
+31c1d46 fix: オンボーディング一括登録で食材リンクとサイト名が登録されない問題を修正 (Issue #49)
+fe75f99 docs: update SESSION.md for session handoff
 2139c44 fix: API 500エラーで内部エラーメッセージを返さないよう汎用化 (Issue #42)
 a4afe2c docs: update SESSION.md for session handoff
-8e69d4a fix: Sheet open時の自動フォーカス無効化 & ひらがな/カタカナ混在検索に対応
-228886b feat: 食材フィルタをカテゴリタブ+チップ選択 UI に変更
-21ffef9 fix: キーボード表示時に食材フィルタのボトムシートが隠れる問題を修正
 ```
 
 ## GitHubリポジトリ
