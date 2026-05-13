@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-10 (Issue #49: オンボーディング食材リンク・サイト名未登録 修正 完了)
+2026-05-13 (Issue #48 ペンディング判断、コメント記載)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
@@ -14,13 +14,16 @@
   - `link-ingredients.ts` を新規追加（一括リンク処理）
   - `onboarding-scrape` で JSON-LD の `publisher` から `source_name` を抽出・保存
   - PR #57 → develop
+- [x] **#48: 画像ホットリンク対応をペンディング判断**
+  - 現在の利用規模（数十人程度）では `<img>` のままで実害なしと判断
+  - `next/image` 化すると Vercel Image Optimization の無料枠（1,000件/月）を消費するためメリット小
+  - Issue にコメント記載済み（利用規模が増えたときに再検討）
 
 ## 進行中のタスク
 - [ ] **PR #57 レビュー・マージ待ち**（develop → main）
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **#48: 画像ホットリンクを next/image プロキシに置き換え**（優先度: 中）
-- [ ] **#43: OGP 画像の作成**
+- [ ] **#43: OGP 画像の作成**（1200×630px、`public/og-image.png`、`app/layout.tsx` に metadata 設定）
 - [ ] **#44: Security Headers の追加**
 - [ ] **#45: Vercel Analytics / Speed Insights の導入**
 - [ ] **#37〜#39: E2E テスト**
@@ -41,6 +44,7 @@
 - **DB 型更新時:** `supabase gen types typescript --local > src/types/database.ts` を実行
 - **Embedding（タイトルのみ Gemini 送信）は低リスク** — Jina+Gemini フォールバック廃止後も embedding は引き続き使用
 - **ソースフィルタの null 扱い:** `source_name` が null のレシピは `_other` センチネル値で「その他」として表示
+- **#48 画像ホットリンク:** 利用規模が数百人規模になったら `next/image` + ワイルドカード許可を再検討
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
@@ -53,11 +57,11 @@
 
 ## コミット履歴（直近）
 ```
+30fe65e docs: update SESSION.md for session handoff
 31c1d46 fix: オンボーディング一括登録で食材リンクとサイト名が登録されない問題を修正 (Issue #49)
 fe75f99 docs: update SESSION.md for session handoff
 2139c44 fix: API 500エラーで内部エラーメッセージを返さないよう汎用化 (Issue #42)
 a4afe2c docs: update SESSION.md for session handoff
-8e69d4a fix: Sheet open時の自動フォーカス無効化 & ひらがな/カタカナ混在検索に対応
 ```
 
 ## GitHubリポジトリ
