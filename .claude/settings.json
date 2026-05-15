@@ -1,4 +1,9 @@
 {
+  "enabledPlugins": {
+    "security-guidance@claude-code-marketplace": true,
+    "frontend-design@claude-code-marketplace": true,
+    "supabase@claude-code-marketplace": true
+  },
   "hooks": {
     "PostToolUse": [
       {

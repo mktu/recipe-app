@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchRecipeById, deleteRecipe, updateRecipe } from '@/lib/db/queries/recipes'
+import { apiServerError } from '@/lib/api/error-response'
 import type { UpdateRecipeInput } from '@/types/recipe'
 
 interface RouteContext {
@@ -21,8 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const { data, error } = await fetchRecipeById(lineUserId, id)
 
   if (error) {
-    console.error('[GET /api/recipes/[id]] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiServerError(error, 'GET /api/recipes/[id]')
   }
 
   if (!data) {
@@ -47,8 +47,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const { error } = await deleteRecipe(lineUserId, id)
 
   if (error) {
-    console.error('[DELETE /api/recipes/[id]] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiServerError(error, 'DELETE /api/recipes/[id]')
   }
 
   return NextResponse.json({ success: true })
@@ -75,8 +74,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const { error } = await updateRecipe(lineUserId, id, updates)
   if (error) {
-    console.error('[PATCH /api/recipes/[id]] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiServerError(error, 'PATCH /api/recipes/[id]')
   }
 
   return NextResponse.json({ success: true })

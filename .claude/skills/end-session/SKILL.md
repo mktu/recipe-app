@@ -7,7 +7,26 @@ description: セッションを終了する前に SESSION.md を更新
 
 以下の処理を順番に実行してください：
 
-## 0. ドキュメント更新チェック
+## 0. ブランチ確認
+
+現在のブランチを確認する（`git branch --show-current`）。
+
+feature ブランチにいる場合は、ユーザーに確認する：
+
+> 「作業はキリよく終わりましたか？
+> - **Y**: develop に切り替えて SESSION.md を更新します
+> - **N**: このブランチのまま SESSION.md を更新します」
+
+Y の場合：
+```bash
+git checkout develop && git pull
+```
+
+N の場合：そのまま次のステップへ。
+
+---
+
+## 0-b. ドキュメント更新チェック
 
 `git diff main HEAD --name-only` でセッション中の変更ファイルを確認し、
 以下の対応表に基づいて更新漏れのドキュメントがないか確認する。
@@ -23,6 +42,8 @@ description: セッションを終了する前に SESSION.md を更新
 更新が必要なドキュメントがあれば、SESSION.md 更新の前にユーザーに確認する。
 
 ## 1. SESSION.md を更新
+
+**注意:** develop に切り替えた場合、pull 後の SESSION.md は古い内容になっているので必ず上書きすること。
 
 以下のセクションを最新状態に更新：
 

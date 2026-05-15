@@ -191,9 +191,7 @@ Deno.serve(async () => {
   } catch (error) {
     console.error('Edge Function error:', error)
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
+      JSON.stringify({ error: 'エラーが発生しました' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }

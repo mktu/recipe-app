@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createServerClient } from '@/lib/db/client'
 import type { Json, TablesInsert } from '@/types/database'
+import { linkIngredientsForRecipes } from '@/lib/recipe/link-ingredients'
 
 interface RecipeCandidate {
   url: string
   title: string
+  sourceName?: string
   imageUrl?: string
   cookingTimeMinutes?: number | null
   ingredientsRaw?: { name: string; amount: string }[]
@@ -37,15 +39,24 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       url: c.url,
       title: c.title,
+      source_name: c.sourceName ?? null,
       image_url: c.imageUrl ?? null,
       cooking_time_minutes: c.cookingTimeMinutes ?? null,
       ingredients_raw: (c.ingredientsRaw ?? []) as unknown as Json,
       ingredients_linked: false,
     }))
 
-    const { error } = await supabase.from('recipes').insert(rows)
+    const { data: inserted, error } = await supabase.from('recipes').insert(rows).select('id, ingredients_raw')
     if (error) {
       console.error('[onboarding/complete] Bulk insert error:', error)
+    }
+
+    if (inserted && inserted.length > 0) {
+      const recipesToLink = inserted.map((r) => ({
+        id: r.id,
+        ingredientsRaw: (r.ingredients_raw ?? []) as { name: string; amount: string }[],
+      }))
+      after(() => linkIngredientsForRecipes(recipesToLink))
     }
   }
 
