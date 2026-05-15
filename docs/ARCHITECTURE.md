@@ -175,6 +175,7 @@ graph TB
             GetRecipes["get-recipes"]
             GenEmbed["generate-embeddings"]
             AutoAlias["auto-alias"]
+            OnboardingScrape["onboarding-scrape"]
         end
 
         Cron["pg_cron"]
@@ -190,12 +191,14 @@ graph TB
 
     Pages --> RecipeAPI
     RecipeAPI --> GetRecipes
+    Pages -->|/api/onboarding/start| OnboardingScrape
 
     GetRecipes --> DB
     GenEmbed --> DB
     GenEmbed --> Gemini
     AutoAlias --> DB
     AutoAlias --> Gemini
+    OnboardingScrape --> DB
 
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
@@ -522,14 +525,20 @@ graph TB
 
 ```mermaid
 graph TB
-    Input["AI extracted ingredient"] --> Normalize["Normalize (lowercase, trim)"]
-    Normalize --> AliasCheck{"Search alias table"}
+    Input["AI extracted ingredient"] --> Normalize["Normalize（分量・単位を除去）"]
+    Normalize --> SeasoningCheck{"調味料チェック"}
+
+    SeasoningCheck -->|調味料| Skip["スキップ（登録しない）"]
+    SeasoningCheck -->|食材| AliasCheck{"エイリアス検索（インメモリ）"}
 
     AliasCheck -->|Match| Found["Get ingredient_id"]
-    AliasCheck -->|No match| MasterCheck{"Search master table"}
+    AliasCheck -->|No match| ExactCheck{"完全一致検索（インメモリ）"}
 
-    MasterCheck -->|Match| Found
-    MasterCheck -->|No match| Unmatched["Record to unmatched_ingredients"]
+    ExactCheck -->|Match| Found
+    ExactCheck -->|No match| PartialCheck{"部分一致検索（インメモリ）"}
+
+    PartialCheck -->|Match| Found
+    PartialCheck -->|No match| Unmatched["Record to unmatched_ingredients"]
 
     Found --> Save["Save to recipe_ingredients"]
     Unmatched --> BatchQueue["Queue for batch (auto-alias)"]
