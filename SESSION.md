@@ -1,7 +1,7 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-15 (Issue #43 OGP 画像・ロゴ画像の追加完了)
+2026-05-15 (ドキュメント整合性チェック・修正完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
@@ -19,6 +19,11 @@
   - develop にマージ済み
 - [x] **#48: 画像ホットリンク対応をペンディング判断**
   - 現在の利用規模では実害なしと判断・Issue にコメント済み
+- [x] **ドキュメント整合性チェック（/doc-check-logic + /doc-check-structure）**
+  - `docs/ARCHITECTURE.md` 食材名寄せフローチャートを実装に合わせ更新（調味料除外・部分一致検索追記、インメモリ検索の明示）
+  - `docs/ARCHITECTURE.md` システム構成図に `onboarding-scrape` Edge Function を追加
+  - `docs/DATABASE_DESIGN.md` マッチングフローに調味料チェックステップを追加
+  - `docs/DATABASE_DESIGN.md` アンマッチ時の挙動を「直接作成」→「unmatched_ingredients キューイング → auto-alias バッチ処理」に修正
 
 ## 進行中のタスク
 なし
@@ -48,8 +53,8 @@
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
-- `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略（本セッションで更新）
+- `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）（本セッションで更新）
 - `next.config.ts` - Security Headers 設定（#44 で追加）
 - `public/og-image.jpg` - OGP 画像（#43 で追加）
 - `public/logo.png` - ロゴ画像（#43 で追加）
@@ -62,11 +67,11 @@
 
 ## コミット履歴（直近）
 ```
+d4f042d docs: ドキュメントと実装の乖離を修正
+54e74a0 docs: update SESSION.md for session handoff
 0a953d2 feat: OGP 画像の追加とロゴ画像の更新 (Issue #43)
 e3c4f73 feat: add official plugins (security-guidance, frontend-design, supabase)
 9ab9fdc docs: end-sessionスキルにブランチ確認ステップを追加
-3fbb3a8 docs: update SESSION.md for session handoff
-74c6c8d Merge pull request #59 from mktu/feature/fix-onboarding-ingredient-link
 ```
 
 ## GitHubリポジトリ
