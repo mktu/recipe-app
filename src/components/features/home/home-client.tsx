@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
@@ -107,7 +108,7 @@ function Header({ sortOrder, onSortChange, onOnboarding }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex max-w-2xl items-center justify-between p-4">
-        <h1 className="text-xl font-bold text-primary">RecipeHub</h1>
+        <Image src="/logo.png" alt="RecipeHub" width={175} height={58} priority />
         <div className="flex items-center gap-2">
           <button
             onClick={onOnboarding}

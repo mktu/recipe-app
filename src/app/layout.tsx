@@ -9,9 +9,15 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ),
   title: "RecipeHub - レシピ保存アプリ",
   description:
     "様々なサイトからレシピを保存して、食材で検索できる自分専用のレシピ図鑑",
+  openGraph: {
+    images: ["/og-image.jpg"],
+  },
 };
 
 export const viewport: Viewport = {

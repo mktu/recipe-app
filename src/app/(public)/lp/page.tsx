@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     description:
       'SNSやWebで見つけたレシピをURLで保存。AIが自動でタグ付けして、食材から検索できる自分専用のレシピ図鑑。',
     type: 'website',
+    images: ['/og-image.jpg'],
   },
 }
 
