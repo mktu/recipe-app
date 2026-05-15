@@ -93,12 +93,15 @@ users ─────< recipes >───── recipe_ingredients >────
   ↓
 正規化: "豚肉細切れ"（分量・単位を除去）
   ↓
+調味料チェック: 塩・砂糖・醤油等はスキップ（登録しない）
+  ↓
 マッチング（優先順）:
   1. エイリアス検索 → なければ次へ
   2. 完全一致検索 → なければ次へ
   3. 部分一致検索（マスター食材が入力に含まれるか、最長優先）
      例: "豚肉細切れ".includes("豚肉") → マッチ！
-  4. マッチなし → 新規作成（needs_review=true）
+  4. マッチなし → unmatched_ingredients に記録
+     → auto-alias Edge Function（バッチ）が後からエイリアス登録 or 新規食材追加（needs_review=true）
   ↓
 recipe_ingredients に紐づけを保存
 ```
