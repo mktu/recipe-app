@@ -1,32 +1,30 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-13 (Issue #44 Security Headers 追加・develop マージ完了)
+2026-05-15 (Issue #43 OGP 画像・ロゴ画像の追加完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#43: OGP 画像の作成**
+  - `public/og-image.jpg` を追加
+  - `src/app/layout.tsx` に `metadataBase`（`NEXT_PUBLIC_APP_URL` 使用）と `openGraph.images` を設定
+  - `src/app/(public)/lp/page.tsx` の `openGraph` にも `images` を追加
+  - `public/logo.png` を追加し、ホーム画面ヘッダーのロゴをテキストから画像（175×58）に変更
+  - develop に直接プッシュ済み・Issue #43 クローズ済み
 - [x] **#44: Security Headers の追加**
-  - `next.config.ts` に `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` を追加
-  - PR #59 → develop にマージ済み
+  - `next.config.ts` に各種ヘッダー追加・develop にマージ済み
 - [x] **#49: オンボーディング一括登録で食材リンクとサイト名が登録されない問題を修正**
-  - `after()` でレスポンス返却後にバックグラウンドで食材マッチング＆`recipe_ingredients`挿入を実行
-  - `match-ingredients.ts` を N+1 解消（ingredients/aliases を2クエリ一括フェッチしインメモリ解決）
-  - `matchIngredientsForRecipes()` を新規追加（複数レシピをDBクエリ2回で処理）
-  - `link-ingredients.ts` を新規追加（一括リンク処理）
-  - `onboarding-scrape` で JSON-LD の `publisher` から `source_name` を抽出・保存
-  - PR #57 → develop にマージ済み
+  - develop にマージ済み
 - [x] **#48: 画像ホットリンク対応をペンディング判断**
-  - 現在の利用規模（数十人程度）では `<img>` のままで実害なしと判断
-  - Issue にコメント記載済み（利用規模が増えたときに再検討）
+  - 現在の利用規模では実害なしと判断・Issue にコメント済み
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#44, #49 の変更を本番反映）
-- [ ] **#43: OGP 画像の作成**（1200×630px、`public/og-image.png`、`app/layout.tsx` に metadata 設定）
+- [ ] **develop → main PR を作成して本番リリース**（#44, #49, #43 の変更を本番反映）
 - [ ] **#45: Vercel Analytics / Speed Insights の導入**
 - [ ] **#37〜#39: E2E テスト**
 
@@ -53,6 +51,10 @@
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・ブランチ戦略
 - `docs/DATABASE_DESIGN.md` - DB設計（RPC関数一覧含む）
 - `next.config.ts` - Security Headers 設定（#44 で追加）
+- `public/og-image.jpg` - OGP 画像（#43 で追加）
+- `public/logo.png` - ロゴ画像（#43 で追加）
+- `src/app/layout.tsx` - metadataBase + openGraph 設定（#43 で更新）
+- `src/components/features/home/home-client.tsx` - ヘッダーロゴ画像（#43 で更新）
 - `src/lib/recipe/match-ingredients.ts` - 食材マッチング（一括フェッチ＋インメモリ化済み）
 - `src/lib/recipe/link-ingredients.ts` - 一括食材リンク処理（#49 で追加）
 - `src/app/api/onboarding/complete/route.ts` - オンボーディング完了API（after()で非同期リンク）
@@ -60,11 +62,11 @@
 
 ## コミット履歴（直近）
 ```
-74c6c8d feat: Security Headers の追加 (Issue #44)
-c7e5f2d fix: オンボーディング一括登録で食材リンクとサイト名が登録されない問題を修正 (Issue #49)
-fe75f99 docs: update SESSION.md for session handoff
-2139c44 fix: API 500エラーで内部エラーメッセージを返さないよう汎用化 (Issue #42)
-a4afe2c docs: update SESSION.md for session handoff
+0a953d2 feat: OGP 画像の追加とロゴ画像の更新 (Issue #43)
+e3c4f73 feat: add official plugins (security-guidance, frontend-design, supabase)
+9ab9fdc docs: end-sessionスキルにブランチ確認ステップを追加
+3fbb3a8 docs: update SESSION.md for session handoff
+74c6c8d Merge pull request #59 from mktu/feature/fix-onboarding-ingredient-link
 ```
 
 ## GitHubリポジトリ
