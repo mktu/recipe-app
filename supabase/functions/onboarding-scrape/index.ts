@@ -281,14 +281,11 @@ async function scrapeAndNotify(sessionId: string, resultUrl: string): Promise<vo
 Deno.serve(async (req) => {
   const { sessionId, resultUrl } = await req.json() as { sessionId: string; resultUrl?: string }
 
-  if (!sessionId) {
-    return new Response(JSON.stringify({ error: 'Missing sessionId' }), { status: 400 })
+  if (!sessionId || !resultUrl) {
+    return new Response(JSON.stringify({ error: 'Missing sessionId or resultUrl' }), { status: 400 })
   }
 
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://localhost:3000'
-  const resolvedResultUrl = resultUrl ?? `${appUrl}/onboarding/result`
-
-  EdgeRuntime.waitUntil(scrapeAndNotify(sessionId, resolvedResultUrl))
+  EdgeRuntime.waitUntil(scrapeAndNotify(sessionId, resultUrl))
 
   return new Response(JSON.stringify({ status: 'processing' }), {
     status: 200,
