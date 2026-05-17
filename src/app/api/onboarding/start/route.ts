@@ -12,6 +12,12 @@ interface StartRequestBody {
   preferences: OnboardingPreferences
 }
 
+function buildResultUrl(): string {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  return liffId ? `https://liff.line.me/${liffId}/onboarding/result` : `${appUrl}/onboarding/result`
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json() as StartRequestBody
   const { lineUserId, preferences } = body
@@ -57,7 +63,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${supabaseKey}`,
       },
-      body: JSON.stringify({ sessionId: session.id }),
+      body: JSON.stringify({ sessionId: session.id, resultUrl: buildResultUrl() }),
     }).catch((err) => {
       console.error('[onboarding/start] Edge Function kick failed:', err)
     })

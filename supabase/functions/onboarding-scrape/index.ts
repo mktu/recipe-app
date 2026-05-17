@@ -190,14 +190,12 @@ function filterCandidates(candidates: RecipeCandidate[], prefs: Preferences): Re
   })
 }
 
-async function sendLineNotification(lineUserId: string, candidateCount: number, appUrl: string): Promise<void> {
+async function sendLineNotification(lineUserId: string, candidateCount: number, resultUrl: string): Promise<void> {
   const token = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')
   if (!token) {
     console.warn('[onboarding-scrape] LINE_CHANNEL_ACCESS_TOKEN not set')
     return
   }
-
-  const resultUrl = `${appUrl}/onboarding/result`
 
   const message = candidateCount > 0
     ? {
@@ -238,10 +236,9 @@ async function sendLineNotification(lineUserId: string, candidateCount: number, 
   })
 }
 
-async function scrapeAndNotify(sessionId: string): Promise<void> {
+async function scrapeAndNotify(sessionId: string, resultUrl: string): Promise<void> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://localhost:3000'
 
   const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -273,22 +270,22 @@ async function scrapeAndNotify(sessionId: string): Promise<void> {
       .update({ candidates: all as unknown as any, status: 'completed' })
       .eq('id', sessionId)
 
-    await sendLineNotification(session.user_id, all.length, appUrl)
+    await sendLineNotification(session.user_id, all.length, resultUrl)
   } catch (e) {
     console.error('[onboarding-scrape] Failed:', e)
     await supabase.from('onboarding_sessions').update({ status: 'failed' }).eq('id', sessionId)
-    await sendLineNotification(session.user_id, 0, appUrl)
+    await sendLineNotification(session.user_id, 0, resultUrl)
   }
 }
 
 Deno.serve(async (req) => {
-  const { sessionId } = await req.json() as { sessionId: string }
+  const { sessionId, resultUrl } = await req.json() as { sessionId: string; resultUrl?: string }
 
-  if (!sessionId) {
-    return new Response(JSON.stringify({ error: 'Missing sessionId' }), { status: 400 })
+  if (!sessionId || !resultUrl) {
+    return new Response(JSON.stringify({ error: 'Missing sessionId or resultUrl' }), { status: 400 })
   }
 
-  EdgeRuntime.waitUntil(scrapeAndNotify(sessionId))
+  EdgeRuntime.waitUntil(scrapeAndNotify(sessionId, resultUrl))
 
   return new Response(JSON.stringify({ status: 'processing' }), {
     status: 200,
