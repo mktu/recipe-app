@@ -129,7 +129,8 @@ Edge Function で使用する環境変数は Supabase Dashboard で設定:
 
 **onboarding-scrape で必要な環境変数（Supabase secrets）:**
 - `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用
-- `APP_URL` - LINE 通知に含める結果ページ URL（例: `https://your-app.vercel.app`）
+
+> LINE 通知のリンク URL（`resultUrl`）は呼び出し元の Next.js API（`/api/onboarding/start`）が LIFF URL として組み立てて渡す。`APP_URL` 環境変数は不要。
 
 > ローカル開発時は `LINE_CHANNEL_ACCESS_TOKEN` が未設定でも警告のみでスクレイピングは継続する。
 
