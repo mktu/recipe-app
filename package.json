@@ -30,8 +30,8 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.13",
-    "@line/bot-sdk": "^10.6.0",
-    "@line/liff": "^2.27.3",
+    "@line/bot-sdk": "^10.8.0",
+    "@line/liff": "^2.29.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
