@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { messagingApi, validateSignature, WebhookEvent, TextEventMessage } from '@line/bot-sdk'
+import { messagingApi, validateSignature, webhook } from '@line/bot-sdk'
 import { createServerClient } from '@/lib/db/client'
 import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } from '@/lib/line/search-handler'
 import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, isRecentlyAddedKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites, handleRecentlyAdded } from '@/lib/line/category-handler'
@@ -100,7 +100,7 @@ async function handleKeyword(text: string, replyToken: string, userId: string): 
 }
 
 /** 友達追加・ブロック解除イベントを処理 */
-async function handleFollowEvent(event: WebhookEvent): Promise<void> {
+async function handleFollowEvent(event: webhook.Event): Promise<void> {
   if (event.type !== 'follow' || !event.source?.userId) return
   const { userId } = event.source
 
@@ -153,11 +153,11 @@ async function handleFollowEvent(event: WebhookEvent): Promise<void> {
 }
 
 /** メッセージイベントを処理 */
-async function handleMessageEvent(event: WebhookEvent): Promise<void> {
+async function handleMessageEvent(event: webhook.Event): Promise<void> {
   if (event.type !== 'message' || event.message.type !== 'text') return
   if (!event.replyToken || !event.source?.userId) return
 
-  const text = (event.message as TextEventMessage).text
+  const text = (event.message as webhook.TextMessageContent).text
   const { replyToken, source: { userId } } = event
 
   if (await handleKeyword(text, replyToken, userId)) return
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  const body = JSON.parse(bodyText) as { events: WebhookEvent[] }
+  const body = JSON.parse(bodyText) as { events: webhook.Event[] }
   await Promise.all(body.events.map((event) => Promise.all([
     handleFollowEvent(event),
     handleMessageEvent(event),
