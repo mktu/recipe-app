@@ -1,12 +1,15 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-17 (LINE SDK パッケージ更新 PR #69)
+2026-05-18 (@supabase/supabase-js 2.105.4 更新 PR #71)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **@supabase/supabase-js 更新（PR #71）**
+  - 2.90.1 → 2.105.4（minor、Breaking changes なし）
+  - develop にマージ済み
 - [x] **LINE SDK パッケージ更新（PR #69）**
   - `@line/liff`: 2.27.3 → 2.29.0
   - `@line/bot-sdk`: 10.6.0 → 10.8.0（`Client`/`OAuth` が deprecated に。v11.0.0 への移行は今後別途対応）
@@ -26,13 +29,16 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新を本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新を本番反映）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **`@line/bot-sdk` v11.0.0 への移行**（`Client`/`OAuth` → `LineBotClient` への移行作業が必要）
 - [ ] **パッケージアップデートの継続**（スキップした項目）
   - `@types/node`: 24 → 25（major、影響調査が必要）
-  - G2〜G4, G6〜G7 グループのパッケージ
+  - G3: AI SDK（`ai` 6.0.48→6.0.184、`@ai-sdk/google` 3.0.13→3.0.75）
+  - G4: UI / スタイリング（`lucide-react` major あり要注意）
+  - G6: 開発ツール（`typescript` 5→6、`eslint` 9→10、`lint-staged` 16→17 など major 多数）
+  - G7: その他（`swr`、`zod`、`schema-dts` 1→2 major）
 - [ ] **#45: Vercel Analytics / Speed Insights の導入**
 - [ ] **#37〜#39: E2E テスト**
 
@@ -67,11 +73,11 @@
 
 ## コミット履歴（直近）
 ```
+d749643 Merge pull request #71 from mktu/feature/update-supabase-libs
+8d079e6 chore: update @supabase/supabase-js 2.90.1 → 2.105.4
+bb02559 docs: update SESSION.md for session handoff
 8cd434b Merge pull request #69 from mktu/feature/update-line-sdk-libs
 ed8a832 chore: update LINE SDK packages (@line/liff 2.29.0, @line/bot-sdk 10.8.0)
-180274a docs: update SESSION.md for session handoff
-945c20d Merge pull request #67 from mktu/feature/fix-onboarding-liff-url
-449bf52 fix: resultUrl を必須パラメータにして APP_URL フォールバックを削除
 ```
 
 ## GitHubリポジトリ
