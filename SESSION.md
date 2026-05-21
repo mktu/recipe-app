@@ -1,16 +1,18 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-21 (@line/bot-sdk 11.0.0 更新 PR #73 マージ済み)
+2026-05-22 (#65 オンボーディング結果画面マスターチェックボックス追加 PR #75 マージ済み)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#65 オンボーディング結果画面にマスターチェックボックス追加（PR #75）**
+  - 「全て外す」ボタン → マスターチェックボックス（全選択/indeterminate/全解除）に変更
+  - develop にマージ済み
 - [x] **@line/bot-sdk 更新（PR #73）**
   - 10.8.0 → 11.0.0（MAJOR）
-  - レガシー `Client`/`OAuth` 削除に伴い `WebhookEvent` → `webhook.Event`、`TextEventMessage` → `webhook.TextMessageContent` に型を移行
-  - `update-packages` スキルの Phase 4 フォーマット改善も同梱
+  - `WebhookEvent` → `webhook.Event`、`TextEventMessage` → `webhook.TextMessageContent` に型を移行
   - develop にマージ済み
 - [x] **@supabase/supabase-js 更新（PR #71）**
   - 2.90.1 → 2.105.4（minor、Breaking changes なし）
@@ -30,7 +32,7 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新、@line/bot-sdk v11 更新を本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新、@line/bot-sdk v11 更新、#65 マスターチェックボックスを本番反映）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -74,11 +76,11 @@
 
 ## コミット履歴（直近）
 ```
+4c33c3c Merge pull request #75 from mktu/feature/add-uncheck-all-button
+1d83c27 feat: 「全て外す」ボタンをマスターチェックボックスに変更
+44f1b60 feat: オンボーディング結果画面に「全て外す」ボタンを追加 (#65)
+7dd4710 docs: update SESSION.md for session handoff
 b74fb2e Merge pull request #73 from mktu/feature/update-line-sdk-v11
-5dda649 docs: improve update-packages skill Phase 4 process
-8bd719f chore: update @line/bot-sdk 10.8.0 → 11.0.0
-d227500 docs: update SESSION.md for session handoff
-d749643 Merge pull request #71 from mktu/feature/update-supabase-libs
 ```
 
 ## GitHubリポジトリ
