@@ -111,6 +111,8 @@ function CandidatesView({ candidates, submitMode, onRegister, onSkip }: Candidat
   const [customSelected, setCustomSelected] = useState<Set<string> | null>(null)
   const selected = customSelected ?? new Set(candidates.map((c) => c.url))
   const submitting = submitMode !== 'idle'
+  const allSelected = selected.size === candidates.length
+  const masterChecked = allSelected ? true : selected.size > 0 ? 'indeterminate' : false
 
   function toggleCandidate(url: string) {
     const next = new Set(selected)
@@ -118,11 +120,20 @@ function CandidatesView({ candidates, submitMode, onRegister, onSkip }: Candidat
     setCustomSelected(next)
   }
 
+  function toggleAll() {
+    setCustomSelected(allSelected ? new Set() : new Set(candidates.map((c) => c.url)))
+  }
+
   return (
     <div className="flex min-h-screen flex-col p-4">
       <div className="mb-4 space-y-1">
         <h1 className="text-lg font-bold">レシピ候補</h1>
-        <p className="text-sm text-muted-foreground">登録するレシピを選んでください</p>
+        <div className="flex items-center gap-2">
+          <Checkbox id="select-all" checked={masterChecked} onCheckedChange={toggleAll} disabled={submitting} />
+          <label htmlFor="select-all" className="cursor-pointer text-sm text-muted-foreground">
+            {allSelected ? '全て選択中' : selected.size > 0 ? `${selected.size}件選択中` : '選択なし'}
+          </label>
+        </div>
       </div>
       <div className="flex-1 space-y-3">
         {candidates.map((c) => (
