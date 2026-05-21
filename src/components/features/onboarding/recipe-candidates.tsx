@@ -120,9 +120,14 @@ function CandidatesView({ candidates, submitMode, onRegister, onSkip }: Candidat
 
   return (
     <div className="flex min-h-screen flex-col p-4">
-      <div className="mb-4 space-y-1">
-        <h1 className="text-lg font-bold">レシピ候補</h1>
-        <p className="text-sm text-muted-foreground">登録するレシピを選んでください</p>
+      <div className="mb-4 flex items-start justify-between">
+        <div className="space-y-1">
+          <h1 className="text-lg font-bold">レシピ候補</h1>
+          <p className="text-sm text-muted-foreground">登録するレシピを選んでください</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setCustomSelected(new Set())} disabled={submitting || selected.size === 0}>
+          全て外す
+        </Button>
       </div>
       <div className="flex-1 space-y-3">
         {candidates.map((c) => (
