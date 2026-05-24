@@ -1,32 +1,33 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-23 (#45 Vercel Analytics / Speed Insights 導入 PR #77 マージ済み)
+2026-05-24 (Issue #79 オンボーディング機能削除 PR #88 マージ、ドキュメント更新完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#79 オンボーディング機能の削除（PR #88）**
+  - DELISH KITCHEN・クラシルの自動スクレイピングは著作権・ToS リスクあり
+  - 関連ファイル一式削除（onboarding ページ・API・Edge Function・E2E テスト等）
+  - DB マイグレーション追加（`onboarding_sessions` テーブル・カラム・RPC 関数削除）
+  - LINE Bot ウェルカムメッセージをシンプルなテキストに変更
+  - CI エラー修正（config.toml の stale エントリ削除）→ develop に直接 push 済み
+  - 関連 Issues #83 #84 #85 も手動クローズ
+- [x] **ドキュメント更新（ARCHITECTURE.md・DATABASE_DESIGN.md）**
+  - オンボーディング関連記述を全て削除
+  - レシピ解析フロー図にユーザー確認ステップを追加
+  - `src/lib/api/` をディレクトリ構造に追加
 - [x] **#45 Vercel Analytics / Speed Insights 導入（PR #77）**
-  - `@vercel/analytics` と `@vercel/speed-insights` をインストール
-  - `src/app/layout.tsx` に `<Analytics />` と `<SpeedInsights />` を追加
-  - develop にマージ済み
 - [x] **#65 オンボーディング結果画面にマスターチェックボックス追加（PR #75）**
-  - 「全て外す」ボタン → マスターチェックボックス（全選択/indeterminate/全解除）に変更
-  - develop にマージ済み
 - [x] **@line/bot-sdk 更新（PR #73）**
-  - 10.8.0 → 11.0.0（MAJOR）
-  - `WebhookEvent` → `webhook.Event`、`TextEventMessage` → `webhook.TextMessageContent` に型を移行
-  - develop にマージ済み
 - [x] **@supabase/supabase-js 更新（PR #71）**
-  - 2.90.1 → 2.105.4（minor、Breaking changes なし）
-  - develop にマージ済み
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新、@line/bot-sdk v11 更新、#65 マスターチェックボックス、#45 Vercel Analytics を本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#79 オンボーディング削除、Vercel Analytics 等を本番反映）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -56,7 +57,6 @@
 - **husky の npx:** fnm の PATH が通っていないと pre-commit フックが失敗する（`eval "$(fnm env --shell zsh)"` を先に実行）
 - **#48 画像ホットリンク:** 利用規模が数百人規模になったら `next/image` + ワイルドカード許可を再検討
 - **`@types/node` メジャーアップ保留:** 24 → 25 は影響調査が必要なため今回スキップ
-- **onboarding-scrape の `APP_URL` 環境変数は不要になった**（PR #67 で削除）
 - **Vercel Analytics:** デプロイ後に Vercel Dashboard の Analytics / Speed Insights タブで計測開始を確認すること
 
 ## 参照すべきファイル
@@ -70,11 +70,12 @@
 
 ## コミット履歴（直近）
 ```
-85915ea Merge pull request #77 from mktu/feature/add-vercel-analytics
-86e695d feat: Vercel Analytics / Speed Insights を導入 (#45)
-3c81746 docs: update SESSION.md for session handoff
-4c33c3c Merge pull request #75 from mktu/feature/add-uncheck-all-button
-1d83c27 feat: 「全て外す」ボタンをマスターチェックボックスに変更
+ec16e1e docs: add src/lib/api/ to ARCHITECTURE.md directory structure
+664122e docs: レシピ解析フロー図にユーザー確認ステップを追加
+c149503 docs: オンボーディング機能削除に伴いドキュメントを更新
+960a7a4 fix: supabase/config.toml から onboarding-scrape の関数定義を削除
+1908bb3 Merge pull request #88 from mktu/feature/remove-onboarding
+c413451 feat: オンボーディング機能を削除（Issue #79 著作権リスク対応）
 ```
 
 ## GitHubリポジトリ
