@@ -94,6 +94,7 @@ recipe-app/
 │   │   └── providers/        # Context プロバイダー
 │   ├── hooks/                # カスタム hooks
 │   ├── lib/
+│   │   ├── api/              # API エラーレスポンスユーティリティ
 │   │   ├── async/            # レスポンス後バックグラウンド処理ユーティリティ
 │   │   ├── auth/             # 認証プロバイダー (LIFF / Dev)
 │   │   ├── batch/            # Edge Functions 共有ロジック（Node.js）
@@ -440,7 +441,9 @@ graph TB
     Strategy2 -->|Fail| Empty["Empty Result（手動入力）"]
 
     Result --> Match["Ingredient Matching"]
-    Match --> Save["Save to DB"]
+    Empty --> Confirm
+    Match --> Confirm["ユーザー確認\n(/recipes/add/confirm)"]
+    Confirm --> Save["Save to DB\n(POST /api/recipes)"]
 ```
 
 ---
