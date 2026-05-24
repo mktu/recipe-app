@@ -7,7 +7,6 @@
 - `id`: UUID (Primary Key)
 - `line_user_id`: String (Unique)
 - `display_name`: String
-- `onboarding_completed_at`: Timestamp (NULL = 未完了、値あり = 完了済み)
 - `created_at`: Timestamp
 
 ### `recipes` テーブル
@@ -63,20 +62,6 @@
 - `created_at`: Timestamp
 
 バッチ処理（`auto-alias` Edge Function）の処理待ちキュー。マッチング成功または新規食材追加後に削除される。
-
-### `onboarding_sessions` テーブル（オンボーディング一時データ）
-
-- `id`: UUID (Primary Key)
-- `user_id`: String (users.line_user_id)
-- `preferences`: JSONB (`{ searchQuery, dislikedIngredients, maxCookingMinutes }`)
-- `candidates`: JSONB (スクレイピング結果。完了後に格納)
-- `status`: String (`pending` / `completed` / `failed`)
-- `created_at`: Timestamp
-- `expires_at`: Timestamp (DEFAULT: 24時間後)
-
-オンボーディング時の一時保存テーブル。完了（`POST /api/onboarding/complete`）後に削除される。
-
-RLS 有効化済み。`service_role` のみフルアクセス可（anon / authenticated ロールはアクセス不可）。
 
 ## ER図（概要）
 
@@ -214,4 +199,3 @@ PostgreSQL ストアドプロシージャ（Supabase RPC）として定義され
 | `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
 | `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |
 | `get_recipes_short_cooking_time(p_user_id, p_limit)` | 調理時間が短いレシピ取得 | LINE Bot のカテゴリ検索 |
-| `get_popular_ingredients_for_onboarding(p_per_category)` | カテゴリ別の人気食材を取得（親食材のみ） | オンボーディング UI の食材表示 |
