@@ -1,12 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-22 (#65 オンボーディング結果画面マスターチェックボックス追加 PR #75 マージ済み)
+2026-05-23 (#45 Vercel Analytics / Speed Insights 導入 PR #77 マージ済み)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#45 Vercel Analytics / Speed Insights 導入（PR #77）**
+  - `@vercel/analytics` と `@vercel/speed-insights` をインストール
+  - `src/app/layout.tsx` に `<Analytics />` と `<SpeedInsights />` を追加
+  - develop にマージ済み
 - [x] **#65 オンボーディング結果画面にマスターチェックボックス追加（PR #75）**
   - 「全て外す」ボタン → マスターチェックボックス（全選択/indeterminate/全解除）に変更
   - develop にマージ済み
@@ -17,22 +21,12 @@
 - [x] **@supabase/supabase-js 更新（PR #71）**
   - 2.90.1 → 2.105.4（minor、Breaking changes なし）
   - develop にマージ済み
-- [x] **LINE SDK パッケージ更新（PR #69）**
-  - `@line/liff`: 2.27.3 → 2.29.0
-  - `@line/bot-sdk`: 10.6.0 → 10.8.0（deprecated 化リリース）
-  - develop にマージ済み
-- [x] **#61 オンボーディング結果が「確認中」のまま固まる不具合修正（PR #67）**
-  - develop にマージ済み
-- [x] **Next.js コアパッケージ更新（PR #64）**
-  - develop にマージ済み
-- [x] **Node.js v24 LTS へのアップグレード（PR #62）**
-  - develop にマージ済み
 
 ## 進行中のタスク
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新、@line/bot-sdk v11 更新、#65 マスターチェックボックスを本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#61 修正、Next.js 更新、Node.js v24、LINE SDK 更新、Supabase JS 更新、@line/bot-sdk v11 更新、#65 マスターチェックボックス、#45 Vercel Analytics を本番反映）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -42,7 +36,6 @@
   - G4: UI / スタイリング（`lucide-react` major あり要注意）
   - G6: 開発ツール（`typescript` 5→6、`eslint` 9→10、`lint-staged` 16→17 など major 多数）
   - G7: その他（`swr`、`zod`、`schema-dts` 1→2 major）
-- [ ] **#45: Vercel Analytics / Speed Insights の導入**
 - [ ] **#37〜#39: E2E テスト**
 
 ## ブロッカー・注意点
@@ -64,6 +57,7 @@
 - **#48 画像ホットリンク:** 利用規模が数百人規模になったら `next/image` + ワイルドカード許可を再検討
 - **`@types/node` メジャーアップ保留:** 24 → 25 は影響調査が必要なため今回スキップ
 - **onboarding-scrape の `APP_URL` 環境変数は不要になった**（PR #67 で削除）
+- **Vercel Analytics:** デプロイ後に Vercel Dashboard の Analytics / Speed Insights タブで計測開始を確認すること
 
 ## 参照すべきファイル
 - `CLAUDE.md` - プロジェクトガイド
@@ -76,11 +70,11 @@
 
 ## コミット履歴（直近）
 ```
+85915ea Merge pull request #77 from mktu/feature/add-vercel-analytics
+86e695d feat: Vercel Analytics / Speed Insights を導入 (#45)
+3c81746 docs: update SESSION.md for session handoff
 4c33c3c Merge pull request #75 from mktu/feature/add-uncheck-all-button
 1d83c27 feat: 「全て外す」ボタンをマスターチェックボックスに変更
-44f1b60 feat: オンボーディング結果画面に「全て外す」ボタンを追加 (#65)
-7dd4710 docs: update SESSION.md for session handoff
-b74fb2e Merge pull request #73 from mktu/feature/update-line-sdk-v11
 ```
 
 ## GitHubリポジトリ
