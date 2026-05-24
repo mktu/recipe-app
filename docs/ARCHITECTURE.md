@@ -175,7 +175,6 @@ graph TB
             GetRecipes["get-recipes"]
             GenEmbed["generate-embeddings"]
             AutoAlias["auto-alias"]
-            OnboardingScrape["onboarding-scrape"]
         end
 
         Cron["pg_cron"]
@@ -191,14 +190,12 @@ graph TB
 
     Pages --> RecipeAPI
     RecipeAPI --> GetRecipes
-    Pages -->|/api/onboarding/start| OnboardingScrape
 
     GetRecipes --> DB
     GenEmbed --> DB
     GenEmbed --> Gemini
     AutoAlias --> DB
     AutoAlias --> Gemini
-    OnboardingScrape --> DB
 
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
@@ -214,8 +211,6 @@ graph TB
 | `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
-| `/onboarding` | 必須 | オンボーディングフォーム（好みのヒアリング）※初回のみ |
-| `/onboarding/result` | 必須 | スクレイピング結果確認・一括登録 |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |
 | `/terms` | 不要 | 利用規約 |
@@ -227,16 +222,11 @@ graph TB
 | エンドポイント | メソッド | 説明 |
 |--------------|---------|------|
 | `/api/auth/ensure-user` | POST | ユーザー確保（LINE UserID → DB登録） |
-| `/api/auth/onboarding-status` | GET | オンボーディング完了チェック |
 | `/api/recipes` | POST | レシピ作成 |
 | `/api/recipes/[id]` | GET/PATCH/DELETE | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | URL解析（JSON-LD / __NEXT_DATA__） |
 | `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
-| `/api/onboarding/start` | POST | オンボーディング収集ジョブ起動（冪等性あり） |
-| `/api/onboarding/result` | GET | スクレイピング結果取得 |
-| `/api/onboarding/complete` | POST | レシピ一括登録 + 完了フラグ更新 + セッション削除 |
-| `/api/onboarding/allow-home` | POST | 完了フラグのみ更新（セッション保持・ホーム遷移用） |
 | `/api/webhook/line` | POST | LINE Webhook |
 
 ---
@@ -282,7 +272,6 @@ graph TB
 | `get-recipes` | API Route | 同期 | レシピ一覧取得（複数クエリ） |
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
-| `onboarding-scrape` | API Route (`/api/onboarding/start`) | **非同期** | DELISH KITCHEN + クラシル スクレイピング → LINE push 通知 |
 
 ### auto-alias の非同期パターン
 
@@ -333,7 +322,6 @@ src/lib/batch/     →  npm run functions:build  →  supabase/functions/*/
 ```mermaid
 erDiagram
     users ||--o{ recipes : "has"
-    users ||--o{ onboarding_sessions : "has"
     recipes ||--o{ recipe_ingredients : "contains"
     ingredients ||--o{ recipe_ingredients : "used_in"
     ingredients ||--o{ ingredient_aliases : "has"
@@ -346,20 +334,18 @@ erDiagram
     ingredient_aliases
     recipe_ingredients
     unmatched_ingredients
-    onboarding_sessions
 ```
 
 ### テーブル概要
 
 | テーブル | 説明 |
 |---------|------|
-| `users` | LINE ユーザー情報（`onboarding_completed_at` で完了管理） |
+| `users` | LINE ユーザー情報 |
 | `recipes` | レシピ情報（タイトル、URL、画像、メモ、埋め込みベクトル） |
 | `ingredients` | 食材マスター（階層構造対応） |
 | `ingredient_aliases` | 表記ゆれ対応（LLM自動生成含む） |
 | `recipe_ingredients` | レシピ - 食材の中間テーブル |
 | `unmatched_ingredients` | バッチ処理待ちの未マッチ食材 |
-| `onboarding_sessions` | オンボーディング一時データ（TTL: 24時間） |
 
 > 詳細なスキーマは `supabase/migrations/` を参照
 
@@ -435,66 +421,6 @@ sequenceDiagram
     LINE-->>LIFF: User profile (lineUserId, displayName)
     Note over LIFF: DB への登録は友達追加時に完了済み
 ```
-
----
-
-## オンボーディングフロー
-
-新規ユーザーの初回アクセス時に好みをヒアリングし、バックグラウンドでレシピを収集して一括登録するフロー。
-
-### フロー概要
-
-```mermaid
-sequenceDiagram
-    participant User as User (LIFF)
-    participant Guard as OnboardingGuard
-    participant API as Next.js API
-    participant EF as onboarding-scrape (Edge Function)
-    participant DB as Supabase
-    participant LINE as LINE Platform
-
-    User->>Guard: 初回アクセス
-    Guard->>API: GET /api/auth/onboarding-status
-    API->>DB: users.onboarding_completed_at を確認
-    DB-->>API: null（未完了）
-    API-->>Guard: { completed: false }
-    Guard-->>User: /onboarding にリダイレクト
-
-    User->>API: POST /api/onboarding/start
-    Note over User,API: { lineUserId, preferences: { searchQuery, dislikedIngredients, maxCookingMinutes } }
-    API->>DB: INSERT onboarding_sessions (status=pending)
-    API->>EF: fetch /functions/v1/onboarding-scrape (fire & forget)
-    API-->>User: 202 { sessionId }
-
-    Note over EF: EdgeRuntime.waitUntil() でバックグラウンド処理
-
-    par DELISH KITCHEN
-        EF->>EF: 検索ページ fetch → URL 抽出 → 各レシピ解析
-    and クラシル
-        EF->>EF: 検索ページ fetch → URL 抽出 → JSON-LD 解析
-    end
-
-    EF->>EF: dislikedIngredients / maxCookingMinutes でフィルタリング
-    EF->>DB: UPDATE onboarding_sessions (candidates, status=completed)
-    EF->>LINE: push message (FlexMessage + 確認ボタン)
-    LINE-->>User: LINE 通知
-
-    User->>API: GET /api/onboarding/result (ポーリング)
-    API->>DB: onboarding_sessions を取得
-    DB-->>API: { status: completed, candidates: [...] }
-    API-->>User: レシピ候補一覧
-
-    User->>API: POST /api/onboarding/complete
-    Note over User,API: { lineUserId, selectedCandidates: [...] }
-    API->>DB: INSERT recipes (bulk)
-    API->>DB: UPDATE users SET onboarding_completed_at = now()
-    API->>DB: DELETE onboarding_sessions
-    API-->>User: ホームへリダイレクト
-```
-
-### リダイレクト制御
-
-`OnboardingGuard`（`src/components/providers/onboarding-guard.tsx`）が `(protected)` レイアウト配下で動作し、`onboarding_completed_at` が NULL のユーザーを `/onboarding` へ誘導する。`/onboarding` 配下のパスはチェックをスキップ。
 
 ---
 
