@@ -1,12 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-05-24 (Issue #78 User-Agent Bot識別対応 PR #91 マージ)
+2026-05-25 (Issue #80 #81 #82 プライバシーポリシー修正 PR #93 マージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#80 #81 #82 プライバシーポリシーを実態に合わせて修正（PR #93）**
+  - #81: 第1条から「プロフィール画像」を削除（DBに保存していない）
+  - #80: 第4条 Gemini API 説明に第三者サイトのタイトル送信を明記
+  - #82: 第4条に Supabase をデータ処理事業者として追記
 - [x] **#78 User-AgentをBot識別可能な値に変更（PR #91）**
   - `src/lib/scraper/html-fetcher.ts` の Chrome なりすまし User-Agent を `RecipeHub-Bot/1.0` に変更
   - `NEXT_PUBLIC_APP_URL` 環境変数参照、未設定時は GitHub リポジトリ URL をフォールバック
@@ -25,7 +29,7 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#79 オンボーディング削除、#78 User-Agent 修正、Vercel Analytics 等を本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#79 オンボーディング削除、#78 User-Agent 修正、#80〜#82 プライバシーポリシー修正、Vercel Analytics 等を本番反映）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -66,14 +70,15 @@
 - `.nvmrc` - Node.js バージョン指定（24）
 - `package.json` - 各パッケージバージョン
 - `.claude/skills/update-packages/SKILL.md` - パッケージ更新スキル（Phase 4 改善済み）
+- `src/components/features/legal/privacy-content.tsx` - プライバシーポリシーコンポーネント
 
 ## コミット履歴（直近）
 ```
+599e72c Merge pull request #93 from mktu/feature/fix-privacy-policy-issues-80-81-82
+0a304cc fix: プライバシーポリシーを実態に合わせて修正（Issue #80 #81 #82）
+b3c55f7 docs: update SESSION.md for session handoff
 c35a9fb Merge pull request #91 from mktu/feature/fix-user-agent-bot-identification
 31ed0bb fix: User-AgentをBot識別可能な値に変更（Issue #78）
-bf3182a docs: update SESSION.md for session handoff
-ec16e1e docs: add src/lib/api/ to ARCHITECTURE.md directory structure
-664122e docs: レシピ解析フロー図にユーザー確認ステップを追加
 ```
 
 ## GitHubリポジトリ
