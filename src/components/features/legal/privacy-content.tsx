@@ -12,7 +12,7 @@ export function PrivacyContent() {
       <Section title="1. 収集する情報">
         <p>本サービスでは、以下の情報を収集します。</p>
         <ul className="ml-4 list-disc space-y-1">
-          <li>LINEアカウント情報（ユーザーID、表示名、プロフィール画像）</li>
+          <li>LINEアカウント情報（ユーザーID、表示名）</li>
           <li>ユーザーが登録したレシピURL</li>
           <li>レシピに関連する食材タグ、メモ等の情報</li>
           <li>サービス利用に関するログ情報</li>
@@ -60,7 +60,11 @@ function ExternalServicesSection() {
         </li>
         <li>
           <strong>Google（Gemini API）</strong>:
-          レシピタイトルの検索最適化（埋め込みベクトル生成）のために利用
+          レシピタイトルの検索最適化（埋め込みベクトル生成）のために利用。送信されるデータにはユーザーが登録したレシピサイトのタイトル情報が含まれます
+        </li>
+        <li>
+          <strong>Supabase</strong>:
+          データベースホスティング・認証サービスとして利用。ユーザーデータおよびレシピデータを保管しています
         </li>
         <li>
           <strong>Vercel Analytics</strong>:
