@@ -2,7 +2,9 @@
 
 import { useCallback } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useRecipes } from '@/hooks/use-recipes'
 import { useRecipeFilters, InitialFilters } from '@/hooks/use-recipe-filters'
@@ -106,7 +108,12 @@ function Header({ sortOrder, onSortChange }: HeaderProps) {
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex max-w-2xl items-center justify-between p-4">
         <Image src="/logo.png" alt="RecipeHub" width={175} height={58} priority />
-        <SortSelect value={sortOrder} onChange={onSortChange} />
+        <div className="flex items-center gap-2">
+          <SortSelect value={sortOrder} onChange={onSortChange} />
+          <Link href="/settings" className="text-muted-foreground hover:text-foreground" aria-label="設定">
+            <Settings className="h-5 w-5" />
+          </Link>
+        </div>
       </div>
     </header>
   )
