@@ -26,6 +26,12 @@ function isHelpKeyword(text: string): boolean {
   return keywords.some((k) => text.trim().toLowerCase() === k.toLowerCase())
 }
 
+/** 退会・データ削除キーワードかどうかを判定 */
+function isWithdrawalKeyword(text: string): boolean {
+  const keywords = ['退会', 'アカウント削除', 'データ削除', '退会したい', 'アカウントを削除']
+  return keywords.includes(text.trim())
+}
+
 /** テストキーワードかどうかを判定（開発環境のみ有効） */
 function isTestKeyword(text: string): boolean {
   if (process.env.NODE_ENV !== 'development') return false
@@ -55,6 +61,17 @@ export async function ensureUser(lineUserId: string): Promise<void> {
   }
 }
 
+/** 退会・データ削除案内の応答 */
+async function replyWithdrawal(replyToken: string): Promise<void> {
+  await client.replyMessage({
+    replyToken,
+    messages: [{
+      type: 'text',
+      text: `アカウント削除について\n\nアカウントとすべてのレシピデータを削除するには、アプリの「設定」画面からアカウント削除を実行してください。\n\n⚠️ 削除後はデータを復元できません。\n\n※ このボットをブロックした場合も、データは自動的に削除されます。`,
+    }],
+  })
+}
+
 /** ヘルプメッセージの応答 */
 async function replyHelp(replyToken: string): Promise<void> {
   const helpText = `📖 RecipeHub の使い方
@@ -78,6 +95,7 @@ type KeywordEntry = [(t: string) => boolean, () => Promise<void>]
 function buildKeywordHandlers(replyToken: string, userId: string): KeywordEntry[] {
   return [
     [isHelpKeyword, () => replyHelp(replyToken)],
+    [isWithdrawalKeyword, () => replyWithdrawal(replyToken)],
     [isSearchKeyword, () => handleSearchCategoryPrompt(client, replyToken)],
     [isOkiniiriKeyword, () => handleFavorites(client, replyToken)],
     [isRecentlyAddedKeyword, () => handleRecentlyAdded(client, replyToken, userId)],
@@ -97,6 +115,22 @@ async function handleKeyword(text: string, replyToken: string, userId: string): 
   if (!match) return false
   await match[1]()
   return true
+}
+
+/** ブロック・友達削除イベントを処理（ユーザーデータを削除） */
+async function handleUnfollowEvent(event: webhook.Event): Promise<void> {
+  if (event.type !== 'unfollow' || !event.source?.userId) return
+  const { userId } = event.source
+
+  const supabase = createServerClient()
+  const { error } = await supabase
+    .from('users')
+    .delete()
+    .eq('line_user_id', userId)
+
+  if (error) {
+    console.error('[LINE Webhook] Failed to delete user on unfollow:', error)
+  }
 }
 
 /** 友達追加・ブロック解除イベントを処理 */
@@ -152,6 +186,7 @@ export async function POST(request: NextRequest) {
   const body = JSON.parse(bodyText) as { events: webhook.Event[] }
   await Promise.all(body.events.map((event) => Promise.all([
     handleFollowEvent(event),
+    handleUnfollowEvent(event),
     handleMessageEvent(event),
   ])))
 
