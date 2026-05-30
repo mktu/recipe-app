@@ -10,10 +10,14 @@ interface DeleteUserRequest {
 async function deauthorize(accessToken: string): Promise<void> {
   const res = await fetch('https://api.line.me/user/v1/deauthorize', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
   })
   if (!res.ok) {
-    console.error('[delete-user] deauthorize failed:', res.status, await res.text())
+    const body = await res.text()
+    console.error('[delete-user] deauthorize failed:', res.status, body, 'token length:', accessToken.length)
     throw new Error('deauthorize に失敗しました')
   }
 }
