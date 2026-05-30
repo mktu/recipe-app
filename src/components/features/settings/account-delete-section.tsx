@@ -12,20 +12,25 @@ import {
 import { useAuth } from '@/lib/auth'
 
 function useAccountDelete() {
-  const { user, logout } = useAuth()
+  const { user, logout, getAccessToken } = useAuth()
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleDelete() {
     if (!user?.lineUserId) return
+    const accessToken = getAccessToken()
+    if (!accessToken) {
+      setError('認証情報が取得できませんでした。再ログインしてからお試しください。')
+      return
+    }
     setIsDeleting(true)
     setError(null)
     try {
       const res = await fetch('/api/auth/delete-user', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lineUserId: user.lineUserId }),
+        body: JSON.stringify({ lineUserId: user.lineUserId, accessToken }),
       })
       if (!res.ok) throw new Error('削除に失敗しました')
       await logout()

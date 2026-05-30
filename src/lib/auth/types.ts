@@ -27,6 +27,8 @@ export interface AuthContextValue {
   logout: () => Promise<void>
   /** 再ログイン処理（トークン無効時用） */
   relogin: () => Promise<void>
+  /** LINE アクセストークンを取得（deauthorize 用） */
+  getAccessToken: () => string | null
 }
 
 /** 認証プロバイダーのインターフェース */
@@ -41,4 +43,6 @@ export interface AuthProviderAdapter {
   logout: () => Promise<void>
   /** 再ログイン（トークン無効時用） */
   relogin: () => Promise<void>
+  /** LINE アクセストークンを取得（deauthorize 用） */
+  getAccessToken: () => string | null
 }

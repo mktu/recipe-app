@@ -77,6 +77,8 @@ export function createLiffProvider(id: string): AuthProviderAdapter {
       clearRetryCount()
       liff.login()
     },
+
+    getAccessToken: () => liff?.getAccessToken() ?? null,
   }
 
   return adapter
