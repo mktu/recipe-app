@@ -14,6 +14,7 @@ async function deauthorize(accessToken: string): Promise<void> {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
+    body: '{}',
   })
   if (!res.ok) {
     const body = await res.text()
