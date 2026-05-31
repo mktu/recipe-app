@@ -8,10 +8,10 @@ interface DeleteUserRequest {
 }
 
 async function getStatelessChannelAccessToken(): Promise<string> {
-  const clientId = process.env.LINE_LOGIN_CHANNEL_ID
+  const clientId = process.env.NEXT_PUBLIC_LIFF_ID?.split('-')[0]
   const clientSecret = process.env.LINE_LOGIN_CHANNEL_SECRET
   if (!clientId || !clientSecret) {
-    throw new Error('LINE_LOGIN_CHANNEL_ID または LINE_LOGIN_CHANNEL_SECRET が未設定です')
+    throw new Error('NEXT_PUBLIC_LIFF_ID または LINE_LOGIN_CHANNEL_SECRET が未設定です')
   }
 
   const res = await fetch('https://api.line.me/oauth2/v3/token', {
