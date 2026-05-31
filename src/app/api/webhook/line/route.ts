@@ -67,7 +67,7 @@ async function replyWithdrawal(replyToken: string): Promise<void> {
     replyToken,
     messages: [{
       type: 'text',
-      text: `アカウント削除について\n\nアカウントとすべてのレシピデータを削除するには、アプリの「設定」画面からアカウント削除を実行してください。\n\n⚠️ 削除後はデータを復元できません。\n\n※ このボットをブロックした場合も、データは自動的に削除されます。`,
+      text: `アカウント削除について\n\nアカウントとすべてのレシピデータを削除するには、アプリの「設定」画面からアカウント削除を実行してください。\n\n⚠️ 削除後はデータを復元できません。`,
     }],
   })
 }
@@ -115,22 +115,6 @@ async function handleKeyword(text: string, replyToken: string, userId: string): 
   if (!match) return false
   await match[1]()
   return true
-}
-
-/** ブロック・友達削除イベントを処理（ユーザーデータを削除） */
-async function handleUnfollowEvent(event: webhook.Event): Promise<void> {
-  if (event.type !== 'unfollow' || !event.source?.userId) return
-  const { userId } = event.source
-
-  const supabase = createServerClient()
-  const { error } = await supabase
-    .from('users')
-    .delete()
-    .eq('line_user_id', userId)
-
-  if (error) {
-    console.error('[LINE Webhook] Failed to delete user on unfollow:', error)
-  }
 }
 
 /** 友達追加・ブロック解除イベントを処理 */
@@ -186,7 +170,6 @@ export async function POST(request: NextRequest) {
   const body = JSON.parse(bodyText) as { events: webhook.Event[] }
   await Promise.all(body.events.map((event) => Promise.all([
     handleFollowEvent(event),
-    handleUnfollowEvent(event),
     handleMessageEvent(event),
   ])))
 
