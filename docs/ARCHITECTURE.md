@@ -223,6 +223,7 @@ graph TB
 | エンドポイント | メソッド | 説明 |
 |--------------|---------|------|
 | `/api/auth/ensure-user` | POST | ユーザー確保（LINE UserID → DB登録） |
+| `/api/auth/delete-user` | DELETE | アカウント削除（LINE deauthorize + DB削除） |
 | `/api/recipes` | POST | レシピ作成 |
 | `/api/recipes/[id]` | GET/PATCH/DELETE | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |

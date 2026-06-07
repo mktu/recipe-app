@@ -76,6 +76,16 @@ function ServiceProvisionSection() {
           著作権者の権利を侵害するものではありません。
         </p>
       </Section>
+
+      <Section title="第6条（外部サービスの利用規約の遵守）">
+        <p>
+          本サービスが提供するレシピサイトの解析機能は、
+          対象サイトの利用規約に従った範囲でのみ提供されます。
+          ユーザーは、解析対象となるサイトの利用規約を遵守した上で本サービスをご利用ください。
+          対象サイトの利用規約により解析が禁止されているコンテンツについては、
+          本サービスは解析を行いません。
+        </p>
+      </Section>
     </>
   )
 }
@@ -83,7 +93,7 @@ function ServiceProvisionSection() {
 function DisclaimerSection() {
   return (
     <>
-      <Section title="第6条（免責事項）">
+      <Section title="第7条（免責事項）">
         <ul className="ml-4 list-disc space-y-1">
           <li>
             運営者は、本サービスに事実上または法律上の瑕疵（安全性、信頼性、正確性、
@@ -102,7 +112,7 @@ function DisclaimerSection() {
         </ul>
       </Section>
 
-      <Section title="第7条（サービス内容の変更等）">
+      <Section title="第8条（サービス内容の変更等）">
         <p>
           運営者は、ユーザーに通知することなく、本サービスの内容を変更し、
           または本サービスの提供を中止することができるものとし、
@@ -110,7 +120,7 @@ function DisclaimerSection() {
         </p>
       </Section>
 
-      <Section title="第8条（利用規約の変更）">
+      <Section title="第9条（利用規約の変更）">
         <p>
           運営者は、必要と判断した場合には、ユーザーに通知することなく
           いつでも本規約を変更することができるものとします。
@@ -118,7 +128,7 @@ function DisclaimerSection() {
         </p>
       </Section>
 
-      <Section title="第9条（準拠法・裁判管轄）">
+      <Section title="第10条（準拠法・裁判管轄）">
         <p>
           本規約の解釈にあたっては、日本法を準拠法とします。
           本サービスに関して紛争が生じた場合には、
