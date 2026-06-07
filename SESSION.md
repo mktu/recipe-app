@@ -1,12 +1,17 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-03 (Issue #86 アカウント削除機能 develop → main マージ完了)
+2026-06-07 (Issue #97 プライバシーポリシー・利用規約更新 develop マージ完了)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#97 プライバシーポリシー・利用規約を実装に合わせて更新（PR #98→develop反映済み）**
+  - 第5条: アカウント削除案内を「設定画面から削除できます」に変更
+  - 第4条: Gemini API の用途に食材名エイリアス自動生成を追記
+  - 第4条: Gemini API 送信データはGoogleのモデル学習に使用されない旨を追記
+  - 利用規約に外部サービスの利用規約遵守条項（第6条）を新設、以降の条番号を繰り上げ
 - [x] **#86 ユーザーが自己でアカウント削除できる機能を実装（PR #95→develop反映済み）**
   - `DELETE /api/auth/delete-user` エンドポイント追加
   - LINE deauthorize API 呼び出し（チャンネルアクセストークン + userAccessToken）
@@ -24,7 +29,7 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
-- [ ] **develop → main PR を作成して本番リリース**（#86 アカウント削除機能を本番反映）
+- [ ] **develop → main PR を作成して本番リリース**（#86 アカウント削除機能 + #97 法的文書更新を本番反映）
   - Vercel 本番環境に `LINE_LOGIN_CHANNEL_SECRET` の設定が必要
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
@@ -57,6 +62,8 @@
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成
 - `docs/DATABASE_DESIGN.md` - DB設計
+- `src/components/features/legal/privacy-content.tsx` - プライバシーポリシー
+- `src/components/features/legal/terms-content.tsx` - 利用規約
 - `src/app/api/auth/delete-user/route.ts` - アカウント削除API
 - `src/components/features/settings/account-delete-section.tsx` - 削除UI
 - `src/lib/auth/types.ts` - AuthProviderAdapter（getAccessToken追加済み）
@@ -64,11 +71,11 @@
 
 ## コミット履歴（直近）
 ```
+e2ee3e8 Merge pull request #98 from mktu/feature/docs-legal-update-97
+c3d50ef docs: プライバシーポリシー・利用規約を実装に合わせて更新 (Issue #97)
+6d40df8 docs: update SESSION.md for session handoff
 13a5ff0 fix: LINE Login チャンネル ID を NEXT_PUBLIC_LIFF_ID から取得
 50cb8ef fix: deauthorize API の呼び出し方を公式仕様に修正
-67742c6 fix: deauthorize リクエストに空ボディを追加
-98a4985 fix: deauthorize リクエストに Content-Type ヘッダーを追加
-2cc4bc5 feat: 退会時に LINE deauthorize API を呼び出す（Issue #86）
 ```
 
 ## GitHubリポジトリ
