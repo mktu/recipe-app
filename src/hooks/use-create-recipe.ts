@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { CreateRecipeInput } from '@/types/recipe'
 
 interface CreateRecipeResult {
@@ -17,6 +18,7 @@ interface UseCreateRecipeReturn {
  * レシピを新規作成するhook
  */
 export function useCreateRecipe(): UseCreateRecipeReturn {
+  const authedFetch = useAuthedFetch()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -26,7 +28,7 @@ export function useCreateRecipe(): UseCreateRecipeReturn {
       setError(null)
 
       try {
-        const response = await fetch('/api/recipes', {
+        const response = await authedFetch('/api/recipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(input),
@@ -47,7 +49,7 @@ export function useCreateRecipe(): UseCreateRecipeReturn {
         setIsLoading(false)
       }
     },
-    []
+    [authedFetch]
   )
 
   return { createRecipe, isLoading, error }

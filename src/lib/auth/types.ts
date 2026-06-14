@@ -29,6 +29,8 @@ export interface AuthContextValue {
   relogin: () => Promise<void>
   /** LINE アクセストークンを取得（deauthorize 用） */
   getAccessToken: () => string | null
+  /** LINE ID トークンを取得（API 認証用） */
+  getIdToken: () => string | null
 }
 
 /** 認証プロバイダーのインターフェース */
@@ -45,4 +47,6 @@ export interface AuthProviderAdapter {
   relogin: () => Promise<void>
   /** LINE アクセストークンを取得（deauthorize 用） */
   getAccessToken: () => string | null
+  /** LINE ID トークンを取得（API 認証用） */
+  getIdToken: () => string | null
 }

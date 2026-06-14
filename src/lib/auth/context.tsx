@@ -69,6 +69,8 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
 
   const getAccessToken = useCallback(() => adapter.getAccessToken(), [adapter])
 
+  const getIdToken = useCallback(() => adapter.getIdToken(), [adapter])
+
   const value: AuthContextValue = {
     user,
     status: isLoading ? 'loading' : user ? 'authenticated' : 'unauthenticated',
@@ -78,6 +80,7 @@ export function AuthProvider({ children, adapter }: AuthProviderProps) {
     logout,
     relogin,
     getAccessToken,
+    getIdToken,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

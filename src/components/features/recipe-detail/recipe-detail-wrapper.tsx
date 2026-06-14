@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { RecipeDetail } from '@/types/recipe'
 import { RecipeDetailPage } from './recipe-detail-page'
 
@@ -11,6 +12,7 @@ interface RecipeDetailWrapperProps {
 
 export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth()
+  const authedFetch = useAuthedFetch()
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -20,9 +22,7 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/recipes/${recipeId}`, {
-        headers: { 'x-line-user-id': user.lineUserId },
-      })
+      const res = await authedFetch(`/api/recipes/${recipeId}`)
       if (!res.ok) {
         setError(res.status === 404 ? 'レシピが見つかりません' : 'レシピの取得に失敗しました')
         return
@@ -33,7 +33,7 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [recipeId, user])
+  }, [recipeId, user, authedFetch])
 
   useEffect(() => {
     if (authLoading || !user) return
