@@ -102,7 +102,7 @@ recipe-app/
 │   │   ├── embedding/        # ベクトル埋め込み
 │   │   ├── line/             # LINE Bot・Flex Message
 │   │   ├── recipe/           # レシピ処理ロジック
-│   │   └── scraper/          # JSON-LD・__NEXT_DATA__ スクレイパー
+│   │   └── scraper/          # JSON-LD・__NEXT_DATA__・OGP スクレイパー
 │   └── types/                # 型定義
 ├── supabase/
 │   ├── functions/            # Edge Functions (Deno)
@@ -228,7 +228,7 @@ graph TB
 | `/api/recipes` | POST | IDトークン | レシピ作成 |
 | `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | IDトークン | 一覧取得（Edge Function経由） |
-| `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__） |
+| `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__ / OGP） |
 | `/api/track/recipe/[id]` | GET/POST | POSTのみIDトークン | 閲覧記録（GET: LINE用リダイレクト・認証不要、POST: LIFF用） |
 | `/api/webhook/line` | POST | LINE署名検証 | LINE Webhook（`validateSignature`） |
 
@@ -467,9 +467,13 @@ graph TB
     Strategy1 -->|Fail| Strategy2{"__NEXT_DATA__ extract"}
 
     Strategy2 -->|Success| Result
-    Strategy2 -->|Fail| Empty["Empty Result（手動入力）"]
+    Strategy2 -->|Fail| Strategy3{"OGP extract（title/image/site_name）"}
+
+    Strategy3 -->|Success| OgpResult["Parse Result（食材なし・手動入力）"]
+    Strategy3 -->|Fail| Empty["Empty Result（手動入力）"]
 
     Result --> Match["Ingredient Matching"]
+    OgpResult --> Confirm
     Empty --> Confirm
     Match --> Confirm["ユーザー確認\n(/recipes/add/confirm)"]
     Confirm --> Save["Save to DB\n(POST /api/recipes)"]
