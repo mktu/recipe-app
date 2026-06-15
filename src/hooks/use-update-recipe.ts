@@ -2,10 +2,12 @@
 
 import { useState, useCallback } from 'react'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { UpdateRecipeInput } from '@/types/recipe'
 
 export function useUpdateRecipe(recipeId: string) {
   const { user } = useAuth()
+  const authedFetch = useAuthedFetch()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -19,12 +21,9 @@ export function useUpdateRecipe(recipeId: string) {
       setError(null)
 
       try {
-        const res = await fetch(`/api/recipes/${recipeId}`, {
+        const res = await authedFetch(`/api/recipes/${recipeId}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-line-user-id': user.lineUserId,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(input),
         })
 
@@ -41,7 +40,7 @@ export function useUpdateRecipe(recipeId: string) {
         setIsLoading(false)
       }
     },
-    [recipeId, user]
+    [recipeId, user, authedFetch]
   )
 
   return { updateRecipe, isLoading, error }

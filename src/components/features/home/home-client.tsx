@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import { useRecipes } from '@/hooks/use-recipes'
 import { useRecipeFilters, InitialFilters } from '@/hooks/use-recipe-filters'
 export type { InitialFilters }
@@ -23,10 +24,11 @@ interface HomeClientProps {
 
 function useRecipeHandlers() {
   const router = useRouter()
+  const authedFetch = useAuthedFetch()
   const handleRecipeClick = useCallback((id: string) => {
-    fetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
+    authedFetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
     router.push(`/recipes/${id}`)
-  }, [router])
+  }, [router, authedFetch])
   const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
   return { handleRecipeClick, handleAddRecipe }
 }

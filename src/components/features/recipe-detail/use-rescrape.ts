@@ -2,10 +2,12 @@
 
 import { useState, useCallback } from 'react'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { ParsedRecipe } from '@/types/recipe'
 
 export function useRescrape() {
   const { user } = useAuth()
+  const authedFetch = useAuthedFetch()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [result, setResult] = useState<ParsedRecipe | null>(null)
@@ -17,7 +19,7 @@ export function useRescrape() {
     setResult(null)
 
     try {
-      const res = await fetch('/api/recipes/parse', {
+      const res = await authedFetch('/api/recipes/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, lineUserId: user.lineUserId }),
@@ -32,7 +34,7 @@ export function useRescrape() {
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, authedFetch])
 
   return { rescrape, isLoading, error, result }
 }

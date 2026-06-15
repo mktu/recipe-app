@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiServerError } from '@/lib/api/error-response'
+import { requireLineUser } from '@/lib/api/auth-guard'
 import type { SortOrder } from '@/types/recipe'
 
 interface ListRecipesRequest {
@@ -48,12 +49,12 @@ async function fetchViaEdgeFunction(params: ListRecipesRequest) {
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
-  const body = (await request.json()) as ListRecipesRequest
-  const { lineUserId, searchQuery, ingredientIds = [], sourceNames = [], sortOrder = 'newest' } = body
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
-  if (!lineUserId) {
-    return NextResponse.json({ error: 'lineUserId は必須です' }, { status: 400 })
-  }
+  const body = (await request.json()) as ListRecipesRequest
+  const { searchQuery, ingredientIds = [], sourceNames = [], sortOrder = 'newest' } = body
 
   try {
     const result = await fetchViaEdgeFunction({

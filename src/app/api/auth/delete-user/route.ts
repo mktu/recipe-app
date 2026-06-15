@@ -1,9 +1,9 @@
 import { createServerClient } from '@/lib/db/client'
 import { apiServerError } from '@/lib/api/error-response'
+import { requireLineUser } from '@/lib/api/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface DeleteUserRequest {
-  lineUserId: string
   accessToken: string
 }
 
@@ -55,11 +55,15 @@ async function deauthorize(channelAccessToken: string, userAccessToken: string):
  * users テーブルの ON DELETE CASCADE により recipes 等も自動削除される
  */
 export async function DELETE(request: NextRequest) {
-  const body = (await request.json()) as DeleteUserRequest
-  const { lineUserId, accessToken } = body
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
-  if (!lineUserId || !accessToken) {
-    return NextResponse.json({ error: 'lineUserId と accessToken は必須です' }, { status: 400 })
+  const body = (await request.json()) as DeleteUserRequest
+  const { accessToken } = body
+
+  if (!accessToken) {
+    return NextResponse.json({ error: 'accessToken は必須です' }, { status: 400 })
   }
 
   try {

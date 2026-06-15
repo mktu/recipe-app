@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { createServerClient } from '@/lib/db/client'
 import { recordRecipeView } from '@/lib/db/queries/recipes'
+import { requireLineUser } from '@/lib/api/auth-guard'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -31,7 +32,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  * POST /api/track/recipe/[id]
  * LIFF用: 閲覧を記録して 204 を返す
  */
-export async function POST(_request: NextRequest, context: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await context.params
 
   await recordRecipeView(id)

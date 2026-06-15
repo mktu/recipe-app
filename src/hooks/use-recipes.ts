@@ -2,7 +2,10 @@
 
 import useSWR from 'swr'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { SortOrder, RecipeWithIngredients } from '@/types/recipe'
+
+type AuthedFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
 interface UseRecipesOptions {
   searchQuery?: string
@@ -35,8 +38,8 @@ interface FetchResult {
 
 const EMPTY_RESULT: FetchResult = { data: [], availableSourceNames: [] }
 
-async function fetchRecipesApi(params: FetchParams): Promise<FetchResult> {
-  const response = await fetch('/api/recipes/list', {
+async function fetchRecipesApi(params: FetchParams, authedFetch: AuthedFetch): Promise<FetchResult> {
+  const response = await authedFetch('/api/recipes/list', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -58,6 +61,7 @@ function buildSwrKey(
 export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
   const { searchQuery = '', ingredientIds = [], sourceNames = [], sortOrder = 'newest' } = options
   const { user } = useAuth()
+  const authedFetch = useAuthedFetch()
 
   const swrKey = user ? buildSwrKey(user.lineUserId, searchQuery, ingredientIds, sourceNames, sortOrder) : null
 
@@ -69,7 +73,7 @@ export function useRecipes(options: UseRecipesOptions = {}): UseRecipesReturn {
       ingredientIds,
       sourceNames,
       sortOrder,
-    }),
+    }, authedFetch),
     {
       revalidateOnFocus: false,
       dedupingInterval: 300,
