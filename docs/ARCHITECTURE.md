@@ -224,7 +224,6 @@ graph TB
 
 | エンドポイント | メソッド | 認証 | 説明 |
 |--------------|---------|------|------|
-| `/api/auth/ensure-user` | POST | IDトークン | ユーザー確保（LINE UserID → DB登録） |
 | `/api/auth/delete-user` | DELETE | IDトークン | アカウント削除（LINE deauthorize + DB削除） |
 | `/api/recipes` | POST | IDトークン | レシピ作成 |
 | `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
@@ -384,7 +383,7 @@ graph TB
 
 ### ユーザー登録フロー
 
-ユーザーは **LINE Bot を友達追加したタイミング**で登録される。
+ユーザーは **LINE Bot を友達追加したタイミング**で登録される（下図）。加えて、Webhook 側の `ensureUser()` は **URL 送信時・検索メッセージ受信時**にも呼ばれるため、友達追加イベントを取りこぼした場合でも初回操作時に遅延登録される（`src/app/api/webhook/line/route.ts`、`src/lib/line/url-handler.ts`、`src/lib/line/search-handler.ts`）。
 
 ```mermaid
 sequenceDiagram
@@ -401,6 +400,8 @@ sequenceDiagram
     Webhook->>LINE: pushMessage (ウェルカムメッセージ)
     LINE-->>User: ウェルカムメッセージ
 ```
+
+> follow イベント以外（URL 送信・検索）での登録は `ensureUser()` による冪等な確保処理（存在すれば何もしない）。ウェルカムメッセージは follow イベント時のみ送信される。
 
 ### LINE LIFF 認証フロー
 
