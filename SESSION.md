@@ -1,12 +1,19 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-15 (#101 IDOR 修正を develop マージ完了、ARCHITECTURE.md 更新、フォローアップ #106/#110 起票)
+2026-06-15 (/doc-check-logic で ARCHITECTURE.md 認証フローを検証・整合化、未使用 ensure-user API を削除して develop に直接プッシュ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **/doc-check-logic でアーキテクチャ整合性を検証し認証フローを修正（commit 896f853→develop直接push済み）**
+  - 検証範囲: 認証 / レシピ解析 / 食材名寄せの3セクション（git diff main...HEAD から自動推論）
+  - レシピ解析フロー: ARCHITECTURE.md と一致（JSON-LD→__NEXT_DATA__→空結果）。※CLAUDE.md L17 の「Jina Reader」記述のみ実装と乖離（実装は __NEXT_DATA__）→ 未対応
+  - 食材名寄せフロー: 完全一致（マッチ順序・インメモリ検索・auto-alias 202非同期・max100ループ）
+  - 認証フロー差異①修正: ユーザー登録は follow だけでなく URL送信・検索時にも `ensureUser()` で遅延登録される旨を追記
+  - 認証フロー差異②修正: `/api/auth/ensure-user` route を削除。a535a51（認証レイヤー導入）で作られたが**導入時から一度もクライアントから呼ばれていないデッドコード**と git 履歴で確認。実登録は Webhook 側 `ensureUser()` が担当
+  - lint / build パス確認済み
 - [x] **#101 アクセス制御の修正（IDOR）を ID トークン検証で実装（PR #107→develop反映済み）**
   - 課題: API が `lineUserId` を body/ヘッダから無検証で受け取り、Service Role キーで RLS をバイパス（他人のレシピを読み書きできる IDOR リスク）
   - 方針: LINE **ID トークン**（LIFF `getIDToken()`）をサーバーで検証し、検証済み userId のみ使用
@@ -48,6 +55,7 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
+- [ ] **CLAUDE.md L17 の Scraper 記述を実装に合わせて修正**（「Jina Reader API（フォールバック）」→ 実装は `__NEXT_DATA__` 抽出。/doc-check-logic で発見、ARCHITECTURE.md 側は整合済み）
 - [ ] **#102 Gemini API プランの確認**
   - 使用キーが課金プラン有効か確認 → 無料枠ならプライバシーポリシー記述を修正 or 有料化
 - [ ] **develop → main PR を作成して本番リリース**（#86 アカウント削除 + #97/#100 法的文書更新を本番反映）
@@ -101,11 +109,11 @@
 
 ## コミット履歴（直近）
 ```
+896f853 docs: 認証フローの記述を実装と整合させ、未使用の ensure-user API を削除
+c489abd docs: update SESSION.md and ARCHITECTURE.md for session handoff
 2835285 Merge pull request #107 from mktu/feature/fix-idor-line-token-101
 f9e2be5 fix: API の lineUserId を ID トークンで検証し IDOR を防ぐ (Issue #101)
 7084e73 docs: update SESSION.md for session handoff
-b37e68d Merge pull request #103 from mktu/feature/fix-terms-scraping-clause-100
-46cfcc6 docs: 利用規約 第6条を解析の実態に合わせて修正 (Issue #100)
 ```
 
 ## GitHubリポジトリ
