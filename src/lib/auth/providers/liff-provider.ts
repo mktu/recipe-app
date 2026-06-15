@@ -79,6 +79,8 @@ export function createLiffProvider(id: string): AuthProviderAdapter {
     },
 
     getAccessToken: () => liff?.getAccessToken() ?? null,
+
+    getIdToken: () => liff?.getIDToken() ?? null,
   }
 
   return adapter

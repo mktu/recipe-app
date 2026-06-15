@@ -26,5 +26,9 @@ export function createDevProvider(): AuthProviderAdapter {
     getAccessToken(): null {
       return null
     },
+
+    getIdToken(): null {
+      return null
+    },
   }
 }

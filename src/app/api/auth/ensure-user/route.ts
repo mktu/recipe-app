@@ -1,22 +1,26 @@
 import { createServerClient } from '@/lib/db/client'
 import { apiServerError } from '@/lib/api/error-response'
+import { requireLineUser } from '@/lib/api/auth-guard'
 import type { Tables } from '@/types/database'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface EnsureUserRequest {
-  lineUserId: string
   displayName: string
 }
 
 type User = Tables<'users'>
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as EnsureUserRequest
-  const { lineUserId, displayName } = body
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
-  if (!lineUserId || !displayName) {
+  const body = (await request.json()) as EnsureUserRequest
+  const { displayName } = body
+
+  if (!displayName) {
     return NextResponse.json(
-      { error: 'lineUserId と displayName は必須です' },
+      { error: 'displayName は必須です' },
       { status: 400 }
     )
   }

@@ -10,9 +10,11 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useAuth } from '@/lib/auth'
+import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 
 function useAccountDelete() {
   const { user, logout, getAccessToken } = useAuth()
+  const authedFetch = useAuthedFetch()
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +29,7 @@ function useAccountDelete() {
     setIsDeleting(true)
     setError(null)
     try {
-      const res = await fetch('/api/auth/delete-user', {
+      const res = await authedFetch('/api/auth/delete-user', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lineUserId: user.lineUserId, accessToken }),

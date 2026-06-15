@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchRecipeById, deleteRecipe, updateRecipe } from '@/lib/db/queries/recipes'
 import { apiServerError } from '@/lib/api/error-response'
+import { requireLineUser } from '@/lib/api/auth-guard'
 import type { UpdateRecipeInput } from '@/types/recipe'
 
 interface RouteContext {
@@ -13,11 +14,9 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
-  const lineUserId = request.headers.get('x-line-user-id')
-
-  if (!lineUserId) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  }
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
   const { data, error } = await fetchRecipeById(lineUserId, id)
 
@@ -38,11 +37,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
-  const lineUserId = request.headers.get('x-line-user-id')
-
-  if (!lineUserId) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  }
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
   const { error } = await deleteRecipe(lineUserId, id)
 
@@ -59,11 +56,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
-  const lineUserId = request.headers.get('x-line-user-id')
-
-  if (!lineUserId) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  }
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
   const body = await request.json()
 

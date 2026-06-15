@@ -1,10 +1,10 @@
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { createServerClient } from '@/lib/db/client'
+import { requireLineUser } from '@/lib/api/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface ParseRecipeRequest {
   url: string
-  lineUserId: string
 }
 
 /**
@@ -12,12 +12,12 @@ interface ParseRecipeRequest {
  * URLからレシピ情報を解析する
  */
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as ParseRecipeRequest
-  const { url, lineUserId } = body
+  const auth = await requireLineUser(request)
+  if (auth instanceof NextResponse) return auth
+  const lineUserId = auth
 
-  if (!lineUserId) {
-    return NextResponse.json({ error: 'lineUserId は必須です' }, { status: 400 })
-  }
+  const body = (await request.json()) as ParseRecipeRequest
+  const { url } = body
 
   if (!url) {
     return NextResponse.json({ error: 'URL は必須です' }, { status: 400 })
