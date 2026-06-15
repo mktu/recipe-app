@@ -220,16 +220,19 @@ graph TB
 
 ## API構成
 
-| エンドポイント | メソッド | 説明 |
-|--------------|---------|------|
-| `/api/auth/ensure-user` | POST | ユーザー確保（LINE UserID → DB登録） |
-| `/api/auth/delete-user` | DELETE | アカウント削除（LINE deauthorize + DB削除） |
-| `/api/recipes` | POST | レシピ作成 |
-| `/api/recipes/[id]` | GET/PATCH/DELETE | レシピ詳細取得・更新（メモ）・削除 |
-| `/api/recipes/list` | POST | 一覧取得（Edge Function経由） |
-| `/api/recipes/parse` | POST | URL解析（JSON-LD / __NEXT_DATA__） |
-| `/api/track/recipe/[id]` | GET/POST | 閲覧記録（GET: LINE用リダイレクト、POST: LIFF用） |
-| `/api/webhook/line` | POST | LINE Webhook |
+クライアント（LIFF）から呼ぶ API は **LINE ID トークン検証**で保護する。クライアントは `Authorization: Bearer <idToken>` を付与し（`useAuthedFetch`）、サーバーは `requireLineUser()`（`src/lib/api/auth-guard.ts`）で検証して **検証済み userId のみ**を使用する。body / ヘッダの自己申告 `lineUserId` は信用しない。詳細は [認証フロー](#認証フロー) を参照。
+
+| エンドポイント | メソッド | 認証 | 説明 |
+|--------------|---------|------|------|
+| `/api/auth/delete-user` | DELETE | IDトークン | アカウント削除（LINE deauthorize + DB削除） |
+| `/api/recipes` | POST | IDトークン | レシピ作成 |
+| `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
+| `/api/recipes/list` | POST | IDトークン | 一覧取得（Edge Function経由） |
+| `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__） |
+| `/api/track/recipe/[id]` | GET/POST | POSTのみIDトークン | 閲覧記録（GET: LINE用リダイレクト・認証不要、POST: LIFF用） |
+| `/api/webhook/line` | POST | LINE署名検証 | LINE Webhook（`validateSignature`） |
+
+> dev モード（`NEXT_PUBLIC_LIFF_ID` 空）では ID トークン検証をバイパスし `dev-user-001` として扱う（`src/lib/auth/verify-line-token.ts`）。
 
 ---
 
@@ -380,7 +383,7 @@ graph TB
 
 ### ユーザー登録フロー
 
-ユーザーは **LINE Bot を友達追加したタイミング**で登録される。
+ユーザーは **LINE Bot を友達追加したタイミング**で登録される（下図）。加えて、Webhook 側の `ensureUser()` は **URL 送信時・検索メッセージ受信時**にも呼ばれるため、友達追加イベントを取りこぼした場合でも初回操作時に遅延登録される（`src/app/api/webhook/line/route.ts`、`src/lib/line/url-handler.ts`、`src/lib/line/search-handler.ts`）。
 
 ```mermaid
 sequenceDiagram
@@ -397,6 +400,8 @@ sequenceDiagram
     Webhook->>LINE: pushMessage (ウェルカムメッセージ)
     LINE-->>User: ウェルカムメッセージ
 ```
+
+> follow イベント以外（URL 送信・検索）での登録は `ensureUser()` による冪等な確保処理（存在すれば何もしない）。ウェルカムメッセージは follow イベント時のみ送信される。
 
 ### LINE LIFF 認証フロー
 
@@ -423,6 +428,29 @@ sequenceDiagram
     LINE-->>LIFF: User profile (lineUserId, displayName)
     Note over LIFF: DB への登録は友達追加時に完了済み
 ```
+
+### API 認証（ID トークン検証）
+
+LIFF クライアントから API を呼ぶ際は、`liff.getIDToken()` の ID トークンを `Authorization: Bearer` ヘッダで送信し、サーバー側で検証する。これにより、自己申告の `lineUserId` を信用せず、なりすまし（IDOR）を防ぐ。
+
+```mermaid
+sequenceDiagram
+    participant LIFF as LIFF App
+    participant API as Next.js API Route
+    participant LINE as LINE Platform
+    participant DB as Supabase
+
+    LIFF->>API: fetch(Authorization: Bearer <idToken>)
+    Note over API: requireLineUser()
+    API->>LINE: POST /oauth2/v2.1/verify (id_token, client_id)
+    LINE-->>API: { sub: lineUserId, aud }
+    Note over API: aud 検証 → 検証済み userId 確定
+    API->>DB: 検証済み userId でスコープしたクエリ
+    DB-->>API: data
+    API-->>LIFF: response
+```
+
+> サーバーは Service Role キーで接続し RLS をバイパスするため、アクセス制御はこの API 層のトークン検証＋userId スコープが担う。RLS の実効化は defense-in-depth として別途検討（Issue #110）。
 
 ---
 
