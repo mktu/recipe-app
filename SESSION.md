@@ -1,12 +1,21 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-15 (PR #112 を develop→main マージし本番を最新化。docs 整合・未使用 ensure-user API 削除を本番反映)
+2026-06-16 (#105 OGP タイトルフォールバックを実装し PR #113 を develop にマージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#105 JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得（PR #113→develop反映済み・merged 2026-06-16）**
+  - 課題: 構造化データを持たないサイトで title が空になり「タイトル未取得」で保存されていた（`url-handler.ts:51`）
+  - 解決: 解析の最終フォールバックに **Strategy 3: OGP 抽出** を追加（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
+  - `src/lib/scraper/ogp-extractor.ts`（新規）: `og:title`/`og:image`/`og:site_name` を抽出。`og:title` 無しは `<title>` タグ、`og:site_name` 無しはドメイン名にフォールバック。`content` の前後位置両対応・HTMLエンティティデコード
+  - OGP でタイトルが取れた場合は食材空（手動入力）の `ParsedRecipe` を返す
+  - `ogp-extractor.test.ts`（新規）: 8 ケースのユニットテスト追加（全パス）
+  - `docs/ARCHITECTURE.md`: 解析フロー図・ディレクトリ説明・API 表を更新
+  - **スコープ外（必要なら別Issue化）:** JSON-LD に Recipe はあるが recipeIngredient が空のケースの補完
+  - lint / build / test パス確認済み
 - [x] **PR #112 を develop→main マージし本番を最新化（merged 2026-06-15）**
   - 内容: docs 整合（ARCHITECTURE.md / SESSION.md）・未使用 ensure-user API 削除を本番反映
   - PR #108（#86 アカウント削除 + #97/#100 法的文書 + #101 IDOR 修正）に続くドキュメント追従リリース
@@ -97,6 +106,8 @@
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成
 - `docs/DATABASE_DESIGN.md` - DB設計
+- `src/lib/recipe/parse-recipe.ts` - レシピ解析フロー（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
+- `src/lib/scraper/ogp-extractor.ts` - OGP 抽出（タイトルフォールバック）
 - `src/components/features/legal/privacy-content.tsx` - プライバシーポリシー
 - `src/components/features/legal/terms-content.tsx` - 利用規約
 - `src/lib/auth/verify-line-token.ts` - ID トークン検証（dev バイパス）
@@ -109,11 +120,11 @@
 
 ## コミット履歴（直近）
 ```
+cdde9eb Merge pull request #113 from mktu/feature/add-ogp-title-fallback-105
+29501bd feat: JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得 (#105)
+0996bdc docs: update SESSION.md for PR #112 release
 7c4d049 Merge pull request #112 from mktu/develop
 349cf2a docs: update SESSION.md for session handoff
-896f853 docs: 認証フローの記述を実装と整合させ、未使用の ensure-user API を削除
-c489abd docs: update SESSION.md and ARCHITECTURE.md for session handoff
-00cb18c Merge pull request #108 from mktu/develop
 ```
 
 ## GitHubリポジトリ
