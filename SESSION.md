@@ -1,12 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-16 (#102 プライバシーポリシーの Gemini 学習利用記述を修正し PR #115 を develop にマージ)
+2026-06-16 (#111 README を RecipeHub 用に整備し PR #116 を develop にマージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#111 README を RecipeHub 用に整備（PR #116→develop反映済み・merged 2026-06-16）**
+  - 課題: README が `create-next-app` デフォルトのまま（36行）。アプリ公開・技術記事化（#109）に向けて概要が伝わる README に刷新
+  - 概要・ビジョン・主な機能・技術スタック・セットアップ・ドキュメント導線・法的事項を記載
+  - **ビジョン文言を見直し**: 「献立の意思決定コストをゼロにする」は大言壮語的なため LP トーンに合わせ「**献立選びをもっとラクに**」へ変更。README/CLAUDE.md/requirements.md/docs/ARCHITECTURE.md の**4ファイル横断で統一**
+  - **「AI が自動でタグ付け」の表記を実態へ修正**: レシピ登録のタグ付けは AI 不使用。実態は構造化データ抽出（JSON-LD → __NEXT_DATA__ → OGP）＋ルールベースの食材マッチング（`parse-recipe.ts` / `match-ingredients.ts`）。AI(Gemini)はセマンティック検索の埋め込み生成・食材名寄せ辞書の生成にのみ利用。README と LP メタ description（`src/app/(public)/lp/page.tsx`）を修正
+  - **requirements.md 冒頭に乖離注記を追加**: 構想時は AI 解析を想定 → **法的リスクで AI 解析は不採用**に方針転換した経緯と、実装の正本は `docs/ARCHITECTURE.md` である旨を明記
+  - **重複の解消**: README の環境変数の全ブロック（CLAUDE.md と重複）とディレクトリ構成の詳細ツリー（ARCHITECTURE.md と重複）を削除し、各正本へのリンク＋要約に置換。技術スタック表は GitHub トップの概観用として残置
+  - lint パス確認済み
 - [x] **#102 プライバシーポリシーの Gemini 学習利用記述を実態に合わせて修正（PR #115→develop反映済み・merged 2026-06-16）**
   - 課題: 第4条に「送信データはGoogleのモデル学習には使用されません」と記載していたが、Gemini Developer API を**無料プラン**で利用しており規約上は学習利用され得るため、記述が事実と異なっていた（ユーザー確認済み）
   - 落とし所は対応案(b)（文言修正）を採用。有料プラン移行(a)は、送信データがレシピタイトル・食材名のみで機微性が低いため現時点では過剰と判断
@@ -125,11 +133,11 @@
 
 ## コミット履歴（直近）
 ```
-5b8e62c Merge pull request #115 from mktu/feature/fix-privacy-gemini-training-102
-5d6c202 fix: プライバシーポリシーの Gemini 学習利用記述を実態に合わせて修正 (#102)
-497c1ac docs: update SESSION.md for session handoff
-cdde9eb Merge pull request #113 from mktu/feature/add-ogp-title-fallback-105
-29501bd feat: JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得 (#105)
+8253726 Merge pull request #116 from mktu/feature/docs-readme-recipehub-111
+1ba10f0 docs: README の環境変数・ディレクトリ構成を各ドキュメント参照に変更 (#111)
+38c5e3d docs: requirements.md 冒頭に実装との乖離注記を追加 (#111)
+687f935 docs: レシピのタグ付けを「AI」から実態（構造化データ抽出）へ修正 (#111)
+eb5c8ac docs: ビジョン文言を「献立選びをもっとラクに」へ統一 (#111)
 ```
 
 ## GitHubリポジトリ
