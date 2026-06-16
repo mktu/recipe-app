@@ -3,6 +3,7 @@ import type { JsonLdExtraction } from '@/types/json-ld'
 import { fetchHtml, HtmlFetchError } from '@/lib/scraper/html-fetcher'
 import { extractRecipeFromJsonLd } from '@/lib/scraper/json-ld-extractor'
 import { extractRecipeFromNextData } from '@/lib/scraper/next-data-extractor'
+import { extractOgp } from '@/lib/scraper/ogp-extractor'
 import { matchIngredients } from './match-ingredients'
 
 /**
@@ -73,6 +74,22 @@ async function parseWithHtmlFetch(url: string): Promise<ParsedRecipe | null> {
       return buildParsedRecipe(nextDataExtraction)
     }
 
+    // Strategy 3: OGP (構造化データが無いサイトの最終フォールバック)
+    // タイトル・画像・サイト名のみ取得し、食材はユーザーが手動入力する
+    const ogpExtraction = extractOgp(html, url)
+    if (ogpExtraction) {
+      console.log('Extracted title from OGP')
+      return {
+        title: ogpExtraction.title,
+        sourceName: ogpExtraction.sourceName,
+        imageUrl: ogpExtraction.imageUrl,
+        ingredientIds: [],
+        ingredientsRaw: [],
+        memo: '',
+        cookingTimeMinutes: null,
+      }
+    }
+
     console.log('No structured data found')
     return null
   } catch (error) {
@@ -91,8 +108,9 @@ async function parseWithHtmlFetch(url: string): Promise<ParsedRecipe | null> {
  * 処理フロー:
  * 1. HTML直接取得でJSON-LD抽出を試みる
  * 2. 失敗したら__NEXT_DATA__抽出を試みる（Nadia等）
- * 3. 取得できない場合は空の結果を返す（ユーザーが手動入力）
- * 4. 食材名をingredients/ingredient_aliasesで正規化
+ * 3. それも失敗したらOGPからタイトル・画像・サイト名を取得（食材は手動入力）
+ * 4. いずれも取得できない場合は空の結果を返す（ユーザーが手動入力）
+ * 5. 食材名をingredients/ingredient_aliasesで正規化
  */
 export async function parseRecipe(url: string): Promise<ParsedRecipe> {
   try {
