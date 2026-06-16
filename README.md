@@ -60,44 +60,13 @@ npm run functions:serve
 
 ### 環境変数
 
-`.env.local` に以下を設定します（値は各サービスのダッシュボードから取得）。
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SECRET_KEY=
-
-# Gemini API
-GOOGLE_GENERATIVE_AI_API_KEY=
-
-# LINE LIFF（LINE Login チャネル）
-NEXT_PUBLIC_LIFF_ID=
-
-# LINE Messaging API（Messaging API チャネル）
-LINE_CHANNEL_SECRET=
-LINE_CHANNEL_ACCESS_TOKEN=
-```
+`.env.local` に Supabase / Gemini API / LINE（LIFF・Messaging API）の各キーを設定します。設定すべき変数の一覧は [`CLAUDE.md`](CLAUDE.md#環境変数) を参照してください。
 
 ローカル Supabase / LINE 開発環境の詳しいセットアップは、それぞれ [`docs/SUPABASE_LOCAL.md`](docs/SUPABASE_LOCAL.md) / [`docs/LINE_SETUP.md`](docs/LINE_SETUP.md) を参照してください。
 
-## ディレクトリ構成
+## ディレクトリ構成・アーキテクチャ
 
-```
-recipe-app/
-├── src/
-│   ├── app/           # ページ・API Routes（(protected) / (public) / api）
-│   ├── components/    # UI / 機能別 / プロバイダーコンポーネント
-│   ├── hooks/         # カスタム hooks
-│   ├── lib/           # ビジネスロジック（auth / db / line / scraper / recipe 等）
-│   └── types/         # 型定義
-├── supabase/          # Edge Functions (Deno) / マイグレーション
-├── seed/              # 食材マスター等のシードデータ
-├── docs/              # ドキュメント
-└── scripts/           # 開発・運用スクリプト
-```
-
-詳細なアーキテクチャは [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) を参照してください。
+`src/`（アプリ本体）・`supabase/`（Edge Functions・マイグレーション）・`docs/`・`scripts/` などで構成されています。ディレクトリ構成の詳細・システム構成図・各種フローは [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) を参照してください。
 
 ## よく使うコマンド
 
