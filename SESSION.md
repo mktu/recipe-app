@@ -1,12 +1,19 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-16 (#105 OGP タイトルフォールバックを実装し PR #113 を develop にマージ)
+2026-06-16 (#102 プライバシーポリシーの Gemini 学習利用記述を修正し PR #115 を develop にマージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#102 プライバシーポリシーの Gemini 学習利用記述を実態に合わせて修正（PR #115→develop反映済み・merged 2026-06-16）**
+  - 課題: 第4条に「送信データはGoogleのモデル学習には使用されません」と記載していたが、Gemini Developer API を**無料プラン**で利用しており規約上は学習利用され得るため、記述が事実と異なっていた（ユーザー確認済み）
+  - 落とし所は対応案(b)（文言修正）を採用。有料プラン移行(a)は、送信データがレシピタイトル・食材名のみで機微性が低いため現時点では過剰と判断
+  - `src/components/features/legal/privacy-content.tsx` 第4条を「送信データはGoogleの利用規約に基づき、サービスの提供・改善およびAIモデルの学習に利用される場合があります（詳細はGoogleのプライバシーポリシーをご確認ください）」へ変更
+  - `alias-llm.ts`/`embedding/` 等のコード側に同種の文言は無し（文言は privacy-content.tsx のみ）
+  - **将来有料プランへ移行する場合は記述を見直すこと**（学習に使われない旨を再度明記できる）
+  - lint パス確認済み
 - [x] **#105 JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得（PR #113→develop反映済み・merged 2026-06-16）**
   - 課題: 構造化データを持たないサイトで title が空になり「タイトル未取得」で保存されていた（`url-handler.ts:51`）
   - 解決: 解析の最終フォールバックに **Strategy 3: OGP 抽出** を追加（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
@@ -69,8 +76,6 @@
 
 ## 次にやること（GitHub Issues で管理）
 - [ ] **CLAUDE.md L17 の Scraper 記述を実装に合わせて修正**（「Jina Reader API（フォールバック）」→ 実装は `__NEXT_DATA__` 抽出。/doc-check-logic で発見、ARCHITECTURE.md 側は整合済み）
-- [ ] **#102 Gemini API プランの確認**
-  - 使用キーが課金プラン有効か確認 → 無料枠ならプライバシーポリシー記述を修正 or 有料化
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -120,11 +125,11 @@
 
 ## コミット履歴（直近）
 ```
+5b8e62c Merge pull request #115 from mktu/feature/fix-privacy-gemini-training-102
+5d6c202 fix: プライバシーポリシーの Gemini 学習利用記述を実態に合わせて修正 (#102)
+497c1ac docs: update SESSION.md for session handoff
 cdde9eb Merge pull request #113 from mktu/feature/add-ogp-title-fallback-105
 29501bd feat: JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得 (#105)
-0996bdc docs: update SESSION.md for PR #112 release
-7c4d049 Merge pull request #112 from mktu/develop
-349cf2a docs: update SESSION.md for session handoff
 ```
 
 ## GitHubリポジトリ
