@@ -1,12 +1,16 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-15 (/doc-check-logic で ARCHITECTURE.md 認証フローを検証・整合化、未使用 ensure-user API を削除して develop に直接プッシュ)
+2026-06-15 (PR #112 を develop→main マージし本番を最新化。docs 整合・未使用 ensure-user API 削除を本番反映)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **PR #112 を develop→main マージし本番を最新化（merged 2026-06-15）**
+  - 内容: docs 整合（ARCHITECTURE.md / SESSION.md）・未使用 ensure-user API 削除を本番反映
+  - PR #108（#86 アカウント削除 + #97/#100 法的文書 + #101 IDOR 修正）に続くドキュメント追従リリース
+  - develop と main は完全に同期済み（差分なし）
 - [x] **/doc-check-logic でアーキテクチャ整合性を検証し認証フローを修正（commit 896f853→develop直接push済み）**
   - 検証範囲: 認証 / レシピ解析 / 食材名寄せの3セクション（git diff main...HEAD から自動推論）
   - レシピ解析フロー: ARCHITECTURE.md と一致（JSON-LD→__NEXT_DATA__→空結果）。※CLAUDE.md L17 の「Jina Reader」記述のみ実装と乖離（実装は __NEXT_DATA__）→ 未対応
@@ -58,8 +62,6 @@
 - [ ] **CLAUDE.md L17 の Scraper 記述を実装に合わせて修正**（「Jina Reader API（フォールバック）」→ 実装は `__NEXT_DATA__` 抽出。/doc-check-logic で発見、ARCHITECTURE.md 側は整合済み）
 - [ ] **#102 Gemini API プランの確認**
   - 使用キーが課金プラン有効か確認 → 無料枠ならプライバシーポリシー記述を修正 or 有料化
-- [ ] **develop → main PR を作成して本番リリース**（#86 アカウント削除 + #97/#100 法的文書更新を本番反映）
-  - Vercel 本番環境に `LINE_LOGIN_CHANNEL_SECRET` の設定が必要
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -76,8 +78,6 @@
   - 現状 `auth.uid()` ベースのポリシーは Supabase Auth 不在で空振り。先に単一データアクセス層・クロスユーザーテストが費用対効果高
 
 ## ブロッカー・注意点
-- **本番リリース前に Vercel 本番環境へ `LINE_LOGIN_CHANNEL_SECRET` を設定すること**
-  - LINE Developers Console → LINE Login チャンネル → Basic settings → Channel secret
 - **PR は必ず `--base develop` を指定する**（`/create-pr` スキルを使うと安全）
   - 過去に `main` へ誤マージした実績あり（PR #95）
 - **Vercel Preview の Deployment Protection は Off にしている**
@@ -109,11 +109,11 @@
 
 ## コミット履歴（直近）
 ```
+7c4d049 Merge pull request #112 from mktu/develop
+349cf2a docs: update SESSION.md for session handoff
 896f853 docs: 認証フローの記述を実装と整合させ、未使用の ensure-user API を削除
 c489abd docs: update SESSION.md and ARCHITECTURE.md for session handoff
-2835285 Merge pull request #107 from mktu/feature/fix-idor-line-token-101
-f9e2be5 fix: API の lineUserId を ID トークンで検証し IDOR を防ぐ (Issue #101)
-7084e73 docs: update SESSION.md for session handoff
+00cb18c Merge pull request #108 from mktu/develop
 ```
 
 ## GitHubリポジトリ
