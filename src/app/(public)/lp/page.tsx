@@ -11,11 +11,11 @@ import {
 export const metadata: Metadata = {
   title: 'RecipeHub - お気に入りレシピを食材で検索',
   description:
-    'SNSやWebで見つけたレシピをURLで保存。AIが自動でタグ付けして、食材から検索できる自分専用のレシピ図鑑。',
+    'SNSやWebで見つけたレシピをURLで保存。食材を自動でタグ付けして、冷蔵庫の中身から検索できる自分専用のレシピ図鑑。',
   openGraph: {
     title: 'RecipeHub - お気に入りレシピを食材で検索',
     description:
-      'SNSやWebで見つけたレシピをURLで保存。AIが自動でタグ付けして、食材から検索できる自分専用のレシピ図鑑。',
+      'SNSやWebで見つけたレシピをURLで保存。食材を自動でタグ付けして、冷蔵庫の中身から検索できる自分専用のレシピ図鑑。',
     type: 'website',
     images: ['/og-image.jpg'],
   },

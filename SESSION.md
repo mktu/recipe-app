@@ -1,12 +1,36 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-15 (PR #112 を develop→main マージし本番を最新化。docs 整合・未使用 ensure-user API 削除を本番反映)
+2026-06-16 (#111 README を RecipeHub 用に整備し PR #116 を develop にマージ)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#111 README を RecipeHub 用に整備（PR #116→develop反映済み・merged 2026-06-16）**
+  - 課題: README が `create-next-app` デフォルトのまま（36行）。アプリ公開・技術記事化（#109）に向けて概要が伝わる README に刷新
+  - 概要・ビジョン・主な機能・技術スタック・セットアップ・ドキュメント導線・法的事項を記載
+  - **ビジョン文言を見直し**: 「献立の意思決定コストをゼロにする」は大言壮語的なため LP トーンに合わせ「**献立選びをもっとラクに**」へ変更。README/CLAUDE.md/requirements.md/docs/ARCHITECTURE.md の**4ファイル横断で統一**
+  - **「AI が自動でタグ付け」の表記を実態へ修正**: レシピ登録のタグ付けは AI 不使用。実態は構造化データ抽出（JSON-LD → __NEXT_DATA__ → OGP）＋ルールベースの食材マッチング（`parse-recipe.ts` / `match-ingredients.ts`）。AI(Gemini)はセマンティック検索の埋め込み生成・食材名寄せ辞書の生成にのみ利用。README と LP メタ description（`src/app/(public)/lp/page.tsx`）を修正
+  - **requirements.md 冒頭に乖離注記を追加**: 構想時は AI 解析を想定 → **法的リスクで AI 解析は不採用**に方針転換した経緯と、実装の正本は `docs/ARCHITECTURE.md` である旨を明記
+  - **重複の解消**: README の環境変数の全ブロック（CLAUDE.md と重複）とディレクトリ構成の詳細ツリー（ARCHITECTURE.md と重複）を削除し、各正本へのリンク＋要約に置換。技術スタック表は GitHub トップの概観用として残置
+  - lint パス確認済み
+- [x] **#102 プライバシーポリシーの Gemini 学習利用記述を実態に合わせて修正（PR #115→develop反映済み・merged 2026-06-16）**
+  - 課題: 第4条に「送信データはGoogleのモデル学習には使用されません」と記載していたが、Gemini Developer API を**無料プラン**で利用しており規約上は学習利用され得るため、記述が事実と異なっていた（ユーザー確認済み）
+  - 落とし所は対応案(b)（文言修正）を採用。有料プラン移行(a)は、送信データがレシピタイトル・食材名のみで機微性が低いため現時点では過剰と判断
+  - `src/components/features/legal/privacy-content.tsx` 第4条を「送信データはGoogleの利用規約に基づき、サービスの提供・改善およびAIモデルの学習に利用される場合があります（詳細はGoogleのプライバシーポリシーをご確認ください）」へ変更
+  - `alias-llm.ts`/`embedding/` 等のコード側に同種の文言は無し（文言は privacy-content.tsx のみ）
+  - **将来有料プランへ移行する場合は記述を見直すこと**（学習に使われない旨を再度明記できる）
+  - lint パス確認済み
+- [x] **#105 JSON-LD/__NEXT_DATA__ 失敗時に OGP からタイトルを取得（PR #113→develop反映済み・merged 2026-06-16）**
+  - 課題: 構造化データを持たないサイトで title が空になり「タイトル未取得」で保存されていた（`url-handler.ts:51`）
+  - 解決: 解析の最終フォールバックに **Strategy 3: OGP 抽出** を追加（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
+  - `src/lib/scraper/ogp-extractor.ts`（新規）: `og:title`/`og:image`/`og:site_name` を抽出。`og:title` 無しは `<title>` タグ、`og:site_name` 無しはドメイン名にフォールバック。`content` の前後位置両対応・HTMLエンティティデコード
+  - OGP でタイトルが取れた場合は食材空（手動入力）の `ParsedRecipe` を返す
+  - `ogp-extractor.test.ts`（新規）: 8 ケースのユニットテスト追加（全パス）
+  - `docs/ARCHITECTURE.md`: 解析フロー図・ディレクトリ説明・API 表を更新
+  - **スコープ外（必要なら別Issue化）:** JSON-LD に Recipe はあるが recipeIngredient が空のケースの補完
+  - lint / build / test パス確認済み
 - [x] **PR #112 を develop→main マージし本番を最新化（merged 2026-06-15）**
   - 内容: docs 整合（ARCHITECTURE.md / SESSION.md）・未使用 ensure-user API 削除を本番反映
   - PR #108（#86 アカウント削除 + #97/#100 法的文書 + #101 IDOR 修正）に続くドキュメント追従リリース
@@ -60,8 +84,6 @@
 
 ## 次にやること（GitHub Issues で管理）
 - [ ] **CLAUDE.md L17 の Scraper 記述を実装に合わせて修正**（「Jina Reader API（フォールバック）」→ 実装は `__NEXT_DATA__` 抽出。/doc-check-logic で発見、ARCHITECTURE.md 側は整合済み）
-- [ ] **#102 Gemini API プランの確認**
-  - 使用キーが課金プラン有効か確認 → 無料枠ならプライバシーポリシー記述を修正 or 有料化
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
 - [ ] **パッケージアップデートの継続**（スキップした項目）
@@ -97,6 +119,8 @@
 - `CLAUDE.md` - プロジェクトガイド
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成
 - `docs/DATABASE_DESIGN.md` - DB設計
+- `src/lib/recipe/parse-recipe.ts` - レシピ解析フロー（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
+- `src/lib/scraper/ogp-extractor.ts` - OGP 抽出（タイトルフォールバック）
 - `src/components/features/legal/privacy-content.tsx` - プライバシーポリシー
 - `src/components/features/legal/terms-content.tsx` - 利用規約
 - `src/lib/auth/verify-line-token.ts` - ID トークン検証（dev バイパス）
@@ -109,11 +133,11 @@
 
 ## コミット履歴（直近）
 ```
-7c4d049 Merge pull request #112 from mktu/develop
-349cf2a docs: update SESSION.md for session handoff
-896f853 docs: 認証フローの記述を実装と整合させ、未使用の ensure-user API を削除
-c489abd docs: update SESSION.md and ARCHITECTURE.md for session handoff
-00cb18c Merge pull request #108 from mktu/develop
+8253726 Merge pull request #116 from mktu/feature/docs-readme-recipehub-111
+1ba10f0 docs: README の環境変数・ディレクトリ構成を各ドキュメント参照に変更 (#111)
+38c5e3d docs: requirements.md 冒頭に実装との乖離注記を追加 (#111)
+687f935 docs: レシピのタグ付けを「AI」から実態（構造化データ抽出）へ修正 (#111)
+eb5c8ac docs: ビジョン文言を「献立選びをもっとラクに」へ統一 (#111)
 ```
 
 ## GitHubリポジトリ
