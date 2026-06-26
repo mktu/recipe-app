@@ -25,6 +25,7 @@ export function TermsContent() {
       <ProhibitedActionsSection />
       <ServiceProvisionSection />
       <DisclaimerSection />
+      <ContactSection />
     </>
   )
 }
@@ -140,5 +141,22 @@ function DisclaimerSection() {
         </p>
       </Section>
     </>
+  )
+}
+
+function ContactSection() {
+  return (
+    <Section title="第11条（運営者・お問い合わせ）">
+      <p>本サービスの運営者および連絡先は以下のとおりです。</p>
+      <ul className="ml-4 list-disc space-y-1">
+        <li>運営者: RecipeHub 運営者</li>
+        <li>
+          連絡先:{' '}
+          <a href="mailto:mushi9ui@gmail.com" className="underline">
+            mushi9ui@gmail.com
+          </a>
+        </li>
+      </ul>
+    </Section>
   )
 }
