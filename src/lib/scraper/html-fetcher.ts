@@ -30,17 +30,15 @@ async function throttleHost(host: string): Promise<void> {
   }
 }
 
-/** 連絡先（問い合わせ窓口）。サイト運営者が識別・連絡できるよう UA に含める */
-const CONTACT_EMAIL = 'mushi9ui@gmail.com'
-
 /**
  * 説明的な User-Agent を構築する。
- * 用途（ユーザー起点のレシピメタデータ取得）と連絡先を明示し、
+ * 用途（ユーザー起点のレシピメタデータ取得）と情報URLを明示し、
  * 取得元サイトが識別・問い合わせできるようにする（検出回避はしない）。
+ * 連絡先は URL 先からたどれるため、UA に生のメールアドレスは含めない。
  */
 function buildUserAgent(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://github.com/mktu/recipe-app'
-  return `RecipeHub-Bot/1.0 (+${appUrl}; user-requested recipe metadata fetch; contact: ${CONTACT_EMAIL})`
+  return `RecipeHub-Bot/1.0 (+${appUrl}; user-requested recipe metadata fetch)`
 }
 
 export interface HtmlFetchResult {
