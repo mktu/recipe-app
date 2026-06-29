@@ -120,7 +120,22 @@ async function replaceRecipeIngredients(client: TypedSupabaseClient, recipeId: s
   if (error) throw error
 }
 
-/** レシピを更新（食材・メモ等） */
+/** UpdateRecipeInput を recipes テーブルの更新用カラムにマッピング */
+function buildRecipeUpdate(updates: UpdateRecipeInput): TablesInsert<'recipes'> & { updated_at: string } {
+  const recipeUpdate: TablesInsert<'recipes'> & { updated_at: string } = {
+    updated_at: new Date().toISOString(),
+  } as TablesInsert<'recipes'> & { updated_at: string }
+  if (typeof updates.memo === 'string') recipeUpdate.memo = updates.memo
+  if (updates.ingredientsRaw) recipeUpdate.ingredients_raw = updates.ingredientsRaw as unknown as Json
+  if (updates.ingredientIds) recipeUpdate.ingredients_linked = updates.ingredientIds.length > 0
+  if (typeof updates.title === 'string') recipeUpdate.title = updates.title
+  if (typeof updates.sourceName === 'string') recipeUpdate.source_name = updates.sourceName || null
+  if (typeof updates.imageUrl === 'string') recipeUpdate.image_url = updates.imageUrl || null
+  if (updates.cookingTimeMinutes !== undefined) recipeUpdate.cooking_time_minutes = updates.cookingTimeMinutes
+  return recipeUpdate
+}
+
+/** レシピを更新（食材・メモ・メタ情報等） */
 export async function updateRecipe(
   lineUserId: string,
   recipeId: string,
@@ -132,12 +147,7 @@ export async function updateRecipe(
     const userId = await getUserIdByLineUserId(client, lineUserId)
     if (!userId) return { error: new Error('ユーザーが見つかりません') }
 
-    const recipeUpdate: TablesInsert<'recipes'> & { updated_at: string } = {
-      updated_at: new Date().toISOString(),
-    } as TablesInsert<'recipes'> & { updated_at: string }
-    if (typeof updates.memo === 'string') recipeUpdate.memo = updates.memo
-    if (updates.ingredientsRaw) recipeUpdate.ingredients_raw = updates.ingredientsRaw as unknown as Json
-    if (updates.ingredientIds) recipeUpdate.ingredients_linked = updates.ingredientIds.length > 0
+    const recipeUpdate = buildRecipeUpdate(updates)
 
     const { error: updateError } = await client
       .from('recipes')
