@@ -14,7 +14,11 @@ export function PrivacyContent() {
         <ul className="ml-4 list-disc space-y-1">
           <li>LINEアカウント情報（ユーザーID、表示名）</li>
           <li>ユーザーが登録したレシピURL</li>
+          <li>
+            登録URLから取得したレシピのメタデータ（タイトル、サイト名、画像URL、調理時間等）
+          </li>
           <li>レシピに関連する食材タグ、メモ等の情報</li>
+          <li>レシピの閲覧回数・最終閲覧日時等の利用状況</li>
           <li>サービス利用に関するログ情報</li>
         </ul>
       </Section>
@@ -107,8 +111,17 @@ function DataManagementSection() {
       <Section title="8. お問い合わせ">
         <p>
           本プライバシーポリシーに関するお問い合わせは、
-          LINE公式アカウントのトーク画面からご連絡ください。
+          以下の窓口までご連絡ください。
         </p>
+        <ul className="ml-4 list-disc space-y-1">
+          <li>運営者: RecipeHub 運営者</li>
+          <li>
+            連絡先:{' '}
+            <a href="mailto:mushi9ui@gmail.com" className="underline">
+              mushi9ui@gmail.com
+            </a>
+          </li>
+        </ul>
       </Section>
     </>
   )

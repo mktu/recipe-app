@@ -25,6 +25,7 @@ export function TermsContent() {
       <ProhibitedActionsSection />
       <ServiceProvisionSection />
       <DisclaimerSection />
+      <ContactSection />
     </>
   )
 }
@@ -85,7 +86,8 @@ function ServiceProvisionSection() {
           レシピの本文・手順等を複製・保存するものではありません。
         </p>
         <p>
-          解析にあたっては、対象サイトが robots.txt 等で示すアクセス指定を尊重するよう努めます。
+          本サービスは、ユーザーの操作に応じて対象ページが公開している構造化データ（メタデータ）のみを取得し、
+          過度な自動アクセスは行いません。
           ユーザーは、解析対象となるサイトの利用規約を遵守した上で本サービスをご利用ください。
         </p>
       </Section>
@@ -139,5 +141,22 @@ function DisclaimerSection() {
         </p>
       </Section>
     </>
+  )
+}
+
+function ContactSection() {
+  return (
+    <Section title="第11条（運営者・お問い合わせ）">
+      <p>本サービスの運営者および連絡先は以下のとおりです。</p>
+      <ul className="ml-4 list-disc space-y-1">
+        <li>運営者: RecipeHub 運営者</li>
+        <li>
+          連絡先:{' '}
+          <a href="mailto:mushi9ui@gmail.com" className="underline">
+            mushi9ui@gmail.com
+          </a>
+        </li>
+      </ul>
+    </Section>
   )
 }
