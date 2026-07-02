@@ -450,7 +450,7 @@ sequenceDiagram
     API-->>LIFF: response
 ```
 
-> サーバーは Service Role キーで接続し RLS をバイパスするため、アクセス制御はこの API 層のトークン検証＋userId スコープが担う。RLS の実効化は defense-in-depth として別途検討（Issue #110）。
+> サーバーは Service Role キーで接続し RLS をバイパスするため、アクセス制御はこの API 層のトークン検証＋userId スコープが担う。RLS は多層防御（defense-in-depth）のバックストップとして機能する：ユーザーデータテーブル（`users`/`recipes`/`recipe_ingredients`）は service_role 以外（ブラウザに露出する publishable/anon キー）からのアクセスを拒否し、公開マスター（`ingredients`/`ingredient_aliases`）のみ anon 参照を許可する。本アプリは LINE 認証で Supabase Auth ユーザーを持たないため `auth.uid()` ベースのポリシーは使わず、ロール（service_role）ベースのポリシーで表現する（Issue #110、`supabase/migrations/20260702000000_clarify_rls_policies.sql`）。
 
 ---
 
