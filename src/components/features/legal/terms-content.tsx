@@ -149,7 +149,8 @@ function ContactSection() {
     <Section title="第11条（運営者・お問い合わせ）">
       <p>本サービスの運営者および連絡先は以下のとおりです。</p>
       <ul className="ml-4 list-disc space-y-1">
-        <li>運営者: RecipeHub 運営者</li>
+        <li>運営者: 植村誠（RecipeHub 運営者）</li>
+        <li>住所: 本人からの請求に応じて遅滞なく開示します</li>
         <li>
           連絡先:{' '}
           <a href="mailto:mushi9ui@gmail.com" className="underline">
