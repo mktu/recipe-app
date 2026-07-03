@@ -1,6 +1,8 @@
 /**
  * HTML直接フェッチャー
  * Jina Readerを経由せずにHTMLを取得する
+ *
+ * 取得対象・アクセス様態・robots.txt に対する方針は docs/SCRAPING_POLICY.md を参照。
  */
 
 const TIMEOUT_MS = 15000
