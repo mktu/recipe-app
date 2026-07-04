@@ -114,7 +114,8 @@ function DataManagementSection() {
           以下の窓口までご連絡ください。
         </p>
         <ul className="ml-4 list-disc space-y-1">
-          <li>運営者: RecipeHub 運営者</li>
+          <li>運営者: 植村誠（RecipeHub 運営者）</li>
+          <li>住所: 本人からの請求に応じて遅滞なく開示します</li>
           <li>
             連絡先:{' '}
             <a href="mailto:mushi9ui@gmail.com" className="underline">
@@ -122,6 +123,10 @@ function DataManagementSection() {
             </a>
           </li>
         </ul>
+        <p>
+          保有個人データの開示・訂正・利用停止等のご請求、および運営者の住所に関するお問い合わせには、
+          上記連絡先にて遅滞なく対応します。
+        </p>
       </Section>
     </>
   )
