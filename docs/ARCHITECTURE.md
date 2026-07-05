@@ -479,6 +479,8 @@ graph TB
     Confirm --> Save["Save to DB\n(POST /api/recipes)"]
 ```
 
+> 取得対象・アクセス様態・robots.txt / 対象サイト利用規約に対する方針は `docs/SCRAPING_POLICY.md` を参照。
+
 ---
 
 ## 食材名寄せフロー

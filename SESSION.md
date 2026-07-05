@@ -1,12 +1,28 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-06-16 (#111 README を RecipeHub 用に整備し PR #116 を develop にマージ)
+2026-07-03 (#110 RLS ポリシー整理を PR #126 で develop→main まで反映。/legal-check 実施)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **#110 RLS ポリシーを実アーキテクチャに沿って整理・明示化（PR #126→develop→main反映済み・merged 2026-07-03）**
+  - `/legal-check` の要対応「RLS 未実効」への対応。全面的な per-user RLS（Supabase Auth 導入=option a）ではなく、**Issue #110 推奨の費用対効果の高い路線**（空振りポリシー整理・意図明示・回帰テスト）を採用
+  - 調査で判明: LINE 認証で Supabase Auth ユーザー不在のため init の `auth.uid()` ベースポリシーは**誰にもマッチしない空振り（dead code）**。per-user 認可に見えて実は機能していなかった。ブラウザ(anon)が触るのは公開マスター `ingredients` のみ、ユーザーデータは全て service_role でサーバー経由
+  - 新マイグレーション `20260702000000_clarify_rls_policies.sql`: `users`/`recipes`/`recipe_ingredients` は空振りポリシー撤去→`service_role` フルアクセスのみ（anon は既定拒否）。`ingredients`/`ingredient_aliases` は公開 SELECT 維持+service_role 書込。service_role は BYPASSRLS のため**実行時挙動は不変**（意図明示と dead code 排除が目的）
+  - デッドコード削除: ブラウザ露出 anon で `recipes` を引く `src/lib/db/queries/recipe-search.ts`（+re-export）。呼び出しは全て `/api/recipes/list`→Edge Function `get-recipes`(service_role) 経由で未使用と確認
+  - 回帰テスト: `test-migrations.yml` に anon がユーザーデータを読めないことを検証するステップ追加。**環境差の学び**: ローカル/Cloud は blanket GRANT ありで RLS 層(0件)拒否、CI はクリーンで GRANT 層(permission denied)拒否 → 両方を「拒否＝合格」として扱う。公開マスターは実行時読取(GRANT依存)でなく public SELECT ポリシー存在で検証
+  - `docs/ARCHITECTURE.md` の RLS 記述を実態に更新
+  - **スコープ外（将来）:** Supabase Auth 導入による真の per-user DB 分離(option a)は Issue でも「今すぐ必須でない」→ ブラウザから Supabase を直接叩く設計に変える場合に再検討
+  - lint / test(24) / build / ローカル RLS 挙動検証・CI 全パス
+- [x] **/legal-check（法的リスクチェック）を実施（2026-07-03）**
+  - 著作権面（本文非保存・画像URL参照）とアカウント削除フロー（deauthorize+CASCADE）は堅実、外部4サービスもポリシー記載済みで良好
+  - 要対応: ①RLS 未実効（#110→上記で対応済み）②プライバシーポリシーの収集項目取りこぼし（→下記 PR #124 で対応済み）
+  - 要確認（人間判断）: Gemini API ティアと学習利用の整合（#102 で開示済み）、運営者匿名表示の是非
+- [x] **プライバシーポリシーの収集情報にレシピメタデータ・閲覧履歴を追記（PR #124→develop反映済み・merged 2026-07-01）**
+  - `/legal-check` で発見: 実装で保存している「レシピのメタデータ（タイトル/サイト名/画像URL/調理時間）」と「閲覧履歴（view_count/last_viewed_at）」が `privacy-content.tsx` の「1. 収集する情報」に未記載
+  - 虚偽ではなく不足のため軽微だが実態と一致させる修正。lint パス確認済み
 - [x] **#111 README を RecipeHub 用に整備（PR #116→develop反映済み・merged 2026-06-16）**
   - 課題: README が `create-next-app` デフォルトのまま（36行）。アプリ公開・技術記事化（#109）に向けて概要が伝わる README に刷新
   - 概要・ビジョン・主な機能・技術スタック・セットアップ・ドキュメント導線・法的事項を記載
@@ -96,8 +112,6 @@
 - [ ] **#37〜#39: E2E テスト**
 - [ ] **#106 API コールを lib/api の typed 関数レイヤーに集約（リファクタ・保守性）**
   - パス直書き・`res.ok` エラー定型の重複を解消。`useApiXxx` ではなく素の関数 + `request()` ヘルパー
-- [ ] **#110 RLS の実効化（defense-in-depth・優先度中〜低）**
-  - 現状 `auth.uid()` ベースのポリシーは Supabase Auth 不在で空振り。先に単一データアクセス層・クロスユーザーテストが費用対効果高
 
 ## ブロッカー・注意点
 - **PR は必ず `--base develop` を指定する**（`/create-pr` スキルを使うと安全）
@@ -123,6 +137,8 @@
 - `src/lib/scraper/ogp-extractor.ts` - OGP 抽出（タイトルフォールバック）
 - `src/components/features/legal/privacy-content.tsx` - プライバシーポリシー
 - `src/components/features/legal/terms-content.tsx` - 利用規約
+- `supabase/migrations/20260702000000_clarify_rls_policies.sql` - RLS ポリシー（service_role ベース・設計意図をコメント記載）
+- `.github/workflows/test-migrations.yml` - マイグレーションテスト（RLS backstop 回帰テスト含む）
 - `src/lib/auth/verify-line-token.ts` - ID トークン検証（dev バイパス）
 - `src/lib/api/auth-guard.ts` - `requireLineUser()`（API 認証ガード）
 - `src/hooks/use-authed-fetch.ts` - `useAuthedFetch`（Authorization ヘッダ自動付与）
@@ -133,11 +149,11 @@
 
 ## コミット履歴（直近）
 ```
-8253726 Merge pull request #116 from mktu/feature/docs-readme-recipehub-111
-1ba10f0 docs: README の環境変数・ディレクトリ構成を各ドキュメント参照に変更 (#111)
-38c5e3d docs: requirements.md 冒頭に実装との乖離注記を追加 (#111)
-687f935 docs: レシピのタグ付けを「AI」から実態（構造化データ抽出）へ修正 (#111)
-eb5c8ac docs: ビジョン文言を「献立選びをもっとラクに」へ統一 (#111)
+4ea8038 Merge pull request #126 from mktu/feature/refactor-rls-clarify-policies
+59bd519 fix(ci): RLS 回帰テストを GRANT 拒否と RLS 0件の両方に対応
+b2c28da refactor: RLS ポリシーを実アーキテクチャに沿って整理・明示化 (#110)
+a588e0c Merge pull request #124 from mktu/feature/docs-privacy-collection-items
+333fce5 docs: プライバシーポリシーの収集情報にレシピメタデータと閲覧履歴を追記
 ```
 
 ## GitHubリポジトリ
