@@ -124,12 +124,17 @@ async function handleFollowEvent(event: webhook.Event): Promise<void> {
 
   await ensureUser(userId)
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   await client.pushMessage({
     to: userId,
     messages: [
       {
         type: 'text',
         text: 'RecipeHub へようこそ！🍳\n\nレシピサイトの URL をこのトークに送ると、自動でレシピを保存できます。\nクックパッド、クラシル、デリッシュキッチンなど主要サイトに対応しています。',
+      },
+      {
+        type: 'text',
+        text: `ご利用にあたっては、以下の利用規約・プライバシーポリシーをご確認ください。本サービスのご利用をもって、これらに同意いただいたものとみなします。\n\n📄 利用規約\n${appUrl}/terms\n\n🔒 プライバシーポリシー\n${appUrl}/privacy`,
       },
     ],
   })
