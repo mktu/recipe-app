@@ -1,12 +1,20 @@
 # セッション引き継ぎ
 
 ## 最終更新
-2026-07-06 (/legal-check 実施 → 同意導線の欠如を発見し PR #134 で対応・develop マージ済み)
+2026-07-08 (/legal-check スキルを収束型に改善（判断記録の Issue 一元化）・PR #138 develop マージ済み)
 
 ## 現在のフェーズ
 フェーズ 3：LINE Messaging API 連携 - **本番稼働中**
 
 ## 直近の完了タスク
+- [x] **/legal-check スキルを収束型に改善（PR #138→develop反映済み・merged 2026-07-08）**
+  - 課題: /legal-check 実行のたびに新規指摘が湧き（#78〜#86 → #97〜#102 → #118〜#134 の3波）、修正 → 再指摘のループが収束しない。原因は ①「対応しない」という判断がどこにも記録されず次回再指摘される ②対応要否の線引きが未定義 ③レポートの「要対応」テーブルが空だと失敗に見えるため埋めるための指摘が生まれる、の3点と診断
+  - **判断記録を GitHub Issues に一元化**（register ファイル案・差分スキャン案も検討したが、二重管理の維持コストと複雑化を理由に不採用）:
+    - 受容済みリスク = `legal-accepted` ラベルの **closed Issue**（1リスク=1 Issue。本文に受容理由と再検討の条件）。再検討条件に該当しない限り再指摘禁止。同種の裁定はカテゴリ単位で既存 Issue にコメント追記し、Issue を無駄に増やさない
+    - 実施記録 = `legal-check-run` ラベルの Issue（1実行=1 Issue。open のまま = 未裁定の指摘あり）。新規指摘ゼロでも作成して即 close（実施記録として残す）
+  - **対応要否の線引きを明文化**: 要対応にできるのは「法令義務違反が具体的に説明できる」「公表ポリシーと実装の矛盾」「規約違反で停止・ブロックの現実的リスク」の3条件のみ。ベストプラクティス・条件付きリスク（営利化したら〜）・実害経路が説明できない理論上のリスクは受容。**迷ったら受容に倒して要確認へ**。「新規指摘ゼロは失敗ではなく収束」を前提に明記
+  - 過去の受容判断3件を記録用 Issue に移行済み: #135（対象サイト規約の営利目的利用禁止・非営利のため受容）、#136（Kurashiru の営利目的 AI 入力禁止・営利化時に再検討）、#137（UA・文言等の体裁改善・カテゴリ受容）
+  - スキャン手順（全体像 → DB スキーマ → 外部連携 → 法的ページ）は従来どおり毎回フルスキャン。robots.txt・対象サイト規約のみ SCRAPING_POLICY.md の確認時点から6ヶ月経過時に WebFetch 再確認
 - [x] **利用規約・プライバシーポリシーへの同意導線を追加（PR #134→develop反映済み・merged 2026-07-06）**
   - `/legal-check`（今回実施）で発見: 利用規約 第2条は「LINE ログインをもって利用登録完了＝契約成立」と定めるが、**登録完了時点（友だち追加 / LIFF ログイン）で規約が一度も提示されておらず、同意の意思表示の導線が欠けていた**。規約ページ自体は掲出済みだが拘束力が弱い状態
   - 調査した現状導線: ①LP は `LPFooter` にリンクがあるのみ（CTA ボタン近傍に同意文言なし）②友だち追加時のウェルカムメッセージに言及なし ③初回 LIFF 起動時に同意ゲートなし。**QR・LINE 検索・共有リンク経由など LP を経由しない登録があるため LP だけでは全ユーザーをカバーできない**
@@ -107,6 +115,7 @@
 なし
 
 ## 次にやること（GitHub Issues で管理）
+- [ ] **次回 /legal-check 実行時に新運用の動作を確認**（受容済み #135〜#137 と open Issue（#132, #48, #110）が再指摘されないこと、実施 Issue が作成されること）
 - [ ] **CLAUDE.md L17 の Scraper 記述を実装に合わせて修正**（「Jina Reader API（フォールバック）」→ 実装は `__NEXT_DATA__` 抽出。/doc-check-logic で発見、ARCHITECTURE.md 側は整合済み）
 - [ ] **Vercel Dashboard で Node.js バージョンを 24.x に設定**（手動作業）
   - Settings → Build & Development Settings → Node.js Version → 24.x
@@ -154,14 +163,16 @@
 - `src/components/features/settings/account-delete-section.tsx` - 削除UI
 - `src/lib/auth/types.ts` - AuthProviderAdapter（getAccessToken / getIdToken）
 - `.claude/skills/create-pr/SKILL.md` - PR作成スキル
+- `.claude/skills/legal-check/skill.md` - 法的リスクチェックスキル（Issue 一元化・線引き基準）
+- `docs/SCRAPING_POLICY.md` - スクレイピング方針（robots.txt・対象サイト規約の確認記録の正本）
 
 ## コミット履歴（直近）
 ```
+139ee71 Merge pull request #138 from mktu/feature/refactor-legal-check-skill
+0a848be refactor: /legal-check を収束型に改善（判断記録の Issue 一元化と対応要否の線引き）
+5197400 docs: update SESSION.md for session handoff
 4c20bb4 Merge pull request #134 from mktu/feature/add-terms-consent-flow
 3a2355d feat: 利用規約・プライバシーポリシーへの同意導線を追加
-f62f270 Merge pull request #130 from mktu/feature/docs-target-site-tos
-0e82723 docs: ARCHITECTURE.md 解析フローに SCRAPING_POLICY.md への参照を追記
-6e54d37 docs: 対象サイト利用規約の確認記録を追記 (SCRAPING_POLICY.md)
 ```
 
 ## GitHubリポジトリ
