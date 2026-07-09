@@ -27,6 +27,17 @@ export function CTASection({ lineFriendUrl }: CTASectionProps) {
               LINEで友だち追加
             </Link>
           </Button>
+          <p className="mt-4 text-xs text-muted-foreground">
+            友だち追加により
+            <Link href="/terms" className="underline hover:text-foreground">
+              利用規約
+            </Link>
+            ・
+            <Link href="/privacy" className="underline hover:text-foreground">
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなします。
+          </p>
         </div>
       </div>
     </section>

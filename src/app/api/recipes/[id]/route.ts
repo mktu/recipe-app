@@ -66,6 +66,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (body.ingredientIds) updates.ingredientIds = body.ingredientIds
   if (body.ingredientsRaw) updates.ingredientsRaw = body.ingredientsRaw
   if (typeof body.memo === 'string') updates.memo = body.memo
+  if (typeof body.title === 'string') updates.title = body.title
+  if (typeof body.sourceName === 'string') updates.sourceName = body.sourceName
+  if (typeof body.imageUrl === 'string') updates.imageUrl = body.imageUrl
+  if (body.cookingTimeMinutes !== undefined) updates.cookingTimeMinutes = body.cookingTimeMinutes
 
   const { error } = await updateRecipe(lineUserId, id, updates)
   if (error) {

@@ -70,6 +70,10 @@ export interface UpdateRecipeInput {
   ingredientIds?: string[]
   ingredientsRaw?: IngredientRaw[]
   memo?: string
+  title?: string
+  sourceName?: string
+  imageUrl?: string
+  cookingTimeMinutes?: number | null
 }
 
 /** レシピ詳細（詳細画面用） */

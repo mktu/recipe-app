@@ -17,13 +17,29 @@ interface RescrapeDialogProps {
   onSaved: () => void
 }
 
-function RescrapePreview({ imageUrl, ingredientsRaw }: { imageUrl: string; ingredientsRaw: IngredientRaw[] }) {
+function RescrapePreview({
+  title,
+  sourceName,
+  imageUrl,
+  ingredientsRaw,
+}: {
+  title: string
+  sourceName: string
+  imageUrl: string
+  ingredientsRaw: IngredientRaw[]
+}) {
   return (
     <div className="space-y-4">
       {imageUrl && (
         <div className="aspect-video w-full overflow-hidden rounded-lg bg-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="レシピ画像" className="h-full w-full object-cover" />
+        </div>
+      )}
+      {title && (
+        <div>
+          <p className="text-sm font-medium">{title}</p>
+          {sourceName && <p className="text-xs text-muted-foreground">{sourceName}</p>}
         </div>
       )}
       {ingredientsRaw.length > 0 && (
@@ -43,6 +59,26 @@ function RescrapePreview({ imageUrl, ingredientsRaw }: { imageUrl: string; ingre
   )
 }
 
+function IngredientSection({
+  categories,
+  selectedIds,
+  onSelectionChange,
+}: {
+  categories: IngredientsByCategory[]
+  selectedIds: string[]
+  onSelectionChange: (ids: string[]) => void
+}) {
+  return (
+    <section className="space-y-3">
+      <p className="text-sm font-medium">メイン食材</p>
+      <p className="text-xs text-muted-foreground">食材検索で使われるタグです。</p>
+      {categories.length > 0 && (
+        <IngredientSelector categories={categories} selectedIds={selectedIds} onSelectionChange={onSelectionChange} />
+      )}
+    </section>
+  )
+}
+
 export function RescrapeDialog({ recipe, parsed, open, onOpenChange, onSaved }: RescrapeDialogProps) {
   const { updateRecipe, isLoading: isSaving, error: saveError } = useUpdateRecipe(recipe.id)
   const [categories, setCategories] = useState<IngredientsByCategory[]>([])
@@ -56,12 +92,16 @@ export function RescrapeDialog({ recipe, parsed, open, onOpenChange, onSaved }: 
     const success = await updateRecipe({
       ingredientIds,
       ingredientsRaw: parsed.ingredientsRaw,
+      title: parsed.title,
+      sourceName: parsed.sourceName,
+      imageUrl: parsed.imageUrl,
+      cookingTimeMinutes: parsed.cookingTimeMinutes,
     })
     if (success) {
       onOpenChange(false)
       onSaved()
     }
-  }, [updateRecipe, ingredientIds, parsed.ingredientsRaw, onOpenChange, onSaved])
+  }, [updateRecipe, ingredientIds, parsed, onOpenChange, onSaved])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,14 +110,13 @@ export function RescrapeDialog({ recipe, parsed, open, onOpenChange, onSaved }: 
           <DialogTitle>レシピ情報の再取得結果</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
-          <RescrapePreview imageUrl={parsed.imageUrl} ingredientsRaw={parsed.ingredientsRaw ?? []} />
-          <section className="space-y-3">
-            <p className="text-sm font-medium">メイン食材</p>
-            <p className="text-xs text-muted-foreground">食材検索で使われるタグです。</p>
-            {categories.length > 0 && (
-              <IngredientSelector categories={categories} selectedIds={ingredientIds} onSelectionChange={setIngredientIds} />
-            )}
-          </section>
+          <RescrapePreview
+            title={parsed.title}
+            sourceName={parsed.sourceName}
+            imageUrl={parsed.imageUrl}
+            ingredientsRaw={parsed.ingredientsRaw ?? []}
+          />
+          <IngredientSection categories={categories} selectedIds={ingredientIds} onSelectionChange={setIngredientIds} />
           {saveError && (
             <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
               {saveError.message}
