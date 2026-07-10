@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSelectedIngredients } from '@/hooks/use-selected-ingredients'
-import { IngredientList } from './ingredient-list'
+import { IngredientPicker } from './ingredient-picker'
 import type { IngredientsByCategory } from '@/types/recipe'
 
 const MAX_INGREDIENTS = 5
@@ -51,8 +51,8 @@ function IngredientSheet({ open, onOpenChange, selectedCount, categories, select
         <SheetHeader>
           <SheetTitle>メイン食材を選択（{selectedCount}/{MAX_INGREDIENTS}）</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 overflow-y-auto px-4 pb-4">
-          <IngredientList categories={categories} selectedIds={selectedIds} onToggle={onToggle} isMaxReached={isMaxReached} />
+        <div className="mt-4 overflow-y-auto px-4 pt-2 pb-4">
+          <IngredientPicker categories={categories} selectedIds={selectedIds} onToggle={onToggle} isMaxReached={isMaxReached} />
         </div>
       </SheetContent>
     </Sheet>
