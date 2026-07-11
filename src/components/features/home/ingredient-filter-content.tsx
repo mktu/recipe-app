@@ -138,7 +138,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   return (
     <div className="relative">
       <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <Input placeholder="食材を入力..." value={value} onChange={(e) => onChange(e.target.value)} className="pl-9" />
+      <Input placeholder="食材を検索..." value={value} onChange={(e) => onChange(e.target.value)} className="pl-9" />
       {value && (
         <Button
           variant="ghost"
