@@ -11,7 +11,7 @@
 ## 進行中・次にやること
 未完了タスクの正本は GitHub Issues（`gh issue list --state open`）。ここには方針レベルの塊だけ:
 
-- **公開・宣伝** — #109 技術記事、#132 Gemini 有料 tier 判断
+- **公開・宣伝** — #132 Gemini 有料 tier 判断
 - **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
