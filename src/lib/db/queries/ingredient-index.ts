@@ -1,11 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import {
-  buildIngredientIndex,
-  type AliasRecord,
-  type IngredientIndex,
-  type IngredientRecord,
-} from '@/lib/search/ingredient-index'
+import { buildIngredientIndexFromRows, type IngredientIndex } from '@/lib/search/ingredient-index'
 
 type TypedSupabaseClient = SupabaseClient<Database>
 
@@ -23,17 +18,5 @@ export async function fetchIngredientIndex(
     client.from('ingredient_aliases').select('alias, ingredient_id'),
   ])
 
-  const ingredientRecords: IngredientRecord[] = (ingredients ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    category: row.category,
-    parentId: row.parent_id,
-  }))
-
-  const aliasRecords: AliasRecord[] = (aliases ?? []).map((row) => ({
-    alias: row.alias,
-    ingredientId: row.ingredient_id,
-  }))
-
-  return buildIngredientIndex(ingredientRecords, aliasRecords)
+  return buildIngredientIndexFromRows(ingredients ?? [], aliases ?? [])
 }

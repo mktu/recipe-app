@@ -24,9 +24,8 @@ describe('resolveTerm - 完全一致', () => {
     expect(ids('シイタケ')).toEqual(['k1'])
   })
 
-  it('全角英数・大文字小文字を吸収する', () => {
-    expect(ids('ＴＯＭＡＴＯ')).toBe(null) // マスタにない語は解決しない
-    expect(ids('チーズ')).toEqual(['d2'])
+  it('前後の空白を無視する', () => {
+    expect(ids('  たまねぎ  ')).toEqual(['v1'])
   })
 })
 

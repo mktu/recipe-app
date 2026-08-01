@@ -8,9 +8,11 @@
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import {
-  buildIngredientIndex,
+  buildIngredientIndexFromRows,
   expandWithChildren,
+  type AliasRow,
   type IngredientIndex,
+  type IngredientRow,
 } from './search/ingredient-index.ts'
 import { EMPTY_QUERY, parseSearchQuery } from './search/parse-query.ts'
 import { filterRecipesByQuery, type SearchableRecipe } from './search/filter-recipes.ts'
@@ -134,11 +136,9 @@ async function fetchIngredientIndex(supabase: SupabaseClient): Promise<Ingredien
     supabase.from('ingredient_aliases').select('alias, ingredient_id'),
   ])
 
-  return buildIngredientIndex(
-    ((ingredients ?? []) as { id: string; name: string; category: string; parent_id: string | null }[])
-      .map((r) => ({ id: r.id, name: r.name, category: r.category, parentId: r.parent_id })),
-    ((aliases ?? []) as { alias: string; ingredient_id: string }[])
-      .map((r) => ({ alias: r.alias, ingredientId: r.ingredient_id }))
+  return buildIngredientIndexFromRows(
+    (ingredients ?? []) as IngredientRow[],
+    (aliases ?? []) as AliasRow[]
   )
 }
 

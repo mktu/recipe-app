@@ -89,6 +89,41 @@ export function buildIngredientIndex(
   return { all: ingredients, byId, exactMap, categoryMap, childrenMap, nameKeys }
 }
 
+/** DB の行そのままの形（Bot / Edge Function で共通） */
+export interface IngredientRow {
+  id: string
+  name: string
+  category: string
+  parent_id: string | null
+}
+
+export interface AliasRow {
+  alias: string
+  ingredient_id: string
+}
+
+/**
+ * DB の行から索引を構築する
+ *
+ * Bot と Edge Function で同じ変換を使うためのエントリポイント。
+ * 呼び出し側で snake_case → camelCase を書くと取り違えても気付けないので、
+ * 変換はここに集約する。
+ */
+export function buildIngredientIndexFromRows(
+  ingredients: IngredientRow[],
+  aliases: AliasRow[]
+): IngredientIndex {
+  return buildIngredientIndex(
+    ingredients.map((r) => ({
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      parentId: r.parent_id,
+    })),
+    aliases.map((r) => ({ alias: r.alias, ingredientId: r.ingredient_id }))
+  )
+}
+
 /** 食材IDに子食材IDを加えて展開する（重複除去） */
 export function expandWithChildren(index: IngredientIndex, ids: string[]): string[] {
   const expanded = new Set<string>()
