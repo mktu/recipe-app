@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/functions/**'
       - 'src/lib/batch/**'
+      - 'src/lib/search/**'
       - 'scripts/build-edge-functions.ts'
 
 jobs:

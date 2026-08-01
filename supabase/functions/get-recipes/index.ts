@@ -7,6 +7,13 @@
  */
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import {
+  buildIngredientIndex,
+  expandWithChildren,
+  type IngredientIndex,
+} from './search/ingredient-index.ts'
+import { EMPTY_QUERY, parseSearchQuery } from './search/parse-query.ts'
+import { filterRecipesByQuery, type SearchableRecipe } from './search/filter-recipes.ts'
 
 // Types
 interface GetRecipesRequest {
@@ -72,15 +79,9 @@ async function getUserId(
 async function fetchRecipes(
   supabase: SupabaseClient,
   userId: string,
-  searchQuery: string | undefined,
   sortOrder: NonNullable<SortOrder>
 ): Promise<Recipe[]> {
   let query = supabase.from('recipes').select('*').eq('user_id', userId)
-
-  if (searchQuery?.trim()) {
-    const term = `%${searchQuery.trim()}%`
-    query = query.or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`)
-  }
 
   // fewest_ingredients はJS側でソートするため、DBはデフォルト順で取得
   const dbSortOrder: DbSortOrder = sortOrder === 'fewest_ingredients' ? 'newest' : sortOrder
@@ -126,51 +127,61 @@ async function fetchRecipeIngredients(
   return map
 }
 
-async function getIngredientAndChildIds(
-  supabase: SupabaseClient,
-  ingredientIds: string[]
-): Promise<Map<string, string[]>> {
-  if (ingredientIds.length === 0) return new Map()
+/** 検索用の食材索引を構築（LINE Bot と同じロジックを共有） */
+async function fetchIngredientIndex(supabase: SupabaseClient): Promise<IngredientIndex> {
+  const [{ data: ingredients }, { data: aliases }] = await Promise.all([
+    supabase.from('ingredients').select('id, name, category, parent_id').eq('needs_review', false),
+    supabase.from('ingredient_aliases').select('alias, ingredient_id'),
+  ])
 
-  const { data, error } = await supabase
-    .from('ingredients')
-    .select('id, parent_id')
-    .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
-
-  if (error) {
-    console.error('[getIngredientAndChildIds] Error:', error)
-    return new Map(ingredientIds.map((id) => [id, [id]]))
-  }
-
-  const rows = (data ?? []) as { id: string; parent_id: string | null }[]
-  const result = new Map<string, string[]>()
-
-  for (const searchId of ingredientIds) {
-    const matchingIds = rows
-      .filter((row) => row.id === searchId || row.parent_id === searchId)
-      .map((row) => row.id)
-    if (!matchingIds.includes(searchId)) {
-      matchingIds.push(searchId)
-    }
-    result.set(searchId, matchingIds)
-  }
-  return result
+  return buildIngredientIndex(
+    ((ingredients ?? []) as { id: string; name: string; category: string; parent_id: string | null }[])
+      .map((r) => ({ id: r.id, name: r.name, category: r.category, parentId: r.parent_id })),
+    ((aliases ?? []) as { alias: string; ingredient_id: string }[])
+      .map((r) => ({ alias: r.alias, ingredientId: r.ingredient_id }))
+  )
 }
 
-function filterByIngredients(
-  recipes: RecipeWithIngredients[],
-  ingredientIds: string[],
-  expandedIdsMap: Map<string, string[]>
-): RecipeWithIngredients[] {
-  if (ingredientIds.length === 0) return recipes
+type SearchableRow = SearchableRecipe & { id: string }
 
-  return recipes.filter((recipe) => {
-    const recipeIngredientIds = recipe.mainIngredients.map((i) => i.id)
-    return ingredientIds.every((searchId) => {
-      const expandedIds = expandedIdsMap.get(searchId) || [searchId]
-      return expandedIds.some((id) => recipeIngredientIds.includes(id))
-    })
-  })
+function toSearchable(recipe: RecipeWithIngredients): SearchableRow {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    memo: recipe.memo,
+    sourceName: recipe.source_name,
+    ingredientsRaw: recipe.ingredients_raw,
+    ingredientIds: recipe.mainIngredients.map((i) => i.id),
+    ingredientNames: recipe.mainIngredients.map((i) => i.name),
+  }
+}
+
+/**
+ * 検索クエリ + 食材フィルタでレシピを絞り込む
+ *
+ * 検索文字列は食材条件（グループ内OR / グループ間AND）とテキスト条件（AND）に
+ * 分解され、フィルターバーで明示選択された食材IDとは AND で結合される。
+ */
+async function filterBySearch(
+  supabase: SupabaseClient,
+  recipes: RecipeWithIngredients[],
+  searchQuery: string | undefined,
+  ingredientIds: string[]
+): Promise<RecipeWithIngredients[]> {
+  if (!searchQuery?.trim() && ingredientIds.length === 0) return recipes
+
+  const index = await fetchIngredientIndex(supabase)
+  const parsed = searchQuery?.trim() ? parseSearchQuery(index, searchQuery) : EMPTY_QUERY
+  const selectedGroups = ingredientIds.map((id) => expandWithChildren(index, [id]))
+
+  const matchedIds = new Set(
+    filterRecipesByQuery(recipes.map(toSearchable), {
+      ingredientGroups: [...selectedGroups, ...parsed.ingredientGroups],
+      textTerms: parsed.textTerms,
+    }).map((r) => r.id)
+  )
+
+  return recipes.filter((r) => matchedIds.has(r.id))
 }
 
 function extractAvailableSourceNames(recipes: RecipeWithIngredients[]): string[] {
@@ -250,7 +261,7 @@ Deno.serve(async (req) => {
 
     // 2. Fetch recipes
     t = Date.now()
-    const recipes = await fetchRecipes(supabase, userId, searchQuery, sortOrder)
+    const recipes = await fetchRecipes(supabase, userId, sortOrder)
     timings.fetchRecipes = Date.now() - t
 
     if (recipes.length === 0) {
@@ -271,14 +282,10 @@ Deno.serve(async (req) => {
       mainIngredients: ingredientMap.get(r.id) || [],
     }))
 
-    // 4. Filter by ingredients if needed
+    // 4. Filter by search query and ingredients
     t = Date.now()
-    let result = recipesWithIngredients
-    if (ingredientIds.length > 0) {
-      const expandedIdsMap = await getIngredientAndChildIds(supabase, ingredientIds)
-      result = filterByIngredients(recipesWithIngredients, ingredientIds, expandedIdsMap)
-    }
-    timings.filterByIngredients = Date.now() - t
+    let result = await filterBySearch(supabase, recipesWithIngredients, searchQuery, ingredientIds)
+    timings.filterBySearch = Date.now() - t
 
     // 5. Extract available source names (before source filtering)
     const availableSourceNames = extractAvailableSourceNames(result)
