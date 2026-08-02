@@ -3,10 +3,10 @@
  * 手動紐付け・レシピ絞り込みの両方で使う、食材名の部分一致検索ロジック
  */
 
-/** ひらがな → カタカナ に正規化（大文字小文字も統一） */
-export function toKatakana(str: string): string {
-  return str.replace(/[ぁ-ゖ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
-}
+import { toKatakana } from '@/lib/search/normalize'
+
+/** ひらがな → カタカナ に正規化（実装は検索モジュールと共有） */
+export { toKatakana }
 
 interface SearchableIngredient {
   id: string

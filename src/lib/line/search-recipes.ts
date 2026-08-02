@@ -1,8 +1,11 @@
 import { createServerClient } from '@/lib/db/client'
-import type { ParsedSearchQuery } from './parse-search-query'
 import { getVectorSearchIds } from '@/lib/db/queries/recipe-embedding'
+import { filterRecipesByQuery } from '@/lib/search/filter-recipes'
+import type { ParsedSearchQuery } from '@/lib/search/parse-query'
+import { fetchSearchableRecipes, type BotSearchableRecipe } from './searchable-recipes'
 
-const MIN_ILIKE_RESULTS = 3
+/** テキスト検索がこの件数に満たない場合はベクトル検索で補完する */
+const MIN_TEXT_RESULTS = 3
 
 export interface SearchRecipeResult {
   id: string
@@ -14,212 +17,77 @@ export interface SearchRecipeResult {
   cookingTimeMinutes?: number | null
 }
 
+export const toResult = (r: BotSearchableRecipe): SearchRecipeResult => ({
+  id: r.id,
+  title: r.title,
+  url: r.url,
+  imageUrl: r.imageUrl,
+  sourceName: r.sourceName ?? null,
+  cookingTimeMinutes: r.cookingTimeMinutes,
+  ingredientCount: r.ingredientCount,
+})
+
+export async function findUserId(
+  client: ReturnType<typeof createServerClient>,
+  lineUserId: string
+): Promise<string | null> {
+  const { data } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
+  return data?.id ?? null
+}
+
 /**
- * 食材IDに対して、その食材+子食材のIDを取得
- * @returns Map<検索食材ID, [検索食材ID + 子食材ID]>
+ * ベクトル検索でテキスト条件を補完する
+ *
+ * 食材条件（AND）は満たしたままにしたいので、候補は食材条件を通ったものに限定する。
  */
-async function expandIngredientIds(ingredientIds: string[]): Promise<Map<string, string[]>> {
-  if (ingredientIds.length === 0) return new Map()
+async function findByVectorSearch(
+  client: ReturnType<typeof createServerClient>,
+  userId: string,
+  query: ParsedSearchQuery,
+  allRecipes: BotSearchableRecipe[],
+  matched: BotSearchableRecipe[],
+  limit: number
+): Promise<BotSearchableRecipe[]> {
+  try {
+    const excludeIds = matched.map((r) => r.id)
+    const ids = await getVectorSearchIds(client, userId, query.textTerms.join(' '), excludeIds, limit)
+    if (ids.length === 0) return []
 
-  const supabase = createServerClient()
-  const { data } = await supabase
-    .from('ingredients')
-    .select('id, parent_id')
-    .or(`id.in.(${ingredientIds.join(',')}),parent_id.in.(${ingredientIds.join(',')})`)
-
-  const result = new Map<string, string[]>()
-  for (const searchId of ingredientIds) {
-    const matchingIds = (data ?? [])
-      .filter((row) => row.id === searchId || row.parent_id === searchId)
-      .map((row) => row.id)
-    if (!matchingIds.includes(searchId)) {
-      matchingIds.push(searchId)
-    }
-    result.set(searchId, matchingIds)
-  }
-  return result
-}
-
-/** 食材IDに該当するレシピIDを取得（AND条件） */
-async function findRecipeIdsByIngredients(ingredientIds: string[]): Promise<string[] | null> {
-  if (ingredientIds.length === 0) return null
-
-  const supabase = createServerClient()
-  const expandedIdsMap = await expandIngredientIds(ingredientIds)
-
-  const matchingSets = await Promise.all(
-    ingredientIds.map(async (searchId) => {
-      const ids = expandedIdsMap.get(searchId) || [searchId]
-      const { data } = await supabase
-        .from('recipe_ingredients')
-        .select('recipe_id')
-        .in('ingredient_id', ids)
-        .eq('is_main', true)
-      return new Set((data ?? []).map((r) => r.recipe_id))
+    const eligible = filterRecipesByQuery(allRecipes, {
+      ingredientGroups: query.ingredientGroups,
+      textTerms: [],
     })
-  )
-
-  const intersection = matchingSets.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))))
-  return Array.from(intersection)
+    const byId = new Map(eligible.map((r) => [r.id, r]))
+    return ids.map((id) => byId.get(id)).filter((r): r is BotSearchableRecipe => r !== undefined)
+  } catch (e) {
+    console.error('[findByVectorSearch] Vector search failed:', e)
+    return []
+  }
 }
 
-/** Bot検索: 食材ID + タイトル検索でレシピを検索 */
+/**
+ * Bot 検索: 食材条件（グループ内OR / グループ間AND）+ テキスト条件（AND）で絞り込む
+ *
+ * レシピを新しい順に全件取得し、Web の get-recipes と同じ照合ロジックで絞り込む。
+ */
 export async function searchRecipesForBot(
   lineUserId: string,
   query: ParsedSearchQuery,
   limit: number = 10
 ): Promise<SearchRecipeResult[]> {
   const supabase = createServerClient()
+  const userId = await findUserId(supabase, lineUserId)
+  if (!userId) return []
 
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
+  const recipes = await fetchSearchableRecipes(supabase, userId)
+  if (recipes.length === 0) return []
 
-  const recipeIds = await findRecipeIdsByIngredients(query.ingredientIds)
-  if (recipeIds !== null && recipeIds.length === 0) return []
+  const matched = filterRecipesByQuery(recipes, query)
 
-  // 検索クエリがない場合は通常の検索
-  if (!query.searchQuery.trim()) {
-    let recipesQuery = supabase
-      .from('recipes')
-      .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    if (recipeIds !== null) recipesQuery = recipesQuery.in('id', recipeIds)
-
-    const { data: recipes } = await recipesQuery
-    if (!recipes) return []
-
-    return recipes.map(toResult)
+  if (query.textTerms.length > 0 && matched.length < MIN_TEXT_RESULTS) {
+    const extra = await findByVectorSearch(supabase, userId, query, recipes, matched, limit)
+    return [...matched, ...extra].slice(0, limit).map(toResult)
   }
 
-  // ハイブリッド検索
-  return searchRecipesHybridForBot(supabase, user.id, query.searchQuery.trim(), recipeIds, limit)
-}
-
-type RecipeRow = { id: string; title: string; url: string; image_url: string | null; source_name: string | null; cooking_time_minutes: number | null; ingredients_raw: unknown }
-const toResult = (r: RecipeRow): SearchRecipeResult => ({ id: r.id, title: r.title, url: r.url, imageUrl: r.image_url, sourceName: r.source_name, cookingTimeMinutes: r.cooking_time_minutes, ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null })
-
-/** 最近見たレシピ（last_viewed_at DESC, NULL除外） */
-export async function fetchRecentlyViewedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
-  const supabase = createServerClient()
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
-
-  const { data } = await supabase
-    .from('recipes')
-    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
-    .eq('user_id', user.id)
-    .not('last_viewed_at', 'is', null)
-    .order('last_viewed_at', { ascending: false })
-    .limit(limit)
-  return (data ?? []).map(toResult)
-}
-
-/** よく見るレシピ（view_count DESC, 0除外） */
-export async function fetchMostViewedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
-  const supabase = createServerClient()
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
-
-  const { data } = await supabase
-    .from('recipes')
-    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
-    .eq('user_id', user.id)
-    .gt('view_count', 0)
-    .order('view_count', { ascending: false })
-    .limit(limit)
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    title: r.title,
-    url: r.url,
-    imageUrl: r.image_url,
-    sourceName: r.source_name,
-    cookingTimeMinutes: r.cooking_time_minutes,
-    ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null,
-  }))
-}
-
-/** 材料少なめレシピ（ingredients_raw 配列長 ASC） */
-export async function fetchFewIngredientsForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
-  const supabase = createServerClient()
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
-
-  const { data } = await supabase.rpc('get_recipes_few_ingredients', { p_user_id: user.id, p_limit: limit })
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    title: r.title,
-    url: r.url,
-    imageUrl: r.image_url,
-    sourceName: r.source_name,
-    ingredientCount: r.ingredient_count,
-    cookingTimeMinutes: r.cooking_time_minutes,
-  }))
-}
-
-/** 最近追加したレシピ（created_at DESC） */
-export async function fetchRecentlyAddedForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
-  const supabase = createServerClient()
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
-
-  const { data } = await supabase
-    .from('recipes')
-    .select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    title: r.title,
-    url: r.url,
-    imageUrl: r.image_url,
-    sourceName: r.source_name,
-    cookingTimeMinutes: r.cooking_time_minutes,
-    ingredientCount: Array.isArray(r.ingredients_raw) ? r.ingredients_raw.length : null,
-  }))
-}
-
-/** 時短レシピ（cooking_time_minutes ASC、NULL除外） */
-export async function fetchShortCookingTimeForBot(lineUserId: string, limit = 5): Promise<SearchRecipeResult[]> {
-  const supabase = createServerClient()
-  const { data: user } = await supabase.from('users').select('id').eq('line_user_id', lineUserId).single()
-  if (!user) return []
-
-  const { data } = await supabase.rpc('get_recipes_short_cooking_time', { p_user_id: user.id, p_limit: limit })
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    title: r.title,
-    url: r.url,
-    imageUrl: r.image_url,
-    sourceName: r.source_name,
-    cookingTimeMinutes: r.cooking_time_minutes,
-    ingredientCount: r.ingredient_count,
-  }))
-}
-
-/** Bot用ハイブリッド検索 */
-async function searchRecipesHybridForBot(
-  supabase: ReturnType<typeof createServerClient>, userId: string, searchQuery: string, recipeIds: string[] | null, limit: number
-): Promise<SearchRecipeResult[]> {
-  const term = `%${searchQuery}%`
-  let q = supabase.from('recipes').select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw').eq('user_id', userId)
-    .or(`title.ilike.${term},memo.ilike.${term},source_name.ilike.${term}`).order('created_at', { ascending: false }).limit(limit)
-  if (recipeIds !== null) q = q.in('id', recipeIds)
-  const { data } = await q
-  const results = (data ?? []).map(toResult)
-  if (results.length >= MIN_ILIKE_RESULTS) return results
-
-  try {
-    const excludeIds = results.map((r) => r.id)
-    const additionalIds = await getVectorSearchIds(supabase, userId, searchQuery, excludeIds, limit)
-    const filteredIds = recipeIds ? additionalIds.filter((id) => recipeIds.includes(id)) : additionalIds
-    if (filteredIds.length > 0) {
-      const { data: extra } = await supabase.from('recipes').select('id, title, url, image_url, source_name, cooking_time_minutes, ingredients_raw').in('id', filteredIds)
-      return [...results, ...(extra ?? []).map(toResult)]
-    }
-  } catch (e) { console.error('[searchRecipesHybridForBot] Vector search failed:', e) }
-  return results
+  return matched.slice(0, limit).map(toResult)
 }

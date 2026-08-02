@@ -510,6 +510,43 @@ graph TB
 
 > バッチ処理の詳細は [Edge Functions](#edge-functions) セクションを参照
 
+### 検索時の解決
+
+検索ロジックは `src/lib/search/` が正本で、LINE Bot と Web（`get-recipes` Edge Function）の
+両方が同じモジュールを使う。Edge Function 側は `npm run functions:build` でコピーされる。
+
+入力は空白区切りで分割し、語ごとに食材条件かテキスト条件かを判定する。
+
+```mermaid
+graph TB
+    Input["検索入力（例: 豚肉 玉ねぎ）"] --> Split["空白（全角/半角）で分割"]
+    Split --> Normalize["正規化（かな→カナ・全角半角・大文字小文字）"]
+
+    Normalize --> ExactCheck{"完全一致（マスタ名・エイリアス）"}
+    ExactCheck -->|Match| Group["食材IDグループ（子食材まで展開）"]
+    ExactCheck -->|No match| CategoryCheck{"カテゴリ一致（肉・魚介 等）"}
+
+    CategoryCheck -->|Match| Group
+    CategoryCheck -->|No match| PartialCheck{"部分一致（双方向）"}
+
+    PartialCheck -->|Match| Group
+    PartialCheck -->|No match| Text["テキスト条件"]
+
+    Group --> Filter["グループ内OR / グループ間AND"]
+    Text --> TextFilter["タイトル・メモ・サイト名・材料テキストを AND 照合"]
+```
+
+| 特性 | 挙動 |
+|------|------|
+| 複数キーワード | 語間は AND（「豚肉 玉ねぎ」＝両方を含むレシピ） |
+| 候補が複数の語 | 絞り込まず OR（「肉」→ 肉カテゴリ全件、「豚」→ 豚肉系すべて） |
+| 親食材 | 子食材まで展開（「豚肉」→ 豚バラ肉・豚こま切れ肉 等） |
+| 未解決語 | テキスト照合に回る（マスタにない食材も材料テキストで拾える） |
+| Bot のみ | テキスト条件のヒットが 3 件未満ならベクトル検索で補完 |
+
+> 絞り込みは DB クエリではなくユーザーのレシピを取得した上での JS フィルタで行う
+> （Bot / Web で同一の照合結果にするため）。レシピ件数が大きく増えた場合は RPC 化を検討する。
+
 ---
 
 ## CI/CD

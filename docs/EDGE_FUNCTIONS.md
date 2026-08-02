@@ -15,7 +15,21 @@ supabase/functions/auto-alias/
 ├── alias-generator.ts   # 自動生成（.gitignore）
 ├── alias-db.ts          # 自動生成（.gitignore）
 └── alias-llm.ts         # 自動生成（.gitignore）
+
+src/lib/search/          # 検索ロジック（LINE Bot と共有）
+├── normalize.ts
+├── ingredient-index.ts
+├── resolve-term.ts
+├── parse-query.ts
+└── filter-recipes.ts
+        ↓  npm run functions:build
+supabase/functions/get-recipes/
+├── index.ts             # エントリーポイント（手動管理）
+└── search/              # 自動生成（.gitignore）
 ```
+
+> 共有元を増やしたら `.github/workflows/supabase-functions.yml` の `paths` にも追加すること
+> （追加しないとソース変更時にデプロイが走らない）。
 
 ### なぜこの構成か
 
@@ -31,7 +45,8 @@ supabase/functions/auto-alias/
 npm run functions:build
 ```
 
-これにより `src/lib/batch/*.ts` が `supabase/functions/auto-alias/` にコピー・変換される。
+これにより `src/lib/batch/*.ts` → `supabase/functions/auto-alias/`、
+`src/lib/search/*.ts` → `supabase/functions/get-recipes/search/` にコピー・変換される。
 
 ### 2. Edge Function を起動
 
