@@ -1,7 +1,8 @@
 import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage } from './flex-message'
-import { parseSearchQuery, ParsedSearchQuery } from './parse-search-query'
-import { searchRecipesForBot, fetchRecentlyViewedForBot, fetchMostViewedForBot, SearchRecipeResult } from './search-recipes'
+import { parseSearchQuery, isEmptyQuery } from './parse-search-query'
+import { searchRecipesForBot, SearchRecipeResult } from './search-recipes'
+import { fetchRecentlyViewedForBot, fetchMostViewedForBot } from './recipe-lists'
 import { buildIngredientQuickReply } from './quick-reply'
 import { toCard } from './recipe-card-mapper'
 
@@ -27,21 +28,19 @@ export function isMostViewedKeyword(text: string): boolean {
   return ['よく見る', 'よくみる', 'よく見るレシピ'].includes(text.trim())
 }
 
-/** LIFF URLに検索クエリパラメータを付与 */
-function buildLiffUrl(query: ParsedSearchQuery): string {
+/**
+ * LIFF URLに検索クエリパラメータを付与
+ *
+ * 入力テキストをそのまま `q` に載せ、Web 側でも同じロジックでパースさせる
+ * （食材IDに展開して渡すと、候補が複数ある語で Bot と結果がずれるため）
+ */
+function buildLiffUrl(searchText: string): string {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
   const baseUrl = `https://liff.line.me/${liffId}`
-  const params = new URLSearchParams()
+  const trimmed = searchText.trim()
+  if (!trimmed) return baseUrl
 
-  if (query.searchQuery.trim()) {
-    params.set('q', query.searchQuery.trim())
-  }
-  if (query.ingredientIds.length > 0) {
-    params.set('ingredients', query.ingredientIds.join(','))
-  }
-
-  const queryString = params.toString()
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl
+  return `${baseUrl}?${new URLSearchParams({ q: trimmed }).toString()}`
 }
 
 async function replyText(params: ReplyParams, text: string): Promise<void> {
@@ -51,10 +50,10 @@ async function replyText(params: ReplyParams, text: string): Promise<void> {
 async function replyWithRecipes(
   params: ReplyParams,
   recipes: SearchRecipeResult[],
-  query: ParsedSearchQuery
+  searchText: string
 ): Promise<void> {
   const top5 = recipes.slice(0, 5)
-  const listUrl = buildLiffUrl(query)
+  const listUrl = buildLiffUrl(searchText)
   await params.client.replyMessage({
     replyToken: params.replyToken,
     messages: [createVerticalListMessage(top5.map(toCard), listUrl, recipes.length)],
@@ -74,7 +73,7 @@ export async function handleSearch(
     await ensureUser(lineUserId)
     const query = await parseSearchQuery(text)
 
-    if (query.ingredientIds.length === 0 && !query.searchQuery.trim()) {
+    if (isEmptyQuery(query)) {
       await replyText(params, 'レシピURLを送ってください 🍳\n\n食材名やキーワードで検索もできます。')
       return
     }
@@ -86,7 +85,7 @@ export async function handleSearch(
       return
     }
 
-    await replyWithRecipes(params, recipes, query)
+    await replyWithRecipes(params, recipes, text)
   } catch (err) {
     console.error('[LINE Webhook] Search error:', err)
     await replyText(params, '検索中にエラーが発生しました。')

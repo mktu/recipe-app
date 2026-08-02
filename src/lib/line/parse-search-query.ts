@@ -1,48 +1,28 @@
-import { createDefaultResolver, IngredientResolver } from './ingredient-resolver'
+import { createServerClient } from '@/lib/db/client'
+import { fetchIngredientIndex } from '@/lib/db/queries/ingredient-index'
+import type { IngredientIndex } from '@/lib/search/ingredient-index'
+import { parseSearchQuery as parseWithIndex, type ParsedSearchQuery } from '@/lib/search/parse-query'
 
-export interface ParsedSearchQuery {
-  ingredientIds: string[]
-  searchQuery: string
-}
+export type { ParsedSearchQuery }
+export { isEmptyQuery } from '@/lib/search/parse-query'
 
 /**
- * 検索入力をパースして食材IDとテキスト検索クエリに分離
+ * Bot の検索入力をパースして食材条件とテキスト条件に分離する
+ *
+ * 解決ロジックの本体は `@/lib/search`（Web と共有）。ここは DB 取得の薄いラッパー。
  *
  * @example
- * parseSearchQuery("鶏肉 玉ねぎ") → { ingredientIds: [...], searchQuery: "" }
- * parseSearchQuery("カレー") → { ingredientIds: [], searchQuery: "カレー" }
- * parseSearchQuery("豚肉 カレー") → { ingredientIds: [...], searchQuery: "カレー" }
+ * parseSearchQuery("豚肉 玉ねぎ") → { ingredientGroups: [[豚肉+子食材], [たまねぎ]], textTerms: [] }
+ * parseSearchQuery("カレー")     → { ingredientGroups: [], textTerms: ["カレー"] }
+ * parseSearchQuery("肉 簡単")    → { ingredientGroups: [[肉カテゴリ全件]], textTerms: ["簡単"] }
  *
  * @param input ユーザー入力
- * @param resolver 食材解決に使うResolver（テスト時に差し替え可能）
+ * @param index 食材索引（テスト時に差し替え可能）
  */
 export async function parseSearchQuery(
   input: string,
-  resolver: IngredientResolver = createDefaultResolver()
+  index?: IngredientIndex
 ): Promise<ParsedSearchQuery> {
-  // 全角/半角スペースで分割
-  const words = input.split(/[\s　]+/).filter((w) => w.length > 0)
-
-  if (words.length === 0) {
-    return { ingredientIds: [], searchQuery: '' }
-  }
-
-  const ingredientIds: string[] = []
-  const unmatchedWords: string[] = []
-
-  for (const word of words) {
-    const resolved = await resolver.resolve(word)
-    if (resolved) {
-      if (!ingredientIds.includes(resolved.id)) {
-        ingredientIds.push(resolved.id)
-      }
-    } else {
-      unmatchedWords.push(word)
-    }
-  }
-
-  return {
-    ingredientIds,
-    searchQuery: unmatchedWords.join(' '),
-  }
+  const resolved = index ?? (await fetchIngredientIndex(createServerClient()))
+  return parseWithIndex(resolved, input)
 }

@@ -1,6 +1,6 @@
 import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage } from './flex-message'
-import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './search-recipes'
+import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './recipe-lists'
 import { toCard } from './recipe-card-mapper'
 
 type MessagingApiClient = messagingApi.MessagingApiClient

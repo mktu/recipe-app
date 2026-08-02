@@ -29,6 +29,17 @@ const functions: FunctionConfig[] = [
       { src: 'src/lib/batch/alias-llm.ts', dest: 'alias-llm.ts' },
     ],
   },
+  {
+    // 検索ロジックは LINE Bot と共有（src/lib/search が正本）
+    name: 'get-recipes',
+    sharedFiles: [
+      { src: 'src/lib/search/normalize.ts', dest: 'search/normalize.ts' },
+      { src: 'src/lib/search/ingredient-index.ts', dest: 'search/ingredient-index.ts' },
+      { src: 'src/lib/search/resolve-term.ts', dest: 'search/resolve-term.ts' },
+      { src: 'src/lib/search/parse-query.ts', dest: 'search/parse-query.ts' },
+      { src: 'src/lib/search/filter-recipes.ts', dest: 'search/filter-recipes.ts' },
+    ],
+  },
 ]
 
 function transformForDeno(content: string): string {
