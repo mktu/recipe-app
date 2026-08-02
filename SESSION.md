@@ -12,6 +12,7 @@
 未完了タスクの正本は GitHub Issues（`gh issue list --state open`）。ここには方針レベルの塊だけ:
 
 - **公開・宣伝** — #132 Gemini 有料 tier 判断
+- **食材マッチングの積み残し**（#144 の検討中に判明。着手順は #148 → #147 → #149 が素直）— #148 自動追加食材が `needs_review=true` で行き止まり（LLM 呼び出しを無駄に繰り返す・コスト影響あり）、#147 エイリアス生成後にレシピが再リンクされない、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
 - **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
@@ -28,6 +29,8 @@
 - **ローカルでレシピ追加には `dev-user-001` の users 行が必要**（`supabase/seed.sql`）。無いと create 失敗 → `npx supabase db reset` で seed 再投入
 - **API は ID トークン検証必須**（dev は `NEXT_PUBLIC_LIFF_ID` 空でバイパス）。クライアントからの呼び出しは `useAuthedFetch` を使う
 - **Supabase キー**: アプリ全体は `SUPABASE_SECRET_KEY`（`sb_secret_...`）、Edge Functions 内部は `SUPABASE_SERVICE_ROLE_KEY`（自動インジェクト）
+- **pg_cron の command に secret key が平文で埋まっている**（`SELECT * FROM cron.job;` で見える）。キーをローテーションしたら cron ジョブも貼り直しが必要
+- **`scripts/setup-cron.ts` は cron ジョブを網羅していない**。同スクリプトが作るのは `generate-embeddings` と `cleanup-cron-logs` の2つで、本番の `auto-alias-daily`（毎日 18:00 UTC）はダッシュボードで手動登録されたもの。スクリプトを流し直しても復活しない
 - **fnm の PATH**: ターミナル起動時に `eval "$(fnm env --use-on-cd --shell zsh)"` が必要
 - **本番/staging で `NEXT_PUBLIC_APP_URL` 設定必須**（未設定だと LINE トーク上の規約・プライバシーリンクが機能しない）
 
@@ -36,6 +39,7 @@
 - `docs/DATABASE_DESIGN.md` - DB設計
 - `docs/SCRAPING_POLICY.md` - スクレイピング方針・規約確認記録の正本
 - `src/lib/recipe/parse-recipe.ts` - 解析フロー（JSON-LD → __NEXT_DATA__ → OGP → 空結果）
+- `src/lib/search/` - 検索ロジックの正本。LINE Bot と Web（`get-recipes` Edge Function）で共有し、Edge へは `npm run functions:build` でコピーされる（共有元を増やしたら `supabase-functions.yml` の `paths` にも追加）
 - `src/lib/auth/verify-line-token.ts` / `src/lib/api/auth-guard.ts` - ID トークン検証・API 認証ガード
 - `supabase/migrations/20260702000000_clarify_rls_policies.sql` - RLS（service_role ベース・設計意図をコメント記載）
 - `.claude/skills/legal-check/skill.md` - 法的リスクチェック（Issue 一元化・線引き基準）
