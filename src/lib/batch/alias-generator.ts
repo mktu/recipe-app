@@ -64,11 +64,15 @@ async function processNewIngredientItem(
     return { aliasCreated: false, newIngredientCreated: false, error: null }
   }
 
-  const newId = await insertNewIngredient(supabase, item.input, item.newIngredientCategory)
+  const { id, error } = await insertNewIngredient(
+    supabase,
+    item.input,
+    item.newIngredientCategory
+  )
   return {
     aliasCreated: false,
-    newIngredientCreated: newId !== null,
-    error: null,
+    newIngredientCreated: id !== null,
+    error,
   }
 }
 
