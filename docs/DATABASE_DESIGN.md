@@ -35,7 +35,8 @@
 - `id`: UUID (Primary Key)
 - `name`: String (Unique) -- "なす"
 - `category`: String -- "野菜", "肉", "魚介" 等
-- `needs_review`: Boolean (デフォルト false、AI が自動追加した場合は true)
+- `needs_review`: Boolean (デフォルト false、人手で要確認の印を付ける用途。書き込む処理は現状なし)
+- `auto_generated`: Boolean (auto-alias バッチによる自動追加フラグ、デフォルト false)
 - `parent_id`: UUID (Foreign Key → ingredients.id) -- 親食材（例: 豚バラ肉 → 豚肉）
 - `created_at`: Timestamp
 
@@ -86,7 +87,7 @@ users ─────< recipes >───── recipe_ingredients >────
   3. 部分一致検索（マスター食材が入力に含まれるか、最長優先）
      例: "豚肉細切れ".includes("豚肉") → マッチ！
   4. マッチなし → unmatched_ingredients に記録
-     → auto-alias Edge Function（バッチ）が後からエイリアス登録 or 新規食材追加（needs_review=true）
+     → auto-alias Edge Function（バッチ）が後からエイリアス登録 or 新規食材追加（auto_generated=true）
   ↓
 recipe_ingredients に紐づけを保存
 ```
@@ -185,8 +186,8 @@ recipe_ingredients に紐づけを保存
 
 **運用方針:**
 - 初期データとして DB に投入
-- AI が新規食材を出力した場合は自動追加（`needs_review` フラグ付き）
-- 定期的にレビューして整理
+- AI が新規食材を出力した場合は即時有効な状態で自動追加（`auto_generated` フラグ付き）
+- 定期的にレビューして整理（事後監査）
 
 ## RPC 関数
 

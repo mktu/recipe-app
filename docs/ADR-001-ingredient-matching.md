@@ -75,7 +75,7 @@
 2. 上位100件を処理対象
 3. LLM（Gemini）に一括で問い合わせ（1回のAPI呼び出し）
    - マッチ → ingredient_aliases に登録（auto_generated = true）
-   - 新規 → ingredients に追加（needs_review = true）
+   - 新規 → ingredients に追加（auto_generated = true / 即時有効）
 4. 処理済みを unmatched_ingredients から削除
 ```
 
@@ -85,7 +85,7 @@
 |------|-----|
 | バッチ頻度 | 1日1回 |
 | 処理上限 | 100件/日 |
-| マッチしない場合 | 新規食材として追加（要レビュー） |
+| マッチしない場合 | 新規食材として追加（即時有効 + 事後監査） |
 
 ## 理由
 
@@ -105,6 +105,10 @@
 ALTER TABLE ingredient_aliases
 ADD COLUMN auto_generated BOOLEAN DEFAULT FALSE,
 ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- ingredients に追加（Issue #148）
+ALTER TABLE ingredients
+ADD COLUMN auto_generated BOOLEAN DEFAULT FALSE;
 
 -- 未マッチ食材の出現頻度取得用RPC
 CREATE FUNCTION get_unmatched_ingredient_counts(limit_count INTEGER)

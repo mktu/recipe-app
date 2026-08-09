@@ -65,6 +65,7 @@ export type Database = {
       }
       ingredients: {
         Row: {
+          auto_generated: boolean | null
           category: string
           created_at: string | null
           id: string
@@ -73,6 +74,7 @@ export type Database = {
           parent_id: string | null
         }
         Insert: {
+          auto_generated?: boolean | null
           category: string
           created_at?: string | null
           id?: string
@@ -81,6 +83,7 @@ export type Database = {
           parent_id?: string | null
         }
         Update: {
+          auto_generated?: boolean | null
           category?: string
           created_at?: string | null
           id?: string

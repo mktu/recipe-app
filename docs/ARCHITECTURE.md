@@ -274,7 +274,7 @@ graph TB
 
 | 関数 | トリガー | 処理方式 | 説明 |
 |------|---------|---------|------|
-| `get-recipes` | API Route | 同期 | レシピ一覧取得（複数クエリ） |
+| `get-recipes` | API Route | 同期 | レシピ一覧取得・検索（複数クエリ） |
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
 
@@ -309,12 +309,21 @@ sequenceDiagram
 
 ### ソースコード管理
 
-Edge Function の共有ロジックは `src/lib/batch/` で管理し、ビルド時に Deno 用に変換。
+Edge Function の共有ロジックは `src/lib/` 配下で管理し、ビルド時に Deno 用に変換。
 
 ```
-src/lib/batch/     →  npm run functions:build  →  supabase/functions/*/
-(Node.js)                                          (Deno)
+src/lib/batch/     →  npm run functions:build  →  supabase/functions/auto-alias/
+src/lib/search/                                   supabase/functions/get-recipes/search/
+(Node.js)                                         (Deno)
 ```
+
+| 共有元 | 利用する Edge Function | 内容 |
+|--------|------------------------|------|
+| `src/lib/batch/` | `auto-alias` | エイリアス自動生成（ローカルスクリプトと共有） |
+| `src/lib/search/` | `get-recipes` | 検索クエリの解決・絞り込み（LINE Bot と共有） |
+
+> 共有元を追加したら `.github/workflows/supabase-functions.yml` の `paths` にも追加すること。
+> 生成物は gitignore 対象のため、追加しないとソース変更時にデプロイが走らない。
 
 > 詳細は `docs/EDGE_FUNCTIONS.md` を参照
 
