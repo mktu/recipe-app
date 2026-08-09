@@ -84,11 +84,30 @@ export async function insertAlias(
   return true
 }
 
+/**
+ * 新規食材の追加結果
+ *
+ * 重複（23505）を含む失敗を呼び出し元がバッチ結果に計上できるよう、
+ * ID だけでなく失敗理由も返す（Issue #148）
+ */
+export interface InsertIngredientResult {
+  id: string | null
+  error: string | null
+}
+
+/**
+ * LLM が「新規食材」と判定したものを食材マスターに追加する
+ *
+ * needs_review は付けない。付けるとマッチング・検索・LLM に渡すマスタ一覧の
+ * すべてから除外され、同じ食材が来るたびに LLM 判定 → 重複エラーを繰り返す
+ * 行き止まりになるため（Issue #148）。自動追加であることは auto_generated で識別し、
+ * 妥当性は事後監査で担保する。
+ */
 export async function insertNewIngredient(
   supabase: SupabaseClient,
   name: string,
   category: string
-): Promise<string | null> {
+): Promise<InsertIngredientResult> {
   const validCategory = VALID_CATEGORIES.includes(category)
     ? category
     : DEFAULT_CATEGORY
@@ -98,21 +117,24 @@ export async function insertNewIngredient(
     .insert({
       name,
       category: validCategory,
-      needs_review: true,
+      needs_review: false,
+      auto_generated: true,
     })
     .select('id')
     .single()
 
   if (error) {
+    // 23505 = name の UNIQUE 違反。マスタに既にある食材が未マッチとして再来した合図で、
+    // マッチャーの取りこぼしを示すためエラーとして計上する
     if (error.code === '23505') {
-      console.log(`[insertNewIngredient] Already exists: ${name}`)
-      return null
+      console.error(`[insertNewIngredient] Already exists: ${name}`)
+      return { id: null, error: `Ingredient already exists: ${name}` }
     }
     console.error('[insertNewIngredient] Error:', error)
-    return null
+    return { id: null, error: `Failed to insert ingredient: ${name} (${error.message})` }
   }
 
-  return data?.id ?? null
+  return { id: data?.id ?? null, error: null }
 }
 
 export async function deleteProcessedUnmatched(

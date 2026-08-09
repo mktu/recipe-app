@@ -12,6 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Edge Function の共有ロジックは gitignore 対象の生成物のため、
+      # クリーンチェックアウトには存在しない。config.toml が宣言している関数を
+      # supabase start がバンドルしようとして落ちるので、先に生成しておく。
+      - name: Build Edge Functions
+        run: npm run functions:build
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
