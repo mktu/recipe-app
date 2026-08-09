@@ -12,7 +12,7 @@
 未完了タスクの正本は GitHub Issues（`gh issue list --state open`）。ここには方針レベルの塊だけ:
 
 - **公開・宣伝** — #132 Gemini 有料 tier 判断
-- **食材マッチングの積み残し**（#144 の検討中に判明。着手順は #148 → #147 → #149 が素直）— #148 自動追加食材が `needs_review=true` で行き止まり（LLM 呼び出しを無駄に繰り返す・コスト影響あり）、#147 エイリアス生成後にレシピが再リンクされない、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
+- **食材マッチングの積み残し**（#144 の検討中に判明。#148 は完了。着手順は #147 → #152 → #150 → #149 が素直）— #147 エイリアス生成後にレシピが再リンクされない、#152 正規化が切り方・「、」連結を処理せずゴミ食材がマスタに流入する（#148 で自動追加食材を即時有効化したため、今後ゴミが UI に直接出る）、#150 自動追加食材の週次 LINE 通知による事後監査、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
 - **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
@@ -22,6 +22,8 @@
 
 ## 横断的な注意点（環境・運用の gotcha）
 - **PR は必ず `--base develop`**（`/create-pr` を使うと安全）。過去に main へ誤マージあり（PR #95）
+- **`Closes #NNN` は develop への PR では発火しない**（GitHub はデフォルトブランチへのマージ時のみ自動クローズ）。全 PR が develop 向けのため、**Issue は main マージ後に手動で閉じる**必要がある
+- **`supabase/setup-cli` が `version: latest`** のため、コードを変えなくても CLI 更新で CI が壊れ得る。特に `test-migrations.yml` は `supabase/migrations/**` 変更時のみ動くので、壊れてから気付くまで数ヶ月空くことがある（実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。`npm run functions:build` を前段に追加して解消）
 - **Vercel Preview の Deployment Protection は Off**（staging の LINE Webhook を通すため）
 - **staging LINE Webhook URL**: `https://recipe-app-git-develop-mktus-projects.vercel.app/api/webhook/line`
 - **ローカルでのレシピ取得**: `supabase functions serve` を別ターミナルで起動が必要
