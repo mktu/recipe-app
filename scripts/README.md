@@ -170,3 +170,39 @@ npm run backfill:embeddings -- --env=staging
 ```
 
 DBに登録されたレシピの食材マッチング率と未マッチ食材TOP20を表示する。
+
+## 自動追加食材の監査レポート
+
+auto-alias が自動追加した食材（`auto_generated = TRUE`）を洗い出し、管理者向け LINE 通知の本文を組み立てる。
+本番では `audit-auto-generated` Edge Function が毎週月曜 JST 09:00 に同じ処理を実行する（Issue #150）。
+
+```bash
+# 本文を標準出力するだけ（送信しない）
+npm run audit:auto-generated
+
+# 期間を広げる（ローカルは自動追加食材が少ないため）
+npm run audit:auto-generated -- --days=3650
+
+# 実際に管理者へ LINE 送信する（LINE_CHANNEL_ACCESS_TOKEN / LINE_ADMIN_USER_ID が必要）
+npm run audit:auto-generated -- --push
+
+# ステージング環境
+npm run audit:auto-generated -- --env=staging
+```
+
+カテゴリ誤りを見つけたら SQL で直す（管理 UI は無い）:
+
+```sql
+UPDATE ingredients SET category='豆腐・大豆製品' WHERE name='厚揚げ';  -- カテゴリ修正
+UPDATE ingredients SET needs_review=true WHERE name='ゴミ食材';        -- 誤登録を非表示に
+```
+
+## pg_cron ジョブのセットアップ
+
+```bash
+npx tsx scripts/setup-cron.ts --env=staging
+npx tsx scripts/setup-cron.ts --env=production
+```
+
+**ジョブ定義の正本はこのスクリプト。** DB は変更せず、貼り付け用の冪等な SQL を出力するだけなので、
+出力を Supabase ダッシュボードの SQL Editor で実行する。詳細は `docs/EDGE_FUNCTIONS.md` を参照。

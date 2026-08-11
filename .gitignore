@@ -49,4 +49,5 @@ public/rich-menu.png
 
 # Edge Function generated files (built from src/lib/batch/, src/lib/search/)
 supabase/functions/auto-alias/alias-*.ts
+supabase/functions/audit-auto-generated/auto-generated-report.ts
 supabase/functions/get-recipes/search/

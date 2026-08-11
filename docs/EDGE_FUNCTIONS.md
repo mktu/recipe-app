@@ -8,13 +8,18 @@ Supabase Edge Functions の開発・デプロイに関するガイド。
 src/lib/batch/           # ソースコード（Node.js）
 ├── alias-generator.ts
 ├── alias-db.ts
-└── alias-llm.ts
+├── alias-llm.ts
+└── auto-generated-report.ts
         ↓  npm run functions:build
 supabase/functions/auto-alias/
 ├── index.ts             # エントリーポイント（手動管理）
 ├── alias-generator.ts   # 自動生成（.gitignore）
 ├── alias-db.ts          # 自動生成（.gitignore）
 └── alias-llm.ts         # 自動生成（.gitignore）
+
+supabase/functions/audit-auto-generated/
+├── index.ts                  # エントリーポイント（手動管理）
+└── auto-generated-report.ts  # 自動生成（.gitignore）
 
 src/lib/search/          # 検索ロジック（LINE Bot と共有）
 ├── normalize.ts
@@ -45,7 +50,8 @@ supabase/functions/get-recipes/
 npm run functions:build
 ```
 
-これにより `src/lib/batch/*.ts` → `supabase/functions/auto-alias/`、
+これにより `src/lib/batch/*.ts` → `supabase/functions/auto-alias/` /
+`supabase/functions/audit-auto-generated/`、
 `src/lib/search/*.ts` → `supabase/functions/get-recipes/search/` にコピー・変換される。
 
 ### 2. Edge Function を起動
@@ -63,6 +69,9 @@ curl -X POST http://localhost:54321/functions/v1/auto-alias \
 
 # または Node.js スクリプトでテスト（推奨）
 npx tsx scripts/auto-alias.ts --dry-run --limit=5
+
+# 監査通知の本文を確認（送信はしない。--push で実送信）
+npm run audit:auto-generated -- --days=30
 ```
 
 ## CI/CD
@@ -142,37 +151,43 @@ Edge Function で使用する環境変数は Supabase Dashboard で設定:
 **auto-alias で必要な環境変数:**
 - `GOOGLE_GENERATIVE_AI_API_KEY` - Gemini API キー
 
-**onboarding-scrape で必要な環境変数（Supabase secrets）:**
-- `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用
+**audit-auto-generated で必要な環境変数:**
+- `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用（Messaging API チャネル）
+- `LINE_ADMIN_USER_ID` - 通知先。LINE Developers console → Messaging API チャネル → 「あなたのユーザーID」
 
-> LINE 通知のリンク URL（`resultUrl`）は呼び出し元の Next.js API（`/api/onboarding/start`）が LIFF URL として組み立てて渡す。`APP_URL` 環境変数は不要。
-
-> ローカル開発時は `LINE_CHANNEL_ACCESS_TOKEN` が未設定でも警告のみでスクレイピングは継続する。
+> どちらか欠けていると 500 を返して何もしない（誤った宛先に送るより気付ける方を選ぶ）。
+> staging / production の両方に設定が必要。
 
 ## pg_cron との連携
 
-Edge Function を定期実行する場合、pg_cron を使用:
+**cron ジョブ定義の正本は `scripts/setup-cron.ts`。** ジョブを増やす・スケジュールを変えるときは
+まずこのファイルを直す（ダッシュボードで直接いじると次の貼り直しで消える）。
 
-```sql
--- 毎日 AM 3:00 (JST) に実行
-SELECT cron.schedule(
-  'auto-alias-daily',
-  '0 18 * * *',  -- UTC 18:00 = JST 03:00
-  $$
-  SELECT net.http_post(
-    url := 'https://<project-ref>.supabase.co/functions/v1/auto-alias',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-    )
-  );
-  $$
-);
+```bash
+# 貼り付け用の冪等な SQL を出力する（DB は変更しない）
+npx tsx scripts/setup-cron.ts --env=staging
+npx tsx scripts/setup-cron.ts --env=production
 ```
 
+出力を Supabase ダッシュボードの SQL Editor で実行する。各ジョブは
+`cron.unschedule` → `cron.schedule` の順で出力されるため、何度流しても同じ状態になる。
+
+現在のジョブ（すべて UTC 指定）:
+
+| ジョブ名 | schedule | 対象 |
+|---------|----------|------|
+| `generate-embeddings` | `*/5 * * * *` | `generate-embeddings` |
+| `auto-alias-daily` | `0 18 * * *`（JST 03:00） | `auto-alias` |
+| `audit-auto-generated-weekly` | `0 0 * * 1`（JST 月曜 09:00） | `audit-auto-generated` |
+| `cleanup-cron-logs` | `0 0 * * *` | SQL 直実行（古い実行ログ削除） |
+
 **注意:**
+- **対象の Edge Function をデプロイした後**に SQL を流すこと
+- 出力 SQL には secret key が平文で入り、`cron.job` テーブルにも残る。
+  キーをローテーションしたらスクリプトを流し直して貼り替える
 - pg_cron のタイムアウトは最大5秒
-- 長時間処理は非同期パターン（202 Accepted を即座に返す）で対応
-- auto-alias は非同期パターンを採用済み
+- 長時間処理は非同期パターン（202 Accepted を即座に返す）で対応。auto-alias は採用済み
+- cron を待たずに確認したいときは、出力 SQL の `net.http_post(...)` 部分だけを単発で実行する
 
 ## トラブルシューティング
 

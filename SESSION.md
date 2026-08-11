@@ -17,6 +17,9 @@
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
 ## Issue 化しづらい手動メモ
+- **#150 の週次監査通知はデプロイ後の手動作業が残っている**（コードだけでは通知が始まらない）
+  1. Supabase Dashboard（staging / production 両方）→ Edge Functions → Secrets に `LINE_CHANNEL_ACCESS_TOKEN` と `LINE_ADMIN_USER_ID` を設定（admin の user id は LINE Developers console の Messaging API チャネル → 「あなたのユーザーID」）
+  2. `npx tsx scripts/setup-cron.ts --env=<env>` の出力 SQL を SQL Editor で実行（**関数デプロイ後**に）
 - **CLAUDE.md L17 の Scraper 記述を修正**（「Jina Reader API」→ 実装は `__NEXT_DATA__` 抽出。ARCHITECTURE.md 側は整合済み）
 - **Vercel Dashboard で Node.js を 24.x に設定**（Settings → Build & Development Settings → Node.js Version）
 
@@ -32,7 +35,7 @@
 - **API は ID トークン検証必須**（dev は `NEXT_PUBLIC_LIFF_ID` 空でバイパス）。クライアントからの呼び出しは `useAuthedFetch` を使う
 - **Supabase キー**: アプリ全体は `SUPABASE_SECRET_KEY`（`sb_secret_...`）、Edge Functions 内部は `SUPABASE_SERVICE_ROLE_KEY`（自動インジェクト）
 - **pg_cron の command に secret key が平文で埋まっている**（`SELECT * FROM cron.job;` で見える）。キーをローテーションしたら cron ジョブも貼り直しが必要
-- **`scripts/setup-cron.ts` は cron ジョブを網羅していない**。同スクリプトが作るのは `generate-embeddings` と `cleanup-cron-logs` の2つで、本番の `auto-alias-daily`（毎日 18:00 UTC）はダッシュボードで手動登録されたもの。スクリプトを流し直しても復活しない
+- **cron ジョブ定義の正本は `scripts/setup-cron.ts`**（#150 で全ジョブを集約）。DB は変更せず貼り付け用の冪等 SQL を出力するだけなので、**出力を SQL Editor で実行するまで反映されない**。ダッシュボードで直接いじると次の貼り直しで消える
 - **fnm の PATH**: ターミナル起動時に `eval "$(fnm env --use-on-cd --shell zsh)"` が必要
 - **本番/staging で `NEXT_PUBLIC_APP_URL` 設定必須**（未設定だと LINE トーク上の規約・プライバシーリンクが機能しない）
 
