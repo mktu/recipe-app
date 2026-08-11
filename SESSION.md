@@ -17,9 +17,10 @@
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
 ## Issue 化しづらい手動メモ
-- **#150 の週次監査通知はデプロイ後の手動作業が残っている**（コードだけでは通知が始まらない）
-  1. Supabase Dashboard（staging / production 両方）→ Edge Functions → Secrets に `LINE_CHANNEL_ACCESS_TOKEN` と `LINE_ADMIN_USER_ID` を設定（admin の user id は LINE Developers console の Messaging API チャネル → 「あなたのユーザーID」）
-  2. `npx tsx scripts/setup-cron.ts --env=<env>` の出力 SQL を SQL Editor で実行（**関数デプロイ後**に）
+- **#150 の週次監査通知はデプロイ後の手動作業が残っている**（コードだけでは通知が始まらない）。staging（develop マージ後）と本番（main マージ後）で**それぞれ**実施する
+  1. Supabase Dashboard → Edge Functions → Secrets に **`LINE_ADMIN_USER_ID` を追加**（`LINE_CHANNEL_ACCESS_TOKEN` は削除済み onboarding 機能の名残で既に設定済み）。user id は対象環境の `SELECT line_user_id, display_name FROM users;` から取る（LINE の user ID はチャネルスコープのため staging と本番で異なり得る）
+  2. **その環境に関数がデプロイされた後**に `npx tsx scripts/setup-cron.ts --env=<env>` の出力 SQL を SQL Editor で実行
+  3. 出力 SQL の `net.http_post(...)` だけ単発実行して実通知を確認（古いトークンが残っていれば `LINE push failed: 401` で分かる）
 - **CLAUDE.md L17 の Scraper 記述を修正**（「Jina Reader API」→ 実装は `__NEXT_DATA__` 抽出。ARCHITECTURE.md 側は整合済み）
 - **Vercel Dashboard で Node.js を 24.x に設定**（Settings → Build & Development Settings → Node.js Version）
 
