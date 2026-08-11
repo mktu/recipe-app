@@ -53,6 +53,7 @@
 │  │  - PostgreSQL       │  │  - get-recipes                  │   │
 │  │  - pgvector         │  │  - generate-embeddings          │   │
 │  │  - pg_cron          │  │  - auto-alias                   │   │
+│  │                     │  │  - audit-auto-generated         │   │
 │  └─────────────────────┘  └─────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -176,6 +177,7 @@ graph TB
             GetRecipes["get-recipes"]
             GenEmbed["generate-embeddings"]
             AutoAlias["auto-alias"]
+            Audit["audit-auto-generated"]
         end
 
         Cron["pg_cron"]
@@ -197,9 +199,12 @@ graph TB
     GenEmbed --> Gemini
     AutoAlias --> DB
     AutoAlias --> Gemini
+    Audit --> DB
+    Audit -->|push 通知| LINEApp
 
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
+    Cron -->|weekly| Audit
 ```
 
 ---
@@ -254,6 +259,7 @@ graph TB
         GetRecipes["get-recipes (manual)"]
         GenEmbed["generate-embeddings (5min)"]
         AutoAlias["auto-alias (daily)"]
+        Audit["audit-auto-generated (weekly)"]
     end
 
     subgraph Processing["Processing"]
@@ -264,10 +270,12 @@ graph TB
     API --> GetRecipes
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
+    Cron -->|weekly| Audit
 
     GetRecipes --> Sync
     GenEmbed --> Sync
     AutoAlias --> Async
+    Audit --> Sync
 ```
 
 ### Edge Function 詳細
@@ -277,6 +285,9 @@ graph TB
 | `get-recipes` | API Route | 同期 | レシピ一覧取得・検索（複数クエリ） |
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
+| `audit-auto-generated` | pg_cron (毎週月曜) | 同期 | 自動追加食材を管理者へ LINE 通知（事後監査） |
+
+> cron ジョブ定義の正本は `scripts/setup-cron.ts`（出力 SQL を SQL Editor で実行する運用）。
 
 ### auto-alias の非同期パターン
 
@@ -313,6 +324,7 @@ Edge Function の共有ロジックは `src/lib/` 配下で管理し、ビルド
 
 ```
 src/lib/batch/     →  npm run functions:build  →  supabase/functions/auto-alias/
+                                                  supabase/functions/audit-auto-generated/
 src/lib/search/                                   supabase/functions/get-recipes/search/
 (Node.js)                                         (Deno)
 ```
@@ -320,6 +332,7 @@ src/lib/search/                                   supabase/functions/get-recipes
 | 共有元 | 利用する Edge Function | 内容 |
 |--------|------------------------|------|
 | `src/lib/batch/` | `auto-alias` | エイリアス自動生成（ローカルスクリプトと共有） |
+| `src/lib/batch/` | `audit-auto-generated` | 自動追加食材の監査レポート組み立て（ローカルスクリプトと共有） |
 | `src/lib/search/` | `get-recipes` | 検索クエリの解決・絞り込み（LINE Bot と共有） |
 
 > 共有元を追加したら `.github/workflows/supabase-functions.yml` の `paths` にも追加すること。
