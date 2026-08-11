@@ -35,8 +35,15 @@
 - `id`: UUID (Primary Key)
 - `name`: String (Unique) -- "なす"
 - `category`: String -- "野菜", "肉", "魚介" 等
-- `needs_review`: Boolean (デフォルト false、人手で要確認の印を付ける用途。書き込む処理は現状なし)
+- `needs_review`: Boolean (デフォルト false、**手動 NG フラグ**。自動で立てる処理は無い)
 - `auto_generated`: Boolean (auto-alias バッチによる自動追加フラグ、デフォルト false)
+
+> **`needs_review` の位置付け**
+> 読み取り側は `match-ingredients.ts` / `search/ingredient-index.ts`（Web・LINE Bot 共有） /
+> `db/queries/ingredients.ts` / `get-recipes` Edge Function の4箇所が `needs_review = false` で除外している。
+> つまり手動で TRUE にすれば、その食材はレシピのマッチング・検索・食材一覧から即座に消える。
+> 週次の監査通知（`audit-auto-generated`、Issue #150）で誤登録を見つけたときに
+> 「隠す」ための受け皿として残している（#148 以降、自動で TRUE になることはない）。
 - `parent_id`: UUID (Foreign Key → ingredients.id) -- 親食材（例: 豚バラ肉 → 豚肉）
 - `created_at`: Timestamp
 
@@ -187,7 +194,9 @@ recipe_ingredients に紐づけを保存
 **運用方針:**
 - 初期データとして DB に投入
 - AI が新規食材を出力した場合は即時有効な状態で自動追加（`auto_generated` フラグ付き）
-- 定期的にレビューして整理（事後監査）
+- 事後監査: `audit-auto-generated` Edge Function が毎週月曜 JST 09:00 に
+  「直近7日の自動追加食材（名前＋カテゴリ）」を管理者へ LINE 通知する。
+  カテゴリ誤りは `UPDATE ingredients SET category=...`、誤登録は `needs_review = true` で対処する
 
 ## RPC 関数
 

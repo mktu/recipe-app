@@ -1,198 +1,185 @@
 /**
  * pg_cron ジョブセットアップスクリプト
  *
- * 埋め込み生成用の cron ジョブを設定する。
+ * 本番・ステージングで動かす cron ジョブ定義の正本。
+ * ここに無いジョブは「存在しないはず」と読めるように、全ジョブを JOBS に列挙する。
+ *
+ * Supabase のマネージド環境には任意 SQL を実行する RPC が無いため、
+ * このスクリプトは**貼り付け用の冪等な SQL を出力する**役割に徹する。
+ * 出力を Supabase ダッシュボードの SQL Editor で実行すること。
  *
  * 使い方:
  *   npx tsx scripts/setup-cron.ts --env=staging
  *   npx tsx scripts/setup-cron.ts --env=production
  *
- * 設定されるジョブ:
- *   1. generate-embeddings: 5分毎に Edge Function を呼び出し
- *   2. cleanup-cron-logs: 毎日深夜に古いログを削除
+ * 注意:
+ *   - Edge Function を呼ぶジョブは、対象関数がデプロイ済みであること
+ *   - 出力 SQL には secret key が平文で入る（cron.job テーブルにも残る）。
+ *     キーをローテーションしたらこのスクリプトを流し直して貼り替える
  */
 
 import { readFileSync, existsSync } from 'fs'
-import { createClient } from '@supabase/supabase-js'
 
-// 環境引数を解析
-const envArg = process.argv.find((arg) => arg.startsWith('--env='))
-if (!envArg) {
-  console.error('エラー: --env=staging または --env=production を指定してください')
-  process.exit(1)
+// ===========================================
+// ジョブ定義（cron の正本）
+// ===========================================
+
+interface EdgeFunctionJob {
+  name: string
+  schedule: string
+  /** 呼び出す Edge Function 名 */
+  functionName: string
+  description: string
 }
 
-const envName = envArg.split('=')[1]
-if (!['staging', 'production'].includes(envName)) {
-  console.error('エラー: 環境は staging または production を指定してください')
-  process.exit(1)
+interface SqlJob {
+  name: string
+  schedule: string
+  /** cron.schedule に渡す SQL（$$ で囲まれる） */
+  sql: string
+  description: string
 }
 
-const envFilePath = `.env.${envName}`
+type Job = EdgeFunctionJob | SqlJob
 
-if (!existsSync(envFilePath)) {
-  console.error(`エラー: ${envFilePath} が見つかりません`)
-  process.exit(1)
+function isEdgeFunctionJob(job: Job): job is EdgeFunctionJob {
+  return 'functionName' in job
 }
 
-console.log(`環境: ${envName} (${envFilePath})\n`)
+/** schedule はすべて UTC */
+const JOBS: Job[] = [
+  {
+    name: 'generate-embeddings',
+    schedule: '*/5 * * * *',
+    functionName: 'generate-embeddings',
+    description: '埋め込みベクトル生成（5分毎）',
+  },
+  {
+    name: 'auto-alias-daily',
+    schedule: '0 18 * * *',
+    functionName: 'auto-alias',
+    description: '食材エイリアス自動生成（毎日 JST 03:00）',
+  },
+  {
+    name: 'audit-auto-generated-weekly',
+    schedule: '0 0 * * 1',
+    functionName: 'audit-auto-generated',
+    description: '自動追加食材の監査レポートを管理者へ LINE 通知（毎週月曜 JST 09:00）',
+  },
+  {
+    name: 'cleanup-cron-logs',
+    schedule: '0 0 * * *',
+    sql: "DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days'",
+    description: '古い cron 実行ログの削除（毎日 UTC 00:00）',
+  },
+]
 
-// 環境変数ファイルを読み込み
-const envFile = readFileSync(envFilePath, 'utf-8')
-for (const line of envFile.split('\n')) {
-  const match = line.match(/^([^#][^=]*)=(.*)$/)
-  if (match) {
-    process.env[match[1].trim()] = match[2].trim()
+// ===========================================
+// 環境変数
+// ===========================================
+
+function loadEnv(): { supabaseUrl: string; supabaseKey: string; envName: string } {
+  const envArg = process.argv.find((arg) => arg.startsWith('--env='))
+  if (!envArg) {
+    console.error('エラー: --env=staging または --env=production を指定してください')
+    process.exit(1)
   }
-}
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SECRET_KEY
+  const envName = envArg.split('=')[1]
+  if (!['staging', 'production'].includes(envName)) {
+    console.error('エラー: 環境は staging または production を指定してください')
+    process.exit(1)
+  }
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('エラー: NEXT_PUBLIC_SUPABASE_URL と SUPABASE_SECRET_KEY が必要です')
-  process.exit(1)
-}
+  const envFilePath = `.env.${envName}`
+  if (!existsSync(envFilePath)) {
+    console.error(`エラー: ${envFilePath} が見つかりません`)
+    process.exit(1)
+  }
 
-// project-ref を URL から抽出
-const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-if (!projectRef) {
-  console.error('エラー: Supabase URL から project-ref を抽出できません')
-  process.exit(1)
-}
-
-const edgeFunctionUrl = `${supabaseUrl}/functions/v1/generate-embeddings`
-
-console.log(`Project Ref: ${projectRef}`)
-console.log(`Edge Function URL: ${edgeFunctionUrl}`)
-console.log('')
-
-// Supabase クライアント作成
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-async function setupCronJobs() {
-  console.log('=== pg_cron ジョブセットアップ開始 ===\n')
-
-  // 1. 拡張機能の確認
-  console.log('1. 拡張機能の確認...')
-
-  await supabase.rpc('pg_cron_check', {}).maybeSingle()
-  // エラーは無視（関数がない場合もある）
-
-  // 2. 既存ジョブの削除（あれば）
-  console.log('2. 既存ジョブの確認と削除...')
-
-  const jobNames = ['generate-embeddings', 'cleanup-cron-logs']
-
-  for (const jobName of jobNames) {
-    const { error } = await supabase.rpc('cron_unschedule', { job_name: jobName }).maybeSingle()
-    if (!error) {
-      console.log(`   既存ジョブ "${jobName}" を削除しました`)
+  const envFile = readFileSync(envFilePath, 'utf-8')
+  for (const line of envFile.split('\n')) {
+    const match = line.match(/^([^#][^=]*)=(.*)$/)
+    if (match) {
+      process.env[match[1].trim()] = match[2].trim()
     }
   }
 
-  // 3. 埋め込み生成ジョブの作成
-  console.log('3. 埋め込み生成ジョブの作成...')
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY
 
-  const embedJobSql = `
-    SELECT cron.schedule(
-      'generate-embeddings',
-      '*/5 * * * *',
-      $$
-      SELECT net.http_post(
-        url := '${edgeFunctionUrl}',
-        headers := jsonb_build_object(
-          'Content-Type', 'application/json',
-          'Authorization', 'Bearer ${supabaseKey}'
-        ),
-        body := '{}'::jsonb
-      ) AS request_id;
-      $$
-    );
-  `
-
-  const { error: embedJobError } = await supabase.rpc('exec_sql', { sql: embedJobSql })
-
-  if (embedJobError) {
-    // exec_sql RPC がない場合は直接 SQL 実行を試みる
-    console.log('   RPC経由での実行に失敗、直接SQLを実行します...')
-
-    const { error: directError } = await supabase.from('_exec').select('*').limit(0)
-    if (directError) {
-      console.error('   エラー: ジョブの作成に失敗しました')
-      console.error('   Supabase ダッシュボードの SQL Editor で以下を実行してください:')
-      console.log('')
-      console.log(embedJobSql)
-      console.log('')
-    }
-  } else {
-    console.log('   ✅ generate-embeddings ジョブを作成しました（5分毎）')
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('エラー: NEXT_PUBLIC_SUPABASE_URL と SUPABASE_SECRET_KEY が必要です')
+    process.exit(1)
   }
 
-  // 4. ログクリーンアップジョブの作成
-  console.log('4. ログクリーンアップジョブの作成...')
+  return { supabaseUrl, supabaseKey, envName }
+}
 
-  const cleanupJobSql = `
-    SELECT cron.schedule(
-      'cleanup-cron-logs',
-      '0 0 * * *',
-      $$DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days'$$
-    );
-  `
+// ===========================================
+// SQL 生成
+// ===========================================
 
-  const { error: cleanupJobError } = await supabase.rpc('exec_sql', { sql: cleanupJobSql })
+/** Edge Function を叩く net.http_post 呼び出し */
+function httpPostSql(functionUrl: string, supabaseKey: string): string {
+  return `  SELECT net.http_post(
+    url := '${functionUrl}',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ${supabaseKey}'
+    ),
+    body := '{}'::jsonb
+  ) AS request_id;`
+}
 
-  if (cleanupJobError) {
-    console.log('   Supabase ダッシュボードの SQL Editor で以下を実行してください:')
-    console.log('')
-    console.log(cleanupJobSql)
-    console.log('')
-  } else {
-    console.log('   ✅ cleanup-cron-logs ジョブを作成しました（毎日深夜）')
-  }
+function jobSql(job: Job, supabaseUrl: string, supabaseKey: string): string {
+  const command = isEdgeFunctionJob(job)
+    ? `\n${httpPostSql(`${supabaseUrl}/functions/v1/${job.functionName}`, supabaseKey)}\n  `
+    : job.sql
 
-  // 5. 手動実行用の SQL を出力
-  console.log('\n=== 手動セットアップ用 SQL ===')
-  console.log('Supabase ダッシュボードの SQL Editor で以下を実行してください:\n')
+  return [
+    `-- ${job.description}`,
+    // 冪等化: 既存ジョブがあれば先に外す（cron.schedule は同名でも別ジョブを作り得る）
+    `SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = '${job.name}';`,
+    `SELECT cron.schedule(`,
+    `  '${job.name}',`,
+    `  '${job.schedule}',`,
+    `  $$${command}$$`,
+    `);`,
+  ].join('\n')
+}
+
+// ===========================================
+// メイン
+// ===========================================
+
+function main(): void {
+  const { supabaseUrl, supabaseKey, envName } = loadEnv()
+
+  console.log(`-- 環境: ${envName}`)
+  console.log(`-- Supabase: ${supabaseUrl}`)
+  console.log('--')
+  console.log('-- 以下を Supabase ダッシュボードの SQL Editor で実行してください。')
+  console.log('-- 何度実行しても同じ状態になります（既存ジョブは unschedule してから再作成）。')
+  console.log('')
 
   console.log('-- 拡張機能の有効化（未有効の場合）')
   console.log('CREATE EXTENSION IF NOT EXISTS pg_net;')
   console.log('CREATE EXTENSION IF NOT EXISTS pg_cron;')
   console.log('')
 
-  console.log('-- 埋め込み生成ジョブ（5分毎）')
-  console.log(`SELECT cron.schedule(
-  'generate-embeddings',
-  '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := '${edgeFunctionUrl}',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ${supabaseKey}'
-    ),
-    body := '{}'::jsonb
-  ) AS request_id;
-  $$
-);`)
-  console.log('')
+  for (const job of JOBS) {
+    console.log(jobSql(job, supabaseUrl, supabaseKey))
+    console.log('')
+  }
 
-  console.log('-- ログクリーンアップジョブ（毎日深夜）')
-  console.log(`SELECT cron.schedule(
-  'cleanup-cron-logs',
-  '0 0 * * *',
-  $$DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days'$$
-);`)
+  console.log('-- 登録結果の確認')
+  console.log('SELECT jobname, schedule, active FROM cron.job ORDER BY jobname;')
   console.log('')
-
-  console.log('-- ジョブ一覧の確認')
-  console.log('SELECT * FROM cron.job;')
-  console.log('')
-
-  console.log('=== セットアップ完了 ===')
+  console.log('-- 直近の実行結果')
+  console.log(
+    'SELECT j.jobname, d.status, d.start_time FROM cron.job_run_details d JOIN cron.job j USING (jobid) ORDER BY d.start_time DESC LIMIT 20;'
+  )
 }
 
-setupCronJobs().catch((err) => {
-  console.error('セットアップエラー:', err)
-  process.exit(1)
-})
+main()

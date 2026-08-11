@@ -30,6 +30,13 @@ const functions: FunctionConfig[] = [
     ],
   },
   {
+    // 自動追加食材の事後監査通知（Issue #150）。ローカルスクリプトと共有
+    name: 'audit-auto-generated',
+    sharedFiles: [
+      { src: 'src/lib/batch/auto-generated-report.ts', dest: 'auto-generated-report.ts' },
+    ],
+  },
+  {
     // 検索ロジックは LINE Bot と共有（src/lib/search が正本）
     name: 'get-recipes',
     sharedFiles: [
