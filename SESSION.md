@@ -28,6 +28,7 @@
 - **PR は必ず `--base develop`**（`/create-pr` を使うと安全）。過去に main へ誤マージあり（PR #95）
 - **`Closes #NNN` は develop への PR では発火しない**（GitHub はデフォルトブランチへのマージ時のみ自動クローズ）。全 PR が develop 向けのため、**Issue は main マージ後に手動で閉じる**必要がある
 - **`supabase/setup-cli` が `version: latest`** のため、コードを変えなくても CLI 更新で CI が壊れ得る。特に `test-migrations.yml` は `supabase/migrations/**` 変更時のみ動くので、壊れてから気付くまで数ヶ月空くことがある（実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。`npm run functions:build` を前段に追加して解消）
+- **`supabase start` を使うワークフローには必ず `npm run functions:build` を前段に入れる**。生成物は gitignore 対象なので、クリーンチェックアウトでは `config.toml` が宣言する関数をバンドルできず `supabase start` が落ちる。**Edge Function を新規追加したら `test-migrations.yml` と `e2e.yml` の両方を確認すること**（#150 で `audit-auto-generated` を追加した際、e2e 側が漏れて main が一時的に赤くなった）
 - **Vercel Preview の Deployment Protection は Off**（staging の LINE Webhook を通すため）
 - **staging LINE Webhook URL**: `https://recipe-app-git-develop-mktus-projects.vercel.app/api/webhook/line`
 - **ローカルでのレシピ取得**: `supabase functions serve` を別ターミナルで起動が必要
