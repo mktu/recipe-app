@@ -12,15 +12,11 @@
 未完了タスクの正本は GitHub Issues（`gh issue list --state open`）。ここには方針レベルの塊だけ:
 
 - **公開・宣伝** — #132 Gemini 有料 tier 判断
-- **食材マッチングの積み残し**（#144 の検討中に判明。#148 は完了。着手順は #147 → #152 → #150 → #149 が素直）— #147 エイリアス生成後にレシピが再リンクされない、#152 正規化が切り方・「、」連結を処理せずゴミ食材がマスタに流入する（#148 で自動追加食材を即時有効化したため、今後ゴミが UI に直接出る）、#150 自動追加食材の週次 LINE 通知による事後監査、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
+- **食材マッチングの積み残し**（#144 の検討中に判明。#148・#150 は完了。着手順は #147 → #152 → #149 が素直）— #147 エイリアス生成後にレシピが再リンクされない、#152 正規化が切り方・「、」連結を処理せずゴミ食材がマスタに流入する（#148 で自動追加食材を即時有効化したため、今後ゴミが UI に直接出る。#150 の週次通知で検知できる）、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
 - **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
 ## Issue 化しづらい手動メモ
-- **#150 の週次監査通知はデプロイ後の手動作業が残っている**（コードだけでは通知が始まらない）。staging（develop マージ後）と本番（main マージ後）で**それぞれ**実施する
-  1. Supabase Dashboard → Edge Functions → Secrets に **`LINE_ADMIN_USER_ID` を追加**（`LINE_CHANNEL_ACCESS_TOKEN` は削除済み onboarding 機能の名残で既に設定済み）。user id は対象環境の `SELECT line_user_id, display_name FROM users;` から取る（LINE の user ID はチャネルスコープのため staging と本番で異なり得る）
-  2. **その環境に関数がデプロイされた後**に `npx tsx scripts/setup-cron.ts --env=<env>` の出力 SQL を SQL Editor で実行
-  3. 出力 SQL の `net.http_post(...)` だけ単発実行して実通知を確認（古いトークンが残っていれば `LINE push failed: 401` で分かる）
 - **CLAUDE.md L17 の Scraper 記述を修正**（「Jina Reader API」→ 実装は `__NEXT_DATA__` 抽出。ARCHITECTURE.md 側は整合済み）
 - **Vercel Dashboard で Node.js を 24.x に設定**（Settings → Build & Development Settings → Node.js Version）
 
@@ -38,7 +34,8 @@
 - **API は ID トークン検証必須**（dev は `NEXT_PUBLIC_LIFF_ID` 空でバイパス）。クライアントからの呼び出しは `useAuthedFetch` を使う
 - **Supabase キー**: アプリ全体は `SUPABASE_SECRET_KEY`（`sb_secret_...`）、Edge Functions 内部は `SUPABASE_SERVICE_ROLE_KEY`（自動インジェクト）
 - **pg_cron の command に secret key が平文で埋まっている**（`SELECT * FROM cron.job;` で見える）。キーをローテーションしたら cron ジョブも貼り直しが必要
-- **cron ジョブ定義の正本は `scripts/setup-cron.ts`**（#150 で全ジョブを集約）。DB は変更せず貼り付け用の冪等 SQL を出力するだけなので、**出力を SQL Editor で実行するまで反映されない**。ダッシュボードで直接いじると次の貼り直しで消える
+- **cron ジョブ定義の正本は `scripts/setup-cron.ts`**（#150 で全ジョブを集約）。DB は変更せず貼り付け用の冪等 SQL を出力するだけなので、**出力を SQL Editor で実行するまで反映されない**。ダッシュボードで直接いじると次の貼り直しで消える。staging / 本番ともに4ジョブ（`generate-embeddings` / `auto-alias-daily` / `audit-auto-generated-weekly` / `cleanup-cron-logs`）を登録済み
+- **自動追加食材の監査通知が毎週月曜 09:00 JST に届く**（#150、`audit-auto-generated`）。カテゴリ誤りを見つけたら `UPDATE ingredients SET category=...`、ゴミ食材は `needs_review = true` で検索・マッチングから外す（読み取り側4箇所が `needs_review = false` で除外している）。**通知が届かない週はジョブ故障を疑う**（0件でも「0 件」で届く設計）
 - **fnm の PATH**: ターミナル起動時に `eval "$(fnm env --use-on-cd --shell zsh)"` が必要
 - **本番/staging で `NEXT_PUBLIC_APP_URL` 設定必須**（未設定だと LINE トーク上の規約・プライバシーリンクが機能しない）
 
