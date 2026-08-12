@@ -45,8 +45,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # e2e/ にテストが1本も無い間は "No tests found" で落ちる。常時赤いと本物の
+      # 失敗が埋もれるため、0本を許容する。実テストが入れば通常どおり検証される（#37〜#39）
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --pass-with-no-tests
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
