@@ -19,6 +19,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      # Edge Function の共有ロジックは gitignore 対象の生成物のため、
+      # クリーンチェックアウトには存在しない。config.toml が宣言している関数を
+      # supabase start がバンドルしようとして落ちるので、先に生成しておく。
+      - name: Build Edge Functions
+        run: npm run functions:build
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -32,9 +41,6 @@ jobs:
           eval $(supabase status --output env)
           echo "SUPABASE_SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

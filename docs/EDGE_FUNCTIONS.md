@@ -152,11 +152,26 @@ Edge Function で使用する環境変数は Supabase Dashboard で設定:
 - `GOOGLE_GENERATIVE_AI_API_KEY` - Gemini API キー
 
 **audit-auto-generated で必要な環境変数:**
-- `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用（Messaging API チャネル）
-- `LINE_ADMIN_USER_ID` - 通知先。LINE Developers console → Messaging API チャネル → 「あなたのユーザーID」
+- `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用（Messaging API チャネル）。**既に設定済み**
+- `LINE_ADMIN_USER_ID` - 通知先。新規に設定が必要
 
 > どちらか欠けていると 500 を返して何もしない（誤った宛先に送るより気付ける方を選ぶ）。
 > staging / production の両方に設定が必要。
+
+`LINE_ADMIN_USER_ID` の調べ方は、対象環境の SQL Editor で自分の行を引くのが確実:
+
+```sql
+SELECT line_user_id, display_name, created_at FROM users ORDER BY created_at;
+```
+
+LINE の user ID は**チャネル（プロバイダー）スコープ**で、staging と本番で Messaging API
+チャネルが分かれている（`docs/LINE_SETUP.md`）ため、**環境ごとに別の ID になり得る**。
+Webhook 経由で保存されたこの ID なら、送信元チャネルとの対応と友だち追加済みの両方が担保される。
+LINE Developers console の「あなたのユーザーID」でも取れるが、上記2条件を自分で満たす必要がある。
+
+> `LINE_CHANNEL_ACCESS_TOKEN` は削除済みの onboarding 機能の名残で既に入っている。
+> その後 LINE console でトークンを再発行していると古い値のままなので、
+> 有効性は初回の単発実行（下記 pg_cron の項）で確認する（無効なら `LINE push failed: 401`）。
 
 ## pg_cron との連携
 
