@@ -18,7 +18,17 @@ describe('parseSearchQuery', () => {
 
   it('親食材は子食材まで展開する', () => {
     const [group] = parse('豚肉').ingredientGroups
-    expect(group.sort()).toEqual(['m4', 'm5', 'm6'])
+    expect(group.ids.sort()).toEqual(['m4', 'm5', 'm6'])
+  })
+
+  it('食材条件は元の入力語をテキスト照合用に保持する', () => {
+    const [group] = parse('玉ねぎ').ingredientGroups
+    expect(group.text).toBe('玉ねぎ')
+  })
+
+  it('カテゴリ語はテキスト照合に回さない（照合が広すぎるため）', () => {
+    const [group] = parse('肉').ingredientGroups
+    expect(group.text).toBeNull()
   })
 
   it('食材に解決できない語はテキスト条件になる', () => {

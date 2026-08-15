@@ -26,6 +26,8 @@ const INGREDIENTS: Array<[id: string, name: string, category: string, parent?: s
   ['d2', 'チーズ', '卵・乳製品'],
   ['t1', '豆腐', '豆腐・大豆製品'],
   ['t2', '大豆', '豆腐・大豆製品'],
+  ['g1', 'パスタ', '穀物・麺類'],
+  ['g2', 'うどん', '穀物・麺類'],
 ]
 
 const ALIASES: Array<[alias: string, ingredientId: string]> = [
