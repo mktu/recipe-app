@@ -43,6 +43,39 @@ const recipes: Recipe[] = [
     ingredientIds: ['f1'],
     ingredientNames: ['鮭'],
   },
+  {
+    // タイトルにだけ食材名が入っており、食材の紐付けが無い（Issue #154 のサイトB）
+    id: 'r4',
+    title: 'たっぷりトマトパスタ',
+    memo: null,
+    sourceName: null,
+    ingredientsRaw: [],
+    ingredientIds: [],
+    ingredientNames: [],
+  },
+  {
+    // 食材は紐付いているがタイトルには出てこない（Issue #154 のサイトA）
+    id: 'r5',
+    title: '夏野菜の煮込み',
+    memo: null,
+    sourceName: null,
+    ingredientsRaw: [
+      { name: 'トマト', amount: '2個' },
+      { name: 'なす', amount: '1本' },
+    ],
+    ingredientIds: ['v5', 'v3'],
+    ingredientNames: ['トマト', 'なす'],
+  },
+  {
+    // カテゴリ語のテキスト照合を有効にすると誤ヒットするレシピ
+    id: 'r6',
+    title: '肉なしヘルシー麻婆豆腐',
+    memo: null,
+    sourceName: null,
+    ingredientsRaw: [{ name: '豆腐', amount: '1丁' }],
+    ingredientIds: ['t1'],
+    ingredientNames: ['豆腐'],
+  },
 ]
 
 const search = (input: string) =>
@@ -89,6 +122,27 @@ describe('filterRecipesByQuery', () => {
   })
 
   it('空クエリは全件返す', () => {
-    expect(search('')).toEqual(['r1', 'r2', 'r3'])
+    expect(search('')).toEqual(['r1', 'r2', 'r3', 'r4', 'r5', 'r6'])
+  })
+
+  // Issue #154: 食材に解決した語もタイトル等のテキストを見る
+  describe('食材語のテキスト照合', () => {
+    it('食材に紐付いたレシピとタイトルだけ一致するレシピの両方がヒットする', () => {
+      expect(search('トマト').sort()).toEqual(['r4', 'r5'])
+    })
+
+    it('タイトルだけの一致でもグループ間 AND は満たせる', () => {
+      // r4 はトマトもパスタもタイトル一致のみ / r5 はパスタを満たさないので落ちる
+      expect(search('トマト パスタ')).toEqual(['r4'])
+    })
+
+    it('食材のみのクエリでもテキスト条件と組み合わせられる', () => {
+      expect(search('トマト 煮込み')).toEqual(['r5'])
+    })
+
+    it('カテゴリ語はテキスト照合に回さない', () => {
+      // 「肉なしヘルシー麻婆豆腐」(r6) を「肉」で拾ってしまわないこと
+      expect(search('肉').sort()).toEqual(['r1', 'r2'])
+    })
   })
 })

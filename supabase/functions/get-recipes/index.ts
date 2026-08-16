@@ -172,7 +172,11 @@ async function filterBySearch(
 
   const index = await fetchIngredientIndex(supabase)
   const parsed = searchQuery?.trim() ? parseSearchQuery(index, searchQuery) : EMPTY_QUERY
-  const selectedGroups = ingredientIds.map((id) => expandWithChildren(index, [id]))
+  // フィルターバーで明示選択された食材は ID 一致のみ（テキスト照合には回さない）
+  const selectedGroups = ingredientIds.map((id) => ({
+    ids: expandWithChildren(index, [id]),
+    text: null,
+  }))
 
   const matchedIds = new Set(
     filterRecipesByQuery(recipes.map(toSearchable), {
