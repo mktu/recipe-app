@@ -1,14 +1,15 @@
 /**
  * パース済みクエリでレシピを絞り込む
  *
- * 食材条件は正規化済みの食材IDで、テキスト条件は
+ * 食材条件は正規化済みの食材IDに加えて元の入力語のテキスト照合でも当たる
+ * （「トマト」でタイトルだけ一致するレシピも拾うため）。テキスト条件は
  * タイトル・メモ・サイト名・材料テキストを対象に照合する。
  *
  * Edge Function にもコピーされるため相対 import のみ。
  */
 
 import { normalizeSearchKey } from './normalize'
-import type { ParsedSearchQuery } from './parse-query'
+import type { IngredientCondition, ParsedSearchQuery } from './parse-query'
 
 export interface SearchableRecipe {
   title: string
@@ -49,17 +50,37 @@ function buildHaystack(recipe: SearchableRecipe): string {
   )
 }
 
-/** グループ内は OR、グループ間は AND */
-function matchesIngredientGroups(recipe: SearchableRecipe, groups: string[][]): boolean {
+/** 照合キーに正規化済みの食材条件 */
+interface NormalizedGroup {
+  ids: string[]
+  /** 空文字ならテキスト照合しない（カテゴリ語など） */
+  text: string
+}
+
+function normalizeGroups(groups: IngredientCondition[]): NormalizedGroup[] {
+  return groups.map((group) => ({
+    ids: group.ids,
+    text: group.text ? normalizeSearchKey(group.text) : '',
+  }))
+}
+
+/** グループ内は「食材ID一致 OR 元の入力語のテキスト一致」、グループ間は AND */
+function matchesIngredientGroups(
+  recipe: SearchableRecipe,
+  groups: NormalizedGroup[],
+  haystack: string
+): boolean {
   if (groups.length === 0) return true
   const owned = new Set(recipe.ingredientIds)
-  return groups.every((group) => group.some((id) => owned.has(id)))
+  return groups.every(
+    (group) =>
+      group.ids.some((id) => owned.has(id)) ||
+      (group.text.length > 0 && haystack.includes(group.text))
+  )
 }
 
 /** 語間は AND */
-function matchesTextTerms(recipe: SearchableRecipe, normalizedTerms: string[]): boolean {
-  if (normalizedTerms.length === 0) return true
-  const haystack = buildHaystack(recipe)
+function matchesTextTerms(normalizedTerms: string[], haystack: string): boolean {
   return normalizedTerms.every((term) => haystack.includes(term))
 }
 
@@ -72,10 +93,15 @@ export function filterRecipesByQuery<T extends SearchableRecipe>(
   const normalizedTerms = query.textTerms
     .map((term) => normalizeSearchKey(term))
     .filter((term) => term.length > 0)
+  const groups = normalizeGroups(query.ingredientGroups)
 
-  return recipes.filter(
-    (recipe) =>
-      matchesIngredientGroups(recipe, query.ingredientGroups) &&
-      matchesTextTerms(recipe, normalizedTerms)
-  )
+  // haystack はレシピごとに1回だけ組み立てて両判定で使い回す
+  const needsHaystack = normalizedTerms.length > 0 || groups.some((g) => g.text.length > 0)
+
+  return recipes.filter((recipe) => {
+    const haystack = needsHaystack ? buildHaystack(recipe) : ''
+    return (
+      matchesIngredientGroups(recipe, groups, haystack) && matchesTextTerms(normalizedTerms, haystack)
+    )
+  })
 }
