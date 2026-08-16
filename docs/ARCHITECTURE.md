@@ -511,7 +511,8 @@ graph TB
 
 ```mermaid
 graph TB
-    Input["AI extracted ingredient"] --> Normalize["Normalize（分量・単位を除去）"]
+    Input["AI extracted ingredient"] --> Split["「、」で分割（並記された複数食材を個別に扱う）"]
+    Split --> Normalize["Normalize（分量・単位・切り方・ブランド名を除去）"]
     Normalize --> SeasoningCheck{"調味料チェック"}
 
     SeasoningCheck -->|調味料| Skip["スキップ（登録しない）"]

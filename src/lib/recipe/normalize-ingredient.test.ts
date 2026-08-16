@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeIngredientName } from './normalize-ingredient'
+import { normalizeIngredientName, splitIngredientNames } from './normalize-ingredient'
 
 describe('normalizeIngredientName', () => {
   describe('基本的な正規化', () => {
@@ -81,6 +81,47 @@ describe('normalizeIngredientName', () => {
     })
   })
 
+  describe('切り方の除去', () => {
+    it('切り方を除去して基底食材名に寄せる', () => {
+      expect(normalizeIngredientName('唐辛子輪切り')).toBe('唐辛子')
+      expect(normalizeIngredientName('きゅうり小口切り')).toBe('きゅうり')
+      expect(normalizeIngredientName('にんにくみじん切り')).toBe('にんにく')
+      expect(normalizeIngredientName('大根いちょう切り')).toBe('大根')
+      expect(normalizeIngredientName('鶏もも肉そぎ切り')).toBe('鶏もも肉')
+    })
+
+    it('括弧付きの切り方も除去する', () => {
+      expect(normalizeIngredientName('唐辛子（輪切り）')).toBe('唐辛子')
+      expect(normalizeIngredientName('ねぎ(小口切り)')).toBe('ねぎ')
+    })
+
+    it('長い切り方を優先して除去する（残骸を残さない）', () => {
+      // 「みじん切り」が先にマッチすると「粗」が残ってしまう
+      expect(normalizeIngredientName('玉ねぎ粗みじん切り')).toBe('玉ねぎ')
+      expect(normalizeIngredientName('玉ねぎくし形切り')).toBe('玉ねぎ')
+    })
+  })
+
+  describe('切り方に見えるが除去してはいけない語', () => {
+    it('食材名の一部である「こま切れ」を保持する', () => {
+      // マスタに `豚こま切れ肉` `牛こま切れ肉` が存在する
+      expect(normalizeIngredientName('豚こま切れ肉')).toBe('豚こま切れ肉')
+      expect(normalizeIngredientName('牛こま切れ肉')).toBe('牛こま切れ肉')
+      expect(normalizeIngredientName('豚細切れ肉')).toBe('豚細切れ肉')
+    })
+
+    it('「薄切り」は除去しない', () => {
+      // マスタに `牛薄切り肉` が存在するため、除去すると `牛肉` に丸まって粒度が落ちる
+      expect(normalizeIngredientName('牛薄切り肉')).toBe('牛薄切り肉')
+      expect(normalizeIngredientName('豚バラ薄切り肉')).toBe('豚バラ薄切り肉')
+    })
+
+    it('「切り」を含むだけの食材名を保持する', () => {
+      expect(normalizeIngredientName('切り干し大根')).toBe('切り干し大根')
+      expect(normalizeIngredientName('豚肉切り落とし')).toBe('豚肉切り落とし')
+    })
+  })
+
   describe('エッジケース', () => {
     it('空文字列を処理できる', () => {
       expect(normalizeIngredientName('')).toBe('')
@@ -95,5 +136,49 @@ describe('normalizeIngredientName', () => {
       expect(normalizeIngredientName('鶏肉')).toBe('鶏肉')
       expect(normalizeIngredientName('トマト')).toBe('トマト')
     })
+  })
+})
+
+describe('splitIngredientNames', () => {
+  it('「、」で並記された食材を分割する', () => {
+    expect(splitIngredientNames('細ネギ小口切り、七味')).toEqual(['細ネギ小口切り', '七味'])
+    expect(splitIngredientNames('にんじん、玉ねぎ、じゃがいも')).toEqual([
+      'にんじん',
+      '玉ねぎ',
+      'じゃがいも',
+    ])
+  })
+
+  it('全角カンマでも分割する', () => {
+    expect(splitIngredientNames('塩，こしょう')).toEqual(['塩', 'こしょう'])
+  })
+
+  it('区切り文字が無い場合は1件で返す', () => {
+    expect(splitIngredientNames('なす')).toEqual(['なす'])
+    expect(splitIngredientNames('豚こま切れ肉 200g')).toEqual(['豚こま切れ肉 200g'])
+  })
+
+  it('「・」では分割しない', () => {
+    // 「牛・豚合いびき肉」のように単一食材で使われるため対象外
+    expect(splitIngredientNames('牛・豚合いびき肉')).toEqual(['牛・豚合いびき肉'])
+  })
+
+  it('空断片・前後の空白を落とす', () => {
+    expect(splitIngredientNames('なす、')).toEqual(['なす'])
+    expect(splitIngredientNames('なす、 、トマト')).toEqual(['なす', 'トマト'])
+    expect(splitIngredientNames('なす 、 トマト')).toEqual(['なす', 'トマト'])
+    expect(splitIngredientNames('')).toEqual([])
+    expect(splitIngredientNames('   ')).toEqual([])
+  })
+
+  it('既知の制限: 括弧の中の「、」でも分割される', () => {
+    // 「野菜にんじん」は未マッチとして auto-alias に回るが、「玉ねぎ」が拾えるぶん
+    // 分割しない場合（全体が1つのゴミ名になる）より改善するため許容する
+    expect(splitIngredientNames('野菜（にんじん、玉ねぎ）')).toEqual([
+      '野菜（にんじん',
+      '玉ねぎ）',
+    ])
+    expect(normalizeIngredientName('野菜（にんじん')).toBe('野菜にんじん')
+    expect(normalizeIngredientName('玉ねぎ）')).toBe('玉ねぎ')
   })
 })

@@ -1,7 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
 import type { Database } from '@/types/database'
-import { normalizeIngredientName } from './normalize-ingredient'
+import { normalizeSearchKey } from '@/lib/search/normalize'
+import { normalizeIngredientName, splitIngredientNames } from './normalize-ingredient'
 
 /** 検索対象外とする調味料・基礎食材・お菓子材料 */
 const SEASONING_KEYWORDS = [
@@ -22,9 +23,12 @@ const SEASONING_KEYWORDS = [
   'お湯', '水',
 ]
 
+/** 照合キー化した調味料キーワード（かな/カナ・全角半角の揺れを吸収するため事前変換） */
+const SEASONING_KEYS = SEASONING_KEYWORDS.map(normalizeSearchKey)
+
 function isSeasoning(name: string): boolean {
-  const normalized = name.toLowerCase()
-  return SEASONING_KEYWORDS.some((kw) => normalized.includes(kw))
+  const normalized = normalizeSearchKey(name)
+  return SEASONING_KEYS.some((kw) => normalized.includes(kw))
 }
 
 export interface MatchResult {
@@ -44,8 +48,36 @@ interface Ingredient {
 type TypedSupabaseClient = SupabaseClient<Database>
 
 /**
- * 1食材を処理してマッチ結果を results に追加する。
+ * 分割済みの1断片を処理してマッチ結果を results に追加する。
  * アンマッチの場合は未マッチ記録用の normalizedName を返す。
+ */
+function processNamePart(
+  part: string,
+  allIngredients: Ingredient[],
+  ingredientIdMap: Map<string, Ingredient>,
+  aliasMap: Map<string, string>,
+  seen: Set<string>,
+  results: MatchResult[],
+): string | null {
+  const normalizedName = normalizeIngredientName(part)
+  const matched = matchSingleIngredient(allIngredients, ingredientIdMap, aliasMap, part)
+  if (matched) {
+    if (!seen.has(matched.id)) {
+      seen.add(matched.id)
+      results.push({ ingredientId: matched.id, name: matched.name })
+    }
+    return null
+  }
+  if (normalizedName && !isSeasoning(normalizedName)) {
+    return normalizedName
+  }
+  return null
+}
+
+/**
+ * 1エントリを処理してマッチ結果を results に追加する。
+ * 「細ネギ小口切り、七味」のように複数食材が並記されている場合は分割して個別に扱う。
+ * アンマッチの場合は未マッチ記録用の normalizedName を返す（分割時は複数件）。
  */
 function processSingleName(
   name: string,
@@ -54,19 +86,15 @@ function processSingleName(
   aliasMap: Map<string, string>,
   seen: Set<string>,
   results: MatchResult[],
-): string | null {
-  if (!name.trim()) return null
-  const normalizedName = normalizeIngredientName(name)
-  const matched = matchSingleIngredient(allIngredients, ingredientIdMap, aliasMap, name)
-  if (matched && !seen.has(matched.id)) {
-    seen.add(matched.id)
-    results.push({ ingredientId: matched.id, name: matched.name })
-    return null
+): string[] {
+  const unmatched: string[] = []
+  for (const part of splitIngredientNames(name)) {
+    const normalizedName = processNamePart(
+      part, allIngredients, ingredientIdMap, aliasMap, seen, results
+    )
+    if (normalizedName) unmatched.push(normalizedName)
   }
-  if (!matched && normalizedName && !isSeasoning(normalizedName)) {
-    return normalizedName
-  }
-  return null
+  return unmatched
 }
 
 /** ingredients と ingredient_aliases を一括フェッチしてインメモリ検索用データを構築 */
@@ -188,9 +216,9 @@ export async function matchIngredients(
 
   for (const name of ingredientNames) {
     const unmatched = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, results)
-    if (unmatched) {
+    for (const normalizedName of unmatched) {
       unmatchedPromises.push(
-        recordUnmatchedIngredient(supabase, name, unmatched, options.recipeId)
+        recordUnmatchedIngredient(supabase, name, normalizedName, options.recipeId)
       )
     }
   }
@@ -223,9 +251,9 @@ export async function matchIngredientsForRecipes(
 
     for (const name of ingredientNames) {
       const unmatched = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, results)
-      if (unmatched) {
+      for (const normalizedName of unmatched) {
         unmatchedPromises.push(
-          recordUnmatchedIngredient(supabase, name, unmatched, recipeId)
+          recordUnmatchedIngredient(supabase, name, normalizedName, recipeId)
         )
       }
     }
