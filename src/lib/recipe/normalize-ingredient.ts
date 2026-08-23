@@ -36,7 +36,60 @@ const BRAND_NAMES = [
 ]
 
 /**
- * 食材名から分量・単位・調理用語・ブランド名を除去して正規化する
+ * 除去対象の切り方リスト
+ *
+ * 食材名に混ざる切り方を落として基底食材名に寄せる。
+ * 除去してよいのは「マスタ名・エイリアスに現れない語」だけなので、追加時は注意:
+ * - `薄切り` は除去しない（マスタに `牛薄切り肉` が実在し、除去すると `牛肉` に丸まる）
+ * - `こま切れ` `細切れ` `切り落とし` も除去しない（`豚こま切れ肉` 等、食材名の一部）
+ *
+ * 並び順が重要: 正規表現の交替は左優先でマッチするため、長い語を先に置く。
+ * （`みじん切り` が先だと `粗みじん切り` → `粗` が残る）
+ */
+const CUTTING_STYLES = [
+  '粗みじん切り',
+  'みじん切り',
+  'いちょう切り',
+  'さいの目切り',
+  '拍子木切り',
+  'くし形切り',
+  'くし切り',
+  '小口切り',
+  '短冊切り',
+  '半月切り',
+  'ざく切り',
+  'そぎ切り',
+  'ぶつ切り',
+  '斜め切り',
+  '輪切り',
+  '千切り',
+  'せん切り',
+  '乱切り',
+  '角切り',
+]
+
+/** 食材名の並記に使われる区切り文字（`・` は `牛・豚合いびき肉` があるため対象外） */
+const NAME_DELIMITER = /[、，]/
+
+/**
+ * 並記された食材名を分割する
+ *
+ * レシピサイトによっては「細ネギ小口切り、七味」のように複数食材が
+ * 1エントリに詰め込まれる。正規化前に分割し、断片ごとにマッチングへ回す。
+ *
+ * @example
+ * splitIngredientNames('細ネギ小口切り、七味') // → ['細ネギ小口切り', '七味']
+ * splitIngredientNames('なす') // → ['なす']
+ */
+export function splitIngredientNames(raw: string): string[] {
+  return raw
+    .split(NAME_DELIMITER)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+}
+
+/**
+ * 食材名から分量・単位・調理用語・切り方・ブランド名を除去して正規化する
  *
  * @example
  * normalizeIngredientName('豚肉細切れ 200g') // → '豚肉細切れ'
@@ -45,10 +98,13 @@ const BRAND_NAMES = [
  * normalizeIngredientName('鶏もも肉（皮なし） 300g') // → '鶏もも肉皮なし'
  * normalizeIngredientName('キッコーマン醤油') // → '醤油'
  * normalizeIngredientName('マンジョウ本みりん') // → '本みりん'
+ * normalizeIngredientName('唐辛子（輪切り）') // → '唐辛子'
  */
 export function normalizeIngredientName(raw: string): string {
   // ブランド名除去用の正規表現を構築
   const brandPattern = new RegExp(BRAND_NAMES.join('|'), 'g')
+  // 切り方除去用の正規表現を構築
+  const cuttingStylePattern = new RegExp(CUTTING_STYLES.join('|'), 'g')
 
   return (
     raw
@@ -65,6 +121,9 @@ export function normalizeIngredientName(raw: string): string {
       .replace(/[（()）]/g, '')
       // その他の括弧記号を除去
       .replace(/[【】\[\]「」『』]/g, '')
+      // 切り方の除去（例: 唐辛子輪切り → 唐辛子）
+      // 括弧除去の後に置くことで「唐辛子（輪切り）」も拾える
+      .replace(cuttingStylePattern, '')
       // 調理用語・分量表現の除去
       .replace(
         /少々|適量|お好みで|大さじ|小さじ|カップ|ひとつまみ|適宜|ひとかけ|少量|たっぷり|お好み|to taste/gi,
