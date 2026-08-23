@@ -20,7 +20,6 @@
 ## Issue 化しづらい手動メモ
 - **CLAUDE.md L17 の Scraper 記述を修正**（「Jina Reader API」→ 実装は `__NEXT_DATA__` 抽出。ARCHITECTURE.md 側は整合済み）
 - **Vercel Dashboard で Node.js を 24.x に設定**（Settings → Build & Development Settings → Node.js Version）
-- **本番の既存ゴミ食材2件を手当てする**（#152 のコード修正では既存データは直らない）。`細ネギ小口切り、七味` を `needs_review = true`、`唐辛子輪切り` を `唐辛子` に統合（レシピ紐付けを付け替えてからマスタ行を削除）。貼り付け用 SQL は #152 のコメントにある
 
 ## 横断的な注意点（環境・運用の gotcha）
 - **PR は必ず `--base develop`**（`/create-pr` を使うと安全）。過去に main へ誤マージあり（PR #95）
