@@ -40,6 +40,14 @@
 - 調理法で区別したいケースがある（薄切り vs 細切れ）
 - ルールベースの対応は網羅が難しい
 
+> **後日の追記（2026-08 / Issue #152）**: 主軸は選択肢3のままだが、**切り方の除去だけは
+> 補助的に採用した**。`輪切り`・`小口切り`・`みじん切り` 等19語を正規化で落とす
+> （`src/lib/recipe/normalize-ingredient.ts` の `CUTTING_STYLES`）。
+> 却下理由の2点目は除外リストで担保している — マスタに実在する語を含む
+> `薄切り`（`牛薄切り肉`）・`こま切れ` / `細切れ` / `切り落とし`（`豚こま切れ肉` 等）は除去しない。
+> 却下理由の1点目（表記統一）と3点目（網羅性）は未解決のままで、そこは引き続き
+> 選択肢3のエイリアス自動拡充が受け持つ。
+
 ### 選択肢2: ベクトル埋め込みで食材マッチング
 
 ```
@@ -75,9 +83,12 @@
 2. 上位100件を処理対象
 3. LLM（Gemini）に一括で問い合わせ（1回のAPI呼び出し）
    - マッチ → ingredient_aliases に登録（auto_generated = true）
-   - 新規 → ingredients に追加（auto_generated = true / 即時有効）
-4. 処理済みを unmatched_ingredients から削除
+   - 新規 → ingredients に追加（auto_generated = true / needs_review = false = 即時有効）
+   - どちらでもない（調味料等）→ 何も登録しない
+4. 処理済みを unmatched_ingredients から削除（判定結果によらず削除する）
 ```
+
+> 判定ルールと反映時の注意点は `docs/ARCHITECTURE.md`「食材名寄せフロー > バッチでの名寄せ」を参照。
 
 ### 設定値
 
@@ -122,14 +133,16 @@ supabase/migrations/
   20260216000000_alias_auto_generate.sql  # マイグレーション
 
 src/lib/batch/
-  alias-generator.ts   # コアロジック（Node.js用）
+  alias-generator.ts   # コアロジック（Node.js / Deno 共用）
+  alias-db.ts          # DB 操作（unmatched 取得・alias / ingredient 登録・削除）
+  alias-llm.ts         # プロンプト組み立てと Gemini 呼び出し
 
 scripts/
   auto-alias.ts        # ローカル実行用スクリプト
 
 supabase/functions/
   auto-alias/
-    index.ts           # Edge Function（本番用）
+    index.ts           # Edge Function（本番用。src/lib/batch/ をビルド時にコピー）
 ```
 
 ### 使い方
@@ -152,6 +165,15 @@ npx tsx scripts/auto-alias.ts --limit=10
 
 ## 将来の拡張
 
-- 手動でエイリアス追加するUIの提供
-- 未マッチ頻度が高い食材のアラート通知
-- pg_cron でEdge Functionを定期実行（本番環境）
+| 項目 | 状態 |
+|------|------|
+| 手動でエイリアス追加するUIの提供 | 未着手 |
+| 未マッチ頻度が高い食材のアラート通知 | **相当する通知を実装済み**（Issue #150）。ただし通知対象は「未マッチ頻度が高い食材」ではなく **auto-alias が自動追加した食材**（`audit-auto-generated` が毎週月曜 09:00 JST に管理者へ LINE 通知）。未マッチのまま残る食材の可視化は未着手 |
+| pg_cron で Edge Function を定期実行（本番環境） | **実装済み**（定義の正本は `scripts/setup-cron.ts`。本番 / staging に4ジョブ登録） |
+
+## 更新履歴
+
+| 日付 | 内容 |
+|------|------|
+| 2026-02-16 | 初版（選択肢3を採用） |
+| 2026-08-24 | 実装との乖離を解消（Issue #149）: 切り方除去の限定採用（#152）を選択肢1に追記、「将来の拡張」の実装状況を反映。判定ルール・結果の反映フローは `docs/ARCHITECTURE.md`「食材名寄せフロー」に集約 |
