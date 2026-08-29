@@ -12,7 +12,7 @@
 未完了タスクの正本は GitHub Issues（`gh issue list --state open`）。ここには方針レベルの塊だけ:
 
 - **公開・宣伝** — #132 Gemini 有料 tier 判断
-- **食材マッチングの積み残し**（#144 の検討中に判明。#148・#150・#152 は完了。着手順は #147 → #149 が素直）— #147 エイリアス生成後にレシピが再リンクされない、#149 auto-alias のドキュメント整合（ARCHITECTURE.md に判定ロジック未記載 + ADR-001 の「調理法除去は却下」が #152 で覆り「将来の拡張」2項目も実装済み）
+- **食材マッチングの積み残し**（#144 の検討中に判明。#148・#150・#152・#149 は完了）— 残りは #147 エイリアス生成後にレシピが再リンクされない（auto-alias の効果が未来の登録に限定されている）
 - **検索の積み残し**（#144 の複数キーワード対応から派生。#144・#154 は完了）— #163 全語が食材に解決したクエリでベクトル検索フォールバックが効かない（発動条件だけ広げても `findByVectorSearch` の `eligible` が食材条件 AND で絞るため補完されず、制約の緩め方の判断が要る）
 - **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
@@ -42,7 +42,7 @@
 - **本番/staging で `NEXT_PUBLIC_APP_URL` 設定必須**（未設定だと LINE トーク上の規約・プライバシーリンクが機能しない）
 
 ## 主要な参照ポインタ（非自明なものだけ）
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成（実装の正本）
+- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成（実装の正本）。**食材名寄せは「登録時のマッチング」→「バッチでの名寄せ（auto-alias の判定）」→「検索時の解決」の3段構成**で、auto-alias の判定ルール・挙動は #149 でこのセクションに集約した（ADR-001 は設計判断の経緯のみ）
 - `docs/DATABASE_DESIGN.md` - DB設計
 - `docs/SCRAPING_POLICY.md` - スクレイピング方針・規約確認記録の正本
 - `src/lib/recipe/parse-recipe.ts` - 解析フロー（JSON-LD → __NEXT_DATA__ → OGP → 空結果）

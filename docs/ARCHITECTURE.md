@@ -305,18 +305,34 @@ sequenceDiagram
 
     Note over Func: Continue in background
 
-    loop For each unmatched (max 100)
-        Func->>DB: Get unmatched ingredient
-        Func->>LLM: Request classification
-        LLM-->>Func: Match result
-        alt Match found
-            Func->>DB: Register alias
-        else No match
-            Func->>DB: Add new ingredient
+    Func->>DB: get_unmatched_ingredient_counts(100)
+    DB-->>Func: 未マッチ食材（出現頻度順・最大100件）
+    Func->>DB: マスタ食材一覧（needs_review = false のみ）
+    DB-->>Func: ingredients
+
+    Func->>LLM: 未マッチ全件＋マスタ一覧をまとめて判定依頼（1回）
+    LLM-->>Func: results[]（食材ごとの判定）
+
+    loop 判定結果ごと
+        alt マッチあり
+            Func->>DB: ingredient_aliases に登録
+        else 新規食材
+            Func->>DB: ingredients に追加（即時有効）
+        else どちらでもない
+            Note over Func: 登録しない
         end
-        Func->>DB: Delete from unmatched
     end
+
+    Func->>DB: 判定結果に含まれた語を unmatched から一括削除
 ```
+
+> **Gemini 呼び出しは1実行あたり1回**。未マッチ食材は全件まとめて1つのプロンプトに載せ、
+> ループしているのは返ってきた判定結果を DB に反映する部分だけ
+> （`src/lib/batch/alias-generator.ts`）。処理上限 100 件はプロンプトに載せる語数の上限であり、
+> API 呼び出し回数ではない。
+
+> 判定ルールと結果の扱い（新規食材の即時有効・未マッチの削除条件）は
+> [食材名寄せフロー](#食材名寄せフロー) の「バッチでの名寄せ」を参照。
 
 ### ソースコード管理
 
@@ -511,7 +527,8 @@ graph TB
 
 ```mermaid
 graph TB
-    Input["AI extracted ingredient"] --> Normalize["Normalize（分量・単位を除去）"]
+    Input["AI extracted ingredient"] --> Split["「、」で分割（並記された複数食材を個別に扱う）"]
+    Split --> Normalize["Normalize（分量・単位・切り方・ブランド名を除去）"]
     Normalize --> SeasoningCheck{"調味料チェック"}
 
     SeasoningCheck -->|調味料| Skip["スキップ（登録しない）"]
@@ -530,7 +547,64 @@ graph TB
     Unmatched --> BatchQueue["Queue for batch (auto-alias)"]
 ```
 
-> バッチ処理の詳細は [Edge Functions](#edge-functions) セクションを参照
+> 部分一致が走査するのはマスタ食材名だけで、エイリアスは完全一致でしか使われない。
+> そのため `ねぎ → 長ねぎ` のようにエイリアスにしか存在しない語は部分一致の材料にならず、
+> `青ねぎ` ⊃ `ねぎ` の関係を使えないまま未マッチとして記録される（検索時の部分一致も同じ制約）。
+
+### バッチでの名寄せ（auto-alias の判定）
+
+未マッチとして溜まった食材は、1日1回の `auto-alias` バッチが LLM（Gemini）で
+「既存食材の表記揺れ」か「新規食材」かを判定する。
+実行の入れ物（非同期パターン・呼び出し回数）は [Edge Functions](#edge-functions) を参照。
+
+#### 判定ルール
+
+`src/lib/batch/alias-llm.ts` の `buildPrompt` が LLM に渡すルール。
+
+| # | ルール | 例 |
+|---|--------|-----|
+| 1 | 表記揺れ（カタカナ/ひらがな・漢字の違い）は同一食材として扱う | 「長ネギ」→「ねぎ」 |
+| 2 | 調理形態の違いは同一食材として扱う | 「豚バラ薄切り肉」→「豚バラ肉」 |
+| 3 | ただし食材の種類が異なる場合は区別する | 「豚バラ肉」と「豚こま肉」は別物 |
+| 4 | マスターに該当する食材がない場合は新規食材と判定 | 「ヤングコーン」→ 新規追加 |
+| 5 | 調味料や一般的でない食材は追加しない | `matchedId: null` かつ `isNewIngredient: false` |
+
+ルール2の「調理形態」は、正規化（`normalizeIngredientName`）で落としきれなかった分の
+受け皿でもある。正規化側で除去する切り方の一覧は `src/lib/recipe/normalize-ingredient.ts`
+（`CUTTING_STYLES`）を参照。
+
+#### 判定結果の反映
+
+```mermaid
+graph TB
+    Unmatched["unmatched_ingredients<br/>（出現頻度順・最大100件）"] --> Master["マスタ食材一覧を取得<br/>（needs_review = false のみ）"]
+    Master --> LLM["Gemini に一括判定（1回のAPI呼び出し）"]
+
+    LLM --> Judge{"判定結果"}
+    Judge -->|matchedId あり| Alias["ingredient_aliases に登録<br/>auto_generated = true"]
+    Judge -->|isNewIngredient| New["ingredients に追加<br/>needs_review = false / auto_generated = true"]
+    Judge -->|"どちらでもない（ルール5）"| Skip["登録しない"]
+
+    Alias --> Delete["判定結果に含まれた語を<br/>unmatched_ingredients から削除"]
+    New --> Delete
+    Skip --> Delete
+
+    New --> Audit["週次 audit-auto-generated で事後監査"]
+```
+
+#### 押さえておくべき挙動
+
+| 挙動 | 詳細 |
+|------|------|
+| 新規食材は即時有効 | `needs_review = false` で追加され、そのまま検索・マッチングに乗る。妥当性は週次の `audit-auto-generated` 通知で事後確認する（カテゴリ誤りは `UPDATE`、ゴミ食材は `needs_review = true` で退避）。`needs_review = true` で作ると読み取り側4箇所すべてから外れて行き止まりになる（#148） |
+| unmatched の削除は判定結果に依存しない | エイリアス登録・新規追加・ルール5の「登録しない」のいずれでも削除される。同じ食材が再び未マッチで積まれない限り再判定されない |
+| LLM が返さなかった語は残る | 削除対象は LLM の `results` に含まれた語だけなので、応答から漏れた語は次回の実行に持ち越される |
+| LLM に見えるマスタは `needs_review = false` のみ | レビュー中の食材は候補に出ないため同名を「新規食材」と判定してしまう。これが #148 の重複ループの原因 |
+| 新規追加の UNIQUE 違反（23505）はエラー計上 | `ingredients.name` の重複は「登録時のマッチャーが既存食材を取りこぼした」合図なので、握りつぶさずバッチ結果の `errors` に積む |
+| `ingredient_aliases.auto_generated` は書くだけ | 読み出し箇所はまだない（監査バッチが見ているのは `ingredients.auto_generated`） |
+| エイリアス名は正規化後の文字列 | `unmatched_ingredients.normalized_name` をそのままエイリアス名／新規食材名に使うため、正規化を強化すると古いエイリアスは引かれなくなる |
+
+> 設計判断の経緯は `docs/ADR-001-ingredient-matching.md` を参照。
 
 ### 検索時の解決
 
@@ -549,7 +623,7 @@ graph TB
     ExactCheck -->|No match| CategoryCheck{"カテゴリ一致（肉・魚介 等）"}
 
     CategoryCheck -->|Match| Group
-    CategoryCheck -->|No match| PartialCheck{"部分一致（双方向）"}
+    CategoryCheck -->|No match| PartialCheck{"部分一致（双方向・マスタ名のみ）"}
 
     PartialCheck -->|Match| Group
     PartialCheck -->|No match| Text["テキスト条件"]
@@ -567,7 +641,7 @@ graph TB
 | カテゴリ語 | テキスト照合には回さない（「肉」で「肉なし〇〇」を拾わないため） |
 | 未解決語 | テキスト照合に回る（マスタにない食材も材料テキストで拾える） |
 | フィルターバー選択 | 明示選択された食材IDは ID 一致のみ（テキスト照合しない） |
-| Bot のみ | テキスト条件のヒットが 3 件未満ならベクトル検索で補完 |
+| Bot のみ | テキスト条件を含むクエリで絞り込み結果が 3 件未満なら、ベクトル検索で補完（全語が食材に解決したクエリでは発動しない → #163） |
 
 > 絞り込みは DB クエリではなくユーザーのレシピを取得した上での JS フィルタで行う
 > （Bot / Web で同一の照合結果にするため）。レシピ件数が大きく増えた場合は RPC 化を検討する。
