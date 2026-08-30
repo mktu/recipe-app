@@ -19,6 +19,7 @@
 ## Issue 化しづらい手動メモ
 - **CLAUDE.md L17 の Scraper 記述を修正**（「Jina Reader API」→ 実装は `__NEXT_DATA__` 抽出。ARCHITECTURE.md 側は整合済み）
 - **Vercel Dashboard で Node.js を 24.x に設定**（Settings → Build & Development Settings → Node.js Version）
+- **`ingredients_raw` の `amount` が全件空**（本番29件、登録初日から）。`{"name":"うどん 2玉","amount":""}` のように分量が `name` 側に入っており、`DATABASE_DESIGN.md` の想定（`{name:"なす", amount:"2本"}`）と乖離している。#170 の調査中に発見。Issue 化するか要判断
 
 ## 横断的な注意点（環境・運用の gotcha）
 - **PR は必ず `--base develop`**（`/create-pr` を使うと安全）。過去に main へ誤マージあり（PR #95）
@@ -38,6 +39,8 @@
 - **自動追加食材の監査通知が毎週月曜 09:00 JST に届く**（#150、`audit-auto-generated`）。カテゴリ誤りを見つけたら `UPDATE ingredients SET category=...`、ゴミ食材は `needs_review = true` で検索・マッチングから外す（読み取り側4箇所が `needs_review = false` で除外している）。**通知が届かない週はジョブ故障を疑う**（0件でも「0 件」で届く設計）
 - **fnm の PATH**: ターミナル起動時に `eval "$(fnm env --use-on-cd --shell zsh)"` が必要
 - **本番/staging で `NEXT_PUBLIC_APP_URL` 設定必須**（未設定だと LINE トーク上の規約・プライバシーリンクが機能しない）
+- **LINE Flex のアクション `label` は40文字上限**（#170）。超えると reply 全体が 400 で落ちる。`createVerticalListMessage` はレシピタイトルを label に使うため `toActionLabel` で丸めている。**「最近追加」「よく見る」「材料少なめ」「時短」の4リストは同じ描画コードを通る**ので、片方だけ壊れて見えても原因は共通。上位5件にたまたま長いタイトルが入ったかどうかの差でしかない（実例: 材料少なめの最長がちょうど40文字で通っていた一方、最近追加の42文字が落ちた）
+- **LINE の reply が失敗すると replyToken は再利用できない**。catch 内のエラー通知もそこで失敗し、webhook が 500 になってユーザーには「既読のみ・無反応」に見える。#170 で `replyErrorText`（失敗を握ってログに残す）を入れて解消したが、**LINE で無反応を見たら Vercel の Function ログを最優先で見る**こと。ボットの返信文だけでは何も分からない
 
 ## 主要な参照ポインタ（非自明なものだけ）
 - `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API構成（実装の正本）
