@@ -47,6 +47,20 @@ async function replyText(params: ReplyParams, text: string): Promise<void> {
   await params.client.replyMessage({ replyToken: params.replyToken, messages: [{ type: 'text', text }] })
 }
 
+/**
+ * catch 内からのエラー通知用。失敗しても投げない
+ *
+ * 本命の reply が失敗した時点で replyToken が使えなくなっていることがあり、
+ * そのまま投げると webhook 全体が 500 になってユーザーには「既読のみ・無反応」に見える。
+ */
+async function replyErrorText(params: ReplyParams, text: string): Promise<void> {
+  try {
+    await replyText(params, text)
+  } catch (err) {
+    console.error('[LINE Webhook] エラー通知の返信にも失敗:', err)
+  }
+}
+
 async function replyWithRecipes(
   params: ReplyParams,
   recipes: SearchRecipeResult[],
@@ -88,7 +102,7 @@ export async function handleSearch(
     await replyWithRecipes(params, recipes, text)
   } catch (err) {
     console.error('[LINE Webhook] Search error:', err)
-    await replyText(params, '検索中にエラーが発生しました。')
+    await replyErrorText(params, '検索中にエラーが発生しました。')
   }
 }
 
@@ -112,7 +126,7 @@ export async function handleRecentlyViewed(
     })
   } catch (err) {
     console.error('[LINE Webhook] Recently viewed error:', err)
-    await replyText(params, '閲覧履歴の取得中にエラーが発生しました。')
+    await replyErrorText(params, '閲覧履歴の取得中にエラーが発生しました。')
   }
 }
 
@@ -136,7 +150,7 @@ export async function handleMostViewed(
     })
   } catch (err) {
     console.error('[LINE Webhook] Most viewed error:', err)
-    await replyText(params, 'よく見るレシピの取得中にエラーが発生しました。')
+    await replyErrorText(params, 'よく見るレシピの取得中にエラーが発生しました。')
   }
 }
 

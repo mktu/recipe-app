@@ -63,6 +63,21 @@ async function replyText(client: MessagingApiClient, replyToken: string, text: s
   await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
 }
 
+/**
+ * catch 内からのエラー通知用。失敗しても投げない
+ *
+ * 本命の reply が失敗した時点で replyToken が使えなくなっていることがあり、
+ * そのまま投げると webhook 全体が 500 になってユーザーには「既読のみ・無反応」に見える。
+ * ここで握ってログに残せば、少なくとも原因が追える形で終われる。
+ */
+async function replyErrorText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
+  try {
+    await replyText(client, replyToken, text)
+  } catch (err) {
+    console.error('[LINE Webhook] エラー通知の返信にも失敗:', err)
+  }
+}
+
 /** よく作るレシピを返す（view_count 上位） */
 export async function handleYokuTsukuru(
   client: MessagingApiClient,
@@ -84,7 +99,7 @@ export async function handleYokuTsukuru(
     })
   } catch (err) {
     console.error('[LINE Webhook] handleYokuTsukuru error:', err)
-    await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
+    await replyErrorText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
   }
 }
 
@@ -110,7 +125,7 @@ export async function handleShortCookingTime(
     })
   } catch (err) {
     console.error('[LINE Webhook] handleShortCookingTime error:', err)
-    await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
+    await replyErrorText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
   }
 }
 
@@ -136,7 +151,7 @@ export async function handleFewIngredients(
     })
   } catch (err) {
     console.error('[LINE Webhook] handleFewIngredients error:', err)
-    await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
+    await replyErrorText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
   }
 }
 
@@ -161,7 +176,7 @@ export async function handleRecentlyAdded(
     })
   } catch (err) {
     console.error('[LINE Webhook] handleRecentlyAdded error:', err)
-    await replyText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
+    await replyErrorText(client, replyToken, 'レシピの取得中にエラーが発生しました。')
   }
 }
 
