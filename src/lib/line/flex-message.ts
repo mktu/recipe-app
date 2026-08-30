@@ -20,6 +20,19 @@ const COLORS = {
 
 const DEFAULT_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image'
 
+/**
+ * アクションの label の上限（LINE 仕様）
+ *
+ * 超えると reply 全体が 400 で落ちる（`label must not be longer than 40 characters`）。
+ * ボックスの action ラベルは画面に出ずアクセシビリティ用途なので、切り詰めて構わない。
+ */
+const ACTION_LABEL_MAX = 40
+
+/** レシピタイトルをアクションの label に使える長さへ丸める */
+function toActionLabel(title: string): string {
+  return title.length > ACTION_LABEL_MAX ? title.slice(0, ACTION_LABEL_MAX) : title
+}
+
 function createHeroImage(imageUrl: string | null | undefined): messagingApi.FlexImage {
   return { type: 'image', url: imageUrl || DEFAULT_IMAGE, size: 'full', aspectRatio: '20:13', aspectMode: 'cover' }
 }
@@ -153,7 +166,7 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
     paddingBottom: 'lg',
     paddingStart: 'md',
     paddingEnd: 'md',
-    action: { type: 'uri', label: recipe.title, uri: recipe.url },
+    action: { type: 'uri', label: toActionLabel(recipe.title), uri: recipe.url },
     contents: [
       { type: 'image', url: recipe.imageUrl || DEFAULT_IMAGE, size: 'sm', aspectRatio: '1:1', aspectMode: 'cover', flex: 0 },
       { type: 'box', layout: 'vertical', justifyContent: 'center', contents: textContents },
