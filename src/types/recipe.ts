@@ -80,3 +80,28 @@ export interface UpdateRecipeInput {
 export interface RecipeDetail extends RecipeWithIngredients {
   ingredientsRaw: IngredientRaw[]
 }
+
+/** マッチしなかった食材1件分（unmatched_ingredients への記録用） */
+export interface UnmatchedIngredient {
+  rawName: string        // 分割前の元エントリ名
+  normalizedName: string // 正規化後の名前
+}
+
+/** レシピノート作成入力 */
+export interface CreateRecipeNoteInput {
+  lineUserId: string
+  title: string
+  ingredients: IngredientRaw[]
+  steps: string[]
+  ingredientIds: string[]
+  unmatchedIngredients?: UnmatchedIngredient[]
+  imageKey?: string
+  servings?: string
+  memo?: string
+  cookingTimeMinutes?: number | null
+}
+
+/** レシピノート更新入力 */
+export interface UpdateRecipeNoteInput extends CreateRecipeNoteInput {
+  noteId: string
+}

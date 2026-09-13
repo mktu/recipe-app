@@ -1,35 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
 import type { Database } from '@/types/database'
-import { normalizeSearchKey } from '@/lib/search/normalize'
+import type { UnmatchedIngredient } from '@/types/recipe'
 import { normalizeIngredientName, splitIngredientNames } from './normalize-ingredient'
-
-/** 検索対象外とする調味料・基礎食材・お菓子材料 */
-const SEASONING_KEYWORDS = [
-  // 基本調味料
-  '塩', '砂糖', 'グラニュー糖', '醤油', 'しょうゆ', 'みりん', '酒', '料理酒',
-  '油', 'サラダ油', 'ごま油', 'オリーブオイル', 'オリーブ油',
-  '酢', '味噌', 'みそ', 'だし', '出汁', 'ダシ', 'めんつゆ',
-  'マヨネーズ', 'ケチャップ', 'ソース', 'ウスターソース',
-  'こしょう', 'コショウ', '胡椒', '塩こしょう', '黒こしょう',
-  '片栗粉', '薄力粉', '強力粉', '小麦粉', 'パン粉',
-  'コンソメ', 'ブイヨン', '鶏ガラスープ',
-  'ねぎ刻み', '細ねぎ', '細ねぎ刻み',
-  // 辛味調味料
-  '豆板醤', 'コチュジャン', 'はちみつ',
-  // お菓子材料
-  'ホットケーキミックス', 'ベーキングパウダー', 'ココアパウダー', 'ビスケット',
-  // その他
-  'お湯', '水',
-]
-
-/** 照合キー化した調味料キーワード（かな/カナ・全角半角の揺れを吸収するため事前変換） */
-const SEASONING_KEYS = SEASONING_KEYWORDS.map(normalizeSearchKey)
-
-function isSeasoning(name: string): boolean {
-  const normalized = normalizeSearchKey(name)
-  return SEASONING_KEYS.some((kw) => normalized.includes(kw))
-}
+import { isSeasoning } from './seasonings'
 
 export interface MatchResult {
   ingredientId: string
@@ -38,6 +12,11 @@ export interface MatchResult {
 
 export interface MatchIngredientsOptions {
   recipeId?: string  // 未マッチ記録用（どのレシピからの食材か）
+}
+
+export interface ResolveIngredientsResult {
+  matched: MatchResult[]
+  unmatched: UnmatchedIngredient[]
 }
 
 interface Ingredient {
@@ -194,11 +173,17 @@ function matchSingleIngredient(
   return findByPartialMatch(allIngredients, normalizedName)
 }
 
-export async function matchIngredients(
-  ingredientNames: string[],
-  options: MatchIngredientsOptions = {}
-): Promise<MatchResult[]> {
-  if (ingredientNames.length === 0) return []
+/**
+ * 食材名を解決して結果を返す。**DB への書き込みは行わない。**
+ *
+ * 未マッチ食材をどこに記録するかが呼び出し側で変わるため、判定と記録を分けている。
+ * レシピノートの経路はレシピ行と同じトランザクションで記録したいので、この戻り値を
+ * そのまま RPC に渡す（Issue #173）。
+ */
+export async function resolveIngredients(
+  ingredientNames: string[]
+): Promise<ResolveIngredientsResult> {
+  if (ingredientNames.length === 0) return { matched: [], unmatched: [] }
 
   const supabase = createServerClient()
 
@@ -210,24 +195,38 @@ export async function matchIngredients(
     allIngredients.map((ing) => [ing.id, ing])
   )
 
-  const results: MatchResult[] = []
+  const matched: MatchResult[] = []
+  const unmatched: UnmatchedIngredient[] = []
   const seen = new Set<string>()
-  const unmatchedPromises: Promise<void>[] = []
 
   for (const name of ingredientNames) {
-    const unmatched = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, results)
-    for (const normalizedName of unmatched) {
-      unmatchedPromises.push(
-        recordUnmatchedIngredient(supabase, name, normalizedName, options.recipeId)
-      )
+    const normalizedNames = processSingleName(name, allIngredients, ingredientIdMap, aliasMap, seen, matched)
+    for (const normalizedName of normalizedNames) {
+      // rawName は分割前の元エントリ。従来の記録内容をそのまま維持している
+      unmatched.push({ rawName: name, normalizedName })
     }
   }
 
-  if (unmatchedPromises.length > 0) {
-    await Promise.all(unmatchedPromises)
+  return { matched, unmatched }
+}
+
+/** 食材をマッチングし、未マッチ分を unmatched_ingredients に記録する */
+export async function matchIngredients(
+  ingredientNames: string[],
+  options: MatchIngredientsOptions = {}
+): Promise<MatchResult[]> {
+  const { matched, unmatched } = await resolveIngredients(ingredientNames)
+
+  if (unmatched.length > 0) {
+    const supabase = createServerClient()
+    await Promise.all(
+      unmatched.map(({ rawName, normalizedName }) =>
+        recordUnmatchedIngredient(supabase, rawName, normalizedName, options.recipeId)
+      )
+    )
   }
 
-  return results
+  return matched
 }
 
 /** 複数レシピ分を一括でマッチングする（DBクエリを2回のみに抑える） */
