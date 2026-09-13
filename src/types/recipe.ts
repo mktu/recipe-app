@@ -101,7 +101,19 @@ export interface CreateRecipeNoteInput {
   cookingTimeMinutes?: number | null
 }
 
-/** レシピノート更新入力 */
-export interface UpdateRecipeNoteInput extends CreateRecipeNoteInput {
+/**
+ * レシピノート更新入力
+ *
+ * 更新は**全項目の置き換え**（PUT セマンティクス）。`update_recipe_note` の任意引数は
+ * 渡さないと既定値の NULL で上書きされるため、「渡し忘れ」と「明示的に空にする」を
+ * 型で区別できるよう、作成時は任意の項目もここでは必須にしている。
+ * 値を消したいときは `null` を渡す。
+ */
+export interface UpdateRecipeNoteInput
+  extends Omit<CreateRecipeNoteInput, 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'> {
   noteId: string
+  imageKey: string | null
+  servings: string | null
+  memo: string | null
+  cookingTimeMinutes: number | null
 }

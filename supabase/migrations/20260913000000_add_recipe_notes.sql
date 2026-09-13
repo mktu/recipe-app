@@ -146,6 +146,12 @@ COMMENT ON FUNCTION create_recipe_note(UUID, TEXT, JSONB, JSONB, UUID[], JSONB, 
 -- ===========================================
 -- 4. ノートを更新して図鑑側へ書き戻す RPC
 -- ===========================================
+-- **全項目の置き換え（PUT セマンティクス）**であり、部分更新ではない。
+-- p_image_key / p_servings / p_memo / p_cooking_time_minutes は DEFAULT NULL なので、
+-- 渡さなければ NULL で上書きされる。COALESCE で「未指定なら現状維持」にはしていない。
+-- 編集画面では値を空にする操作（分量やメモを消す）が正当なので、
+-- 「未指定」と「明示的に空」を DB 側で区別しない代わりに、呼び出し側の型
+-- （UpdateRecipeNoteInput）でこれらを必須にして渡し忘れを防いでいる。
 CREATE OR REPLACE FUNCTION update_recipe_note(
   p_note_id UUID,
   p_user_id UUID,
@@ -183,7 +189,11 @@ BEGIN
     servings = p_servings
   WHERE id = p_note_id;
 
-  -- recipe_id が NULL のノート（将来のアレンジ用）は図鑑側を持たない
+  -- recipe_id が NULL のノート（将来のアレンジ用）は図鑑側の行を持たない。
+  -- メモと調理時間は recipes 側にしか置き場が無いため、この経路では保存されない。
+  -- 現状 create_recipe_note は必ずレシピ行を作るのでこの分岐には入らない。
+  -- アレンジを図鑑に出さない選択肢を実装するとき（Epic #172）に、
+  -- recipe_notes 側へ列を足すかどうかを併せて決めること。
   IF v_recipe_id IS NULL THEN
     RETURN;
   END IF;

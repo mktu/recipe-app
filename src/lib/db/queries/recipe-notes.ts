@@ -43,8 +43,23 @@ function toRecipeNoteError(err: unknown): RecipeNoteError {
   return { message: err instanceof Error ? err.message : 'Unknown error' }
 }
 
-/** 作成・更新で共通の RPC 引数を組み立てる */
-function buildNoteRpcArgs(input: CreateRecipeNoteInput, userId: string) {
+/**
+ * 作成・更新で共通の RPC 引数を組み立てる。
+ *
+ * RPC 側の任意引数は `DEFAULT NULL` なので、ここで落とした項目は NULL で上書きされる。
+ * 更新時の取りこぼしを防ぐのは `UpdateRecipeNoteInput` 側の必須化（null を明示させる）。
+ */
+type NoteRpcArgsInput = Omit<
+  CreateRecipeNoteInput,
+  'lineUserId' | 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'
+> & {
+  imageKey?: string | null
+  servings?: string | null
+  memo?: string | null
+  cookingTimeMinutes?: number | null
+}
+
+function buildNoteRpcArgs(input: NoteRpcArgsInput, userId: string) {
   return {
     p_user_id: userId,
     p_title: input.title,
@@ -52,9 +67,9 @@ function buildNoteRpcArgs(input: CreateRecipeNoteInput, userId: string) {
     p_steps: input.steps as unknown as Json,
     p_ingredient_ids: input.ingredientIds,
     p_unmatched: toUnmatchedJson(input.unmatchedIngredients),
-    p_image_key: input.imageKey,
-    p_servings: input.servings,
-    p_memo: input.memo,
+    p_image_key: input.imageKey ?? undefined,
+    p_servings: input.servings ?? undefined,
+    p_memo: input.memo ?? undefined,
     p_cooking_time_minutes: input.cookingTimeMinutes ?? undefined,
   }
 }
@@ -91,6 +106,9 @@ export async function createRecipeNote(
 
 /**
  * ノートを更新し、図鑑のレシピ行へ書き戻す。
+ *
+ * **全項目の置き換え**であり、部分更新ではない。`UpdateRecipeNoteInput` は
+ * 画像・分量・メモ・調理時間も必須にしてあるので、消したい場合だけ `null` を渡す。
  *
  * タイトルが変わった場合は RPC 側で `title_embedding` を NULL に落とすため、
  * generate-embeddings が次回実行時に拾い直す。
