@@ -80,3 +80,40 @@ export interface UpdateRecipeInput {
 export interface RecipeDetail extends RecipeWithIngredients {
   ingredientsRaw: IngredientRaw[]
 }
+
+/** マッチしなかった食材1件分（unmatched_ingredients への記録用） */
+export interface UnmatchedIngredient {
+  rawName: string        // 分割前の元エントリ名
+  normalizedName: string // 正規化後の名前
+}
+
+/** レシピノート作成入力 */
+export interface CreateRecipeNoteInput {
+  lineUserId: string
+  title: string
+  ingredients: IngredientRaw[]
+  steps: string[]
+  ingredientIds: string[]
+  unmatchedIngredients?: UnmatchedIngredient[]
+  imageKey?: string
+  servings?: string
+  memo?: string
+  cookingTimeMinutes?: number | null
+}
+
+/**
+ * レシピノート更新入力
+ *
+ * 更新は**全項目の置き換え**（PUT セマンティクス）。`update_recipe_note` の任意引数は
+ * 渡さないと既定値の NULL で上書きされるため、「渡し忘れ」と「明示的に空にする」を
+ * 型で区別できるよう、作成時は任意の項目もここでは必須にしている。
+ * 値を消したいときは `null` を渡す。
+ */
+export interface UpdateRecipeNoteInput
+  extends Omit<CreateRecipeNoteInput, 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'> {
+  noteId: string
+  imageKey: string | null
+  servings: string | null
+  memo: string | null
+  cookingTimeMinutes: number | null
+}

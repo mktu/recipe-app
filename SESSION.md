@@ -32,6 +32,7 @@
 - **ローカルはアカウント削除不可**（DevAuthProvider の getAccessToken が null）
 - **ローカルでレシピ追加には `dev-user-001` の users 行が必要**（`supabase/seed.sql`）。無いと create 失敗 → `npx supabase db reset` で seed 再投入
 - **API は ID トークン検証必須**（dev は `NEXT_PUBLIC_LIFF_ID` 空でバイパス）。クライアントからの呼び出しは `useAuthedFetch` を使う
+- **Postgres 関数の EXECUTE は既定で anon / authenticated に付く**（#173 で判明）。Supabase が `public` スキーマに対してデフォルト権限を設定しているため、`REVOKE EXECUTE ... FROM PUBLIC` だけでは剥がれない。**書き込み RPC を足したら `FROM PUBLIC, anon, authenticated` まで REVOKE すること**。確認は `SELECT has_function_privilege('anon', '<fn>(<引数型>)', 'EXECUTE');`。なお**既存の読み取り RPC 5本は `SECURITY DEFINER` かつ `p_user_id` を引数に取る**ため、この権限が付いたままだと RLS のバックストップを迂回して他ユーザーのデータを読めてしまう（#110 の範囲として要 Issue 化）
 - **Supabase キー**: アプリ全体は `SUPABASE_SECRET_KEY`（`sb_secret_...`）、Edge Functions 内部は `SUPABASE_SERVICE_ROLE_KEY`（自動インジェクト）
 - **pg_cron の command に secret key が平文で埋まっている**（`SELECT * FROM cron.job;` で見える）。キーをローテーションしたら cron ジョブも貼り直しが必要
 - **cron ジョブ定義の正本は `scripts/setup-cron.ts`**（#150 で全ジョブを集約）。DB は変更せず貼り付け用の冪等 SQL を出力するだけなので、**出力を SQL Editor で実行するまで反映されない**。ダッシュボードで直接いじると次の貼り直しで消える。staging / 本番ともに4ジョブ（`generate-embeddings` / `auto-alias-daily` / `audit-auto-generated-weekly` / `cleanup-cron-logs`）を登録済み

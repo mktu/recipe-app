@@ -71,12 +71,40 @@
 
 バッチ処理（`auto-alias` Edge Function）の処理待ちキュー。マッチング成功または新規食材追加後に削除される。
 
+### `recipe_notes` テーブル（レシピノート本文）
+
+- `id`: UUID (Primary Key) -- `recipes.url` の `/notes/<id>` に入る
+- `user_id`: UUID (Foreign Key → users.id ON DELETE CASCADE)
+- `recipe_id`: UUID (Foreign Key → recipes.id ON DELETE CASCADE, **Unique・nullable**)
+- `title`: String
+- `ingredients`: JSONB (材料。例: `[{"name": "なす", "amount": "2本"}]`)
+- `steps`: JSONB (調理手順の配列。例: `["なすを乱切りにする", "炒める"]`)
+- `image_key`: String (プレースホルダー画像の識別子)
+- `servings`: String (「2人分」など。任意)
+- `created_at`: Timestamp
+- `updated_at`: Timestamp
+
+ユーザーが自分で書いた（または AI と相談して作った）レシピの本文。**`recipes` のスキーマは変えず**、
+図鑑側には通常どおりレシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる。
+リンク先が自分自身になるため、詳細画面の外部リンク・閲覧記録のリダイレクト・LINE Flex の uri が
+すべて従来のまま動く（Epic #172）。
+
+> **「このレシピはノートか」の判定に URL は使わない。** `recipe_notes.recipe_id` の外部キーで分かるため、
+> `recipes` にフラグ列を足す必要もない。`recipe_id` が nullable なのは、将来のアレンジを図鑑に出すか
+> どうかを後から選べるようにするため。UNIQUE は NULL を複数許すので nullable のまま1対1を保証できる。
+
+**書き込みは RPC 経由。** ノート行・レシピ行・`recipe_ingredients`・`unmatched_ingredients` は
+`create_recipe_note` / `update_recipe_note`（`supabase/migrations/20260913000000_add_recipe_notes.sql`）
+にまとめてある。PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では
+原子性を張れない。削除は専用 RPC を持たず、対のレシピ行を消せば CASCADE でノートも消える。
+
 ## ER図（概要）
 
 ```
 users ─────< recipes >───── recipe_ingredients >───── ingredients
-                                                           │
-                                              ingredient_aliases
+               │                                           │
+         recipe_notes                          ingredient_aliases
+         （1対1・ノート由来のみ）
 ```
 
 ## 食材のマッチングフロー
