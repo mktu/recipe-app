@@ -13,7 +13,7 @@
 
 - **公開・宣伝** — #132 Gemini 有料 tier 判断
 - **食材マッチングの積み残し**（#144 の検討中に判明。#148・#150 は完了。着手順は #147 → #152 → #149 が素直）— #147 エイリアス生成後にレシピが再リンクされない、#152 正規化が切り方・「、」連結を処理せずゴミ食材がマスタに流入する（#148 で自動追加食材を即時有効化したため、今後ゴミが UI に直接出る。#150 の週次通知で検知できる）、#149 ARCHITECTURE.md の auto-alias 記述が実装とズレ
-- **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS 実効化（defense-in-depth・優先度低）
+- **保守・リファクタ** — #106 API コールの typed 関数集約、#48 画像ホットリンク→next/image プロキシ、#37〜#39 E2E テスト、#110 RLS バックストップの残課題（RLS の実効化自体は完了済み。残るのは `SECURITY DEFINER` RPC の EXECUTE 権限絞り込みで、migration 1本で塞げる）
 - **パッケージアップデート継続**（`/update-packages`）— G3 AI SDK / G4 UI(`lucide-react` major) / G6 開発ツール(`typescript`6, `eslint`10 等 major 多数) / G7 その他(`zod`, `schema-dts`2)
 
 ## Issue 化しづらい手動メモ
@@ -32,7 +32,8 @@
 - **ローカルはアカウント削除不可**（DevAuthProvider の getAccessToken が null）
 - **ローカルでレシピ追加には `dev-user-001` の users 行が必要**（`supabase/seed.sql`）。無いと create 失敗 → `npx supabase db reset` で seed 再投入
 - **API は ID トークン検証必須**（dev は `NEXT_PUBLIC_LIFF_ID` 空でバイパス）。クライアントからの呼び出しは `useAuthedFetch` を使う
-- **Postgres 関数の EXECUTE は既定で anon / authenticated に付く**（#173 で判明）。Supabase が `public` スキーマに対してデフォルト権限を設定しているため、`REVOKE EXECUTE ... FROM PUBLIC` だけでは剥がれない。**書き込み RPC を足したら `FROM PUBLIC, anon, authenticated` まで REVOKE すること**。確認は `SELECT has_function_privilege('anon', '<fn>(<引数型>)', 'EXECUTE');`。なお**既存の読み取り RPC 5本は `SECURITY DEFINER` かつ `p_user_id` を引数に取る**ため、この権限が付いたままだと RLS のバックストップを迂回して他ユーザーのデータを読めてしまう（#110 の範囲として要 Issue 化）
+- **Postgres 関数の EXECUTE は既定で anon / authenticated に付く**（#173 で判明）。Supabase が `public` スキーマに対してデフォルト権限を設定しているため、`REVOKE EXECUTE ... FROM PUBLIC` だけでは剥がれない。**書き込み RPC を足したら `FROM PUBLIC, anon, authenticated` まで REVOKE すること**。確認は `SELECT has_function_privilege('anon', '<fn>(<引数型>)', 'EXECUTE');`。なお**既存の読み取り RPC 5本は `SECURITY DEFINER` かつ `p_user_id` を引数に取る**ため、この権限が付いたままだと RLS のバックストップを迂回して他ユーザーのデータを読めてしまう（調査結果と対応方針は #110 に記載済み。EXECUTE を絞るのと `SECURITY DEFINER` を外すの2段構え）
+- **`NextResponse.redirect()` は絶対 URL しか受け付けない**（#173 で判明）。内部の `validateURL` がベース無しの `new URL()` に通すため、相対パスを渡すと例外＝500 になる。`recipes.url` にはレシピノートの相対パス `/notes/<id>` が入りうるので、**`new URL(url, request.url)` でリクエストのオリジンに解決すること**（外部サイトの絶対 URL はベースを無視して素通りする）。`/api/track/recipe/[id]` は対応済みだが、**`POST /api/recipes/parse` と詳細画面は未対応で相対パスだと 400 になる**（#176 で対応）
 - **Supabase キー**: アプリ全体は `SUPABASE_SECRET_KEY`（`sb_secret_...`）、Edge Functions 内部は `SUPABASE_SERVICE_ROLE_KEY`（自動インジェクト）
 - **pg_cron の command に secret key が平文で埋まっている**（`SELECT * FROM cron.job;` で見える）。キーをローテーションしたら cron ジョブも貼り直しが必要
 - **cron ジョブ定義の正本は `scripts/setup-cron.ts`**（#150 で全ジョブを集約）。DB は変更せず貼り付け用の冪等 SQL を出力するだけなので、**出力を SQL Editor で実行するまで反映されない**。ダッシュボードで直接いじると次の貼り直しで消える。staging / 本番ともに4ジョブ（`generate-embeddings` / `auto-alias-daily` / `audit-auto-generated-weekly` / `cleanup-cron-logs`）を登録済み
