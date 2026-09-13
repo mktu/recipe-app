@@ -370,6 +370,8 @@ erDiagram
     ingredients ||--o{ ingredient_aliases : "has"
     ingredients ||--o| ingredients : "parent"
     recipes ||--o{ unmatched_ingredients : "has"
+    users ||--o{ recipe_notes : "writes"
+    recipes ||--o| recipe_notes : "body"
 
     users
     recipes
@@ -377,6 +379,7 @@ erDiagram
     ingredient_aliases
     recipe_ingredients
     unmatched_ingredients
+    recipe_notes
 ```
 
 ### テーブル概要
@@ -389,6 +392,21 @@ erDiagram
 | `ingredient_aliases` | 表記ゆれ対応（LLM自動生成含む） |
 | `recipe_ingredients` | レシピ - 食材の中間テーブル |
 | `unmatched_ingredients` | バッチ処理待ちの未マッチ食材 |
+| `recipe_notes` | レシピノートの本文（タイトル・材料・手順）。`recipes` と1対1で対応 |
+
+### レシピノートと図鑑の関係
+
+ユーザーが自分で書いたレシピは `recipe_notes` に本文を持ち、図鑑側（`recipes`）には通常どおり
+レシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる。**`recipes` のスキーマは変えていない**ため、
+詳細画面の外部リンク・閲覧記録のリダイレクト・LINE Flex の uri が従来のまま動く。
+
+- 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う
+- 書き込みは `create_recipe_note` / `update_recipe_note` RPC に集約し、ノート行・レシピ行・
+  `recipe_ingredients`・`unmatched_ingredients` を単一トランザクションで書く
+  （PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では原子性を張れない）
+- 削除は専用 RPC を持たない。対のレシピ行を消せば FK の CASCADE でノートも消える
+- ノート経由のレシピは `source_name` が `マイレシピ`、材料の `amount` を正しく保持する
+  （スクレイピング経路は `SCRAPING_POLICY.md` の方針で分量を保存しない）
 
 > 詳細なスキーマは `supabase/migrations/` を参照
 

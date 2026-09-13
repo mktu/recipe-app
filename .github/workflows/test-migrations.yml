@@ -93,8 +93,9 @@ jobs:
           # 検証用データを superuser（RLS バイパス）で投入
           $PSQL -c "INSERT INTO users (id, line_user_id, display_name) VALUES ('00000000-0000-0000-0000-0000000000aa', 'U_rls_test', 'RLS Test') ON CONFLICT (line_user_id) DO NOTHING;"
           $PSQL -c "INSERT INTO recipes (user_id, title, url) VALUES ('00000000-0000-0000-0000-0000000000aa', 'RLS Secret', 'https://example.com/rls-test') ON CONFLICT (user_id, url) DO NOTHING;"
+          $PSQL -c "INSERT INTO recipe_notes (user_id, title) VALUES ('00000000-0000-0000-0000-0000000000aa', 'RLS Secret Note') ON CONFLICT DO NOTHING;"
 
-          for t in recipes users recipe_ingredients; do
+          for t in recipes users recipe_ingredients recipe_notes; do
             OUT=$($PSQL -c "SET ROLE anon; SELECT count(*) FROM ${t};" 2>&1 || true)
             # 数値のみの行が count（クエリ成功＝RLS 評価まで到達したケース）
             N=$(echo "$OUT" | grep -E '^[0-9]+$' | tail -1)

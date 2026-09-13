@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
+import { getUserIdByLineUserId } from '@/lib/db/queries/users'
 import type { Database, Json, TablesInsert } from '@/types/database'
 import type { CreateRecipeInput } from '@/types/recipe'
 
@@ -12,11 +13,6 @@ export interface CreateRecipeResult {
 export interface CreateRecipeError {
   message: string
   code?: string
-}
-
-async function getUserIdByLineUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
-  const { data, error } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
-  return error || !data ? null : (data as { id: string }).id
 }
 
 async function insertRecipe(client: TypedSupabaseClient, userId: string, input: CreateRecipeInput): Promise<{ id: string } | null> {

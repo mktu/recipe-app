@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
+import { getUserIdByLineUserId } from '@/lib/db/queries/users'
 import type { Database, Json, TablesInsert } from '@/types/database'
 import type { RecipeDetail, RecipeIngredient, IngredientRaw, UpdateRecipeInput } from '@/types/recipe'
 
@@ -10,11 +11,6 @@ type RecipeIngredientRow = {
   ingredient_id: string
   is_main: boolean
   ingredients: { id: string; name: string } | null
-}
-
-async function getUserIdByLineUserId(client: TypedSupabaseClient, lineUserId: string): Promise<string | null> {
-  const { data, error } = await client.from('users').select('id').eq('line_user_id', lineUserId).single()
-  return error || !data ? null : data.id
 }
 
 /** 閲覧数をカウントアップ */
