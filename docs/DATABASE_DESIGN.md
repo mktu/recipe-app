@@ -238,3 +238,25 @@ PostgreSQL ストアドプロシージャ（Supabase RPC）として定義され
 | `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
 | `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |
 | `get_recipes_short_cooking_time(p_user_id, p_limit)` | 調理時間が短いレシピ取得 | LINE Bot のカテゴリ検索 |
+
+### RPC の EXECUTE 権限（#173 で判明）
+
+**Postgres 関数の EXECUTE は既定で `anon` / `authenticated` に付く。**
+Supabase が `public` スキーマに対してデフォルト権限を設定しているため、
+`REVOKE EXECUTE ... FROM PUBLIC` だけでは剥がれない。
+
+**書き込み RPC を足したら `FROM PUBLIC, anon, authenticated` まで REVOKE すること。**
+
+```sql
+REVOKE EXECUTE ON FUNCTION <fn>(<引数型>) FROM PUBLIC, anon, authenticated;
+```
+
+確認:
+
+```sql
+SELECT has_function_privilege('anon', '<fn>(<引数型>)', 'EXECUTE');
+```
+
+> 上表の**読み取り RPC 5本は `SECURITY DEFINER` かつ `p_user_id` を引数に取る**ため、
+> この権限が付いたままだと RLS のバックストップを迂回して他ユーザーのデータを読めてしまう。
+> 調査結果と対応方針は #110 に記載済み（EXECUTE を絞るのと `SECURITY DEFINER` を外すの2段構え）。
