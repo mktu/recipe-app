@@ -13,10 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 20 には native WebSocket が無く、@supabase/supabase-js の
+      # createClient() が RealtimeClient の初期化で落ちる（fixtures/db.ts）。
+      # ローカル（.nvmrc）と Vercel は 24 なので、ここも .nvmrc に合わせる。
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies

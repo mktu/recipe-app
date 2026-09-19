@@ -44,6 +44,15 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 
 > 教訓: 「基盤だけ先に入れてテストは後で」は、基盤が腐る速度に対して CI が無力になる。
 
+### CI の Node と、ローカル / 本番の Node がずれている
+
+`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは軒並み `node-version: '20'` 固定**。
+`e2e.yml` だけは `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
+`@supabase/supabase-js` の `createClient()` が `RealtimeClient` の初期化で落ちるため。
+
+残り（`ci.yml` / `test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
+**ローカルで通ったコードが CI だけ落ちる**余地が残っているので、揃えるかは要判断。
+
 ### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
 
 `playwright.config.ts` の `webServer.reuseExistingServer` はローカルで有効。
