@@ -1,48 +1,83 @@
 ---
 name: end-session
-description: セッション終了前に doc 追従を確認し、SESSION.md の現在地を最新化する
+description: セッション終了前に doc 追従を確認し、用済みの worktree を片付ける
 ---
 
 # セッション終了
 
 **進捗・完了タスクは Issue / PR / commit に記録する（このセッションで済ませておく）。**
-end-session でやるのは「doc の追従漏れチェック」と「SESSION.md の現在地更新」の2つだけ。
-完了タスクの詳細ログを SESSION.md に書き足さないこと（履歴は Issue/PR が正本）。
+end-session でやるのは「doc の追従漏れチェック」と「worktree の後片付け」の2つだけ。
 
-## 1. ドキュメント更新チェック（このスキルの主目的）
+かつての `SESSION.md` は廃止済み。完了タスクのログを書き足す場所は無い（履歴は Issue/PR が正本）。
 
-`git diff main HEAD --name-only` でセッション中の変更ファイルを確認し、
+## 1. ドキュメント更新チェック
+
+`git diff origin/develop...HEAD --name-only` でセッション中の変更ファイルを確認し、
 以下の対応表に基づいて更新漏れのドキュメントがないか確認する。問題なければスキップ。
 
 | 変更されたファイル | 確認すべきドキュメント |
 |---|---|
 | `supabase/migrations/` | `docs/DATABASE_DESIGN.md`, `docs/ARCHITECTURE.md` |
-| `supabase/functions/` | `docs/EDGE_FUNCTIONS.md`, `docs/ARCHITECTURE.md` |
-| `src/lib/line/` | `docs/ARCHITECTURE.md` |
-| `src/app/api/` | `docs/ARCHITECTURE.md`（API構成セクション） |
+| `supabase/functions/`, `src/lib/batch/` | `docs/EDGE_FUNCTIONS.md`, `docs/ARCHITECTURE.md` |
+| `src/lib/line/` | `docs/ARCHITECTURE.md`, `docs/LINE_SETUP.md` |
+| `src/app/api/` | `docs/ARCHITECTURE.md`（API 構成セクション） |
+| `.github/workflows/` | `docs/OPERATIONS.md` |
+| `scripts/setup-cron.ts` | `docs/EDGE_FUNCTIONS.md` |
 
-更新が必要なドキュメントがあれば、SESSION.md 更新の前にユーザーに確認する。
+### 新しく判明した gotcha があれば docs に書く
 
-## 2. SESSION.md の現在地を更新
+「コードだけからは分からない」ことがセッション中に判明したら、docs に残す。
+置き場所は CLAUDE.md の「知見の置き場所」表に従う。行き先が無ければ `docs/OPERATIONS.md`。
 
-SESSION.md は履歴ログではなく**現在地ダッシュボード**。以下だけ最新化する：
+更新が必要なドキュメントがあれば、コミット前にユーザーに確認する。
 
-- **現在のフェーズ**: 変わっていれば更新
-- **進行中・次にやること**: 方針レベルの塊のみ（詳細は Issue へ）。着手/完了で変わった Issue 番号を反映
-- **横断的な注意点**: 今回のセッションで判明した環境・運用の gotcha があれば追記。解消済みの注意点は削除
-- **主要な参照ポインタ**: 非自明なものが増えたら追記
+## 2. 作業のコミットと PR
 
-完了タスクの経緯・課題・落とし所は SESSION.md ではなく **Issue コメント / PR 説明**に書くこと。
+未コミットの変更があればコミットする。PR がまだなら `/create-pr` で作成する
+（**`--base develop` が必須**）。
 
-## 3. コミット
-
-SESSION.md に変更があれば commit する（変わっていなければスキップ）。
-feature ブランチ上なら基本はそのまま（PR に含める）でよい。develop に反映したい場合のみ切り替える。
+## 3. worktree を片付けるか判断する
 
 ```bash
-git add SESSION.md && git commit -m "docs: update SESSION.md dashboard"
+git worktree list
+```
+
+worktree で作業していた場合、または前のセッションの worktree が残っている場合、
+**それぞれについて削除可否を判定する**。
+
+```bash
+# 未コミット・未 push が無いか
+git -C <path> status --porcelain
+git -C <path> log --oneline origin/<branch>..HEAD
+
+# PR の状態
+gh pr list --head <branch> --state all --json number,state,mergedAt
+```
+
+| 状態 | 判断 |
+|---|---|
+| PR がマージ済み・未コミットなし | **削除する** |
+| PR が open（レビュー待ち） | **残す**。マージ後の次セッションで削除 |
+| 未コミット、または未 push のコミットあり | **残す**。ユーザーに内容を報告する |
+
+**削除は必ずユーザーに確認してから実行する。**
+
+このセッションが worktree の中にいる場合は `ExitWorktree` ツールで抜ける
+（`action: "remove"` で削除、`action: "keep"` で残す）。
+外から他の worktree を消す場合:
+
+```bash
+git worktree remove .claude/worktrees/<name>
+git branch -d feature/<xxx>       # マージ済みブランチのローカル参照も消す
+git worktree prune
 ```
 
 ## 4. 終了案内
 
-「doc 追従を確認し、SESSION.md の現在地を更新しました。`/clear` でセッションを終了してください。」と表示する。
+以下を報告して終わる。
+
+- doc 追従の確認結果
+- 作成/更新した PR
+- worktree の処理結果（削除した / 残した理由）
+
+最後に「`/clear` でセッションを終了してください。」と表示する。

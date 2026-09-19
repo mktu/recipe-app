@@ -91,3 +91,37 @@ https://manager.line.biz/ → 該当アカウント → ホーム → リッチ�
 
 リッチメニューから「使い方」テキストが送信されると、Webhook がヘルプメッセージを返す。
 対応キーワード: `使い方`, `ヘルプ`, `help`, `?`, `？`
+
+## 運用上の注意点
+
+### Flex のアクション `label` は40文字上限（#170）
+
+超えると reply 全体が 400 で落ちる。`createVerticalListMessage` はレシピタイトルを
+label に使うため `toActionLabel` で丸めている。
+
+**「最近追加」「よく見る」「材料少なめ」「時短」の4リストは同じ描画コードを通る**ので、
+片方だけ壊れて見えても原因は共通。上位5件にたまたま長いタイトルが入ったかどうかの差でしかない。
+
+> 実例: 材料少なめの最長がちょうど40文字で通っていた一方、最近追加の42文字が落ちた。
+
+### reply が失敗すると `replyToken` は再利用できない
+
+catch 内のエラー通知もそこで失敗し、webhook が 500 になる。
+ユーザーには「既読のみ・無反応」に見える。
+
+#170 で `replyErrorText`（失敗を握ってログに残す）を入れて解消したが、
+**LINE で無反応を見たら Vercel の Function ログを最優先で見ること**。
+ボットの返信文だけでは何も分からない。
+
+### 本番 / staging で `NEXT_PUBLIC_APP_URL` の設定は必須
+
+未設定だと LINE トーク上の規約・プライバシーリンクが機能しない。
+
+### staging の Webhook URL
+
+```
+https://recipe-app-git-develop-mktus-projects.vercel.app/api/webhook/line
+```
+
+> この URL を通すため Vercel Preview の Deployment Protection は Off にしている
+> （`docs/OPERATIONS.md`）。

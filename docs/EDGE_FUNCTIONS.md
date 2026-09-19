@@ -99,6 +99,15 @@ supabase functions deploy
 - `src/lib/batch/**` の変更
 - `scripts/build-edge-functions.ts` の変更
 
+### `supabase start` を使うワークフローには `npm run functions:build` を前段に入れる
+
+生成物は gitignore 対象なので、クリーンチェックアウトでは `config.toml` が宣言する
+関数をバンドルできず `supabase start` が落ちる。
+
+**Edge Function を新規追加したら `test-migrations.yml` と `e2e.yml` の両方を確認すること。**
+
+> 実例: #150 で `audit-auto-generated` を追加した際、e2e 側が漏れて main が一時的に赤くなった。
+
 ## 新しい Edge Function の追加
 
 ### 1. 関数ディレクトリ作成
@@ -203,6 +212,21 @@ npx tsx scripts/setup-cron.ts --env=production
 - pg_cron のタイムアウトは最大5秒
 - 長時間処理は非同期パターン（202 Accepted を即座に返す）で対応。auto-alias は採用済み
 - cron を待たずに確認したいときは、出力 SQL の `net.http_post(...)` 部分だけを単発で実行する
+
+## 自動追加食材の監査通知の運用（#150）
+
+`audit-auto-generated` が**毎週月曜 09:00 JST** に LINE へ結果を push する。
+**0 件でも「0 件」で届く設計**なので、**通知が届かない週はジョブ故障を疑うこと。**
+
+届いた内容への対応:
+
+| 内容 | 対応 |
+|------|------|
+| カテゴリ誤り | `UPDATE ingredients SET category = ... WHERE ...` |
+| ゴミ食材 | `UPDATE ingredients SET needs_review = true WHERE ...` |
+
+`needs_review = true` にすると検索・マッチングから外れる
+（読み取り側4箇所が `needs_review = false` で除外している）。
 
 ## トラブルシューティング
 

@@ -14,7 +14,7 @@
 - **Styling:** Tailwind CSS, shadcn/ui
 - **Backend/DB:** Supabase (Auth, PostgreSQL)
 - **LLM API:** Gemini 2.5 Flash (Vercel AI SDK 経由)
-- **Scraper:** JSON-LD 抽出（優先）+ Jina Reader API（フォールバック）
+- **Scraper:** JSON-LD 抽出（優先）→ `__NEXT_DATA__` 抽出 → OGP（最終フォールバック）
 - **Platform:** LINE LIFF
 
 ## ディレクトリ構造
@@ -134,6 +134,8 @@ supabase gen types typescript --local > src/types/database.ts
 - **ローカル Supabase:** `docs/SUPABASE_LOCAL.md` を参照
 - **LINE 開発環境:** `docs/LINE_SETUP.md` を参照
 - **アーキテクチャ・環境構成:** `docs/ARCHITECTURE.md` を参照
+- **Edge Functions・cron:** `docs/EDGE_FUNCTIONS.md` を参照
+- **開発フロー・CI・環境の gotcha:** `docs/OPERATIONS.md` を参照
 
 ## 環境変数
 
@@ -160,56 +162,30 @@ LINE_CHANNEL_ACCESS_TOKEN=
 
 ## セッション引き継ぎ
 
+**進捗の正本は GitHub Issues。** セッションをまたぐ状態ファイル（旧 `SESSION.md`）は廃止した。
+現在地は `gh issue list --state open` で取得し、環境・運用の gotcha は docs 側に置く。
+
 ### 新セッション開始時
 
-新しい AI セッションを開始したら、まず以下を確認:
-
-```
-SESSION.md を読んで現在の状態を把握してください
-```
+`/start-session` を実行する（open Issue の確認と worktree 利用判断を行う）。
 
 ### 実装タスク着手時
 
 GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
 
-### SESSION.md の更新タイミング
+### セッション終了時
 
-以下のタイミングで `SESSION.md` を更新する:
+`/end-session` を実行する（doc 追従チェックと worktree の後片付けを行う）。
 
-1. **大きなタスク完了時** - コミット後に更新
-2. **セッション終了時** - 「セッション終了」と依頼された場合
-3. **ブロッカー発生時** - 次回セッションで対応が必要な場合
+### 知見の置き場所
 
-### SESSION.md の構成
+セッション中に判明した「コードだけからは分からないこと」は、以下に書く。
 
-```markdown
-## 最終更新
-日時
-
-## 現在のフェーズ
-フェーズ X
-
-## 直近の完了タスク
-- [x] タスク1
-- [x] タスク2
-
-## 進行中のタスク
-- [ ] タスク3
-
-## 次にやること
-- [ ] タスク4
-
-## ブロッカー・注意点
-特記事項
-
-## 参照すべきファイル
-関連ファイルのリスト
-
-## コミット履歴（直近）
-直近のコミットログ
-```
-
-### 注意
-
-- Ctrl+C 等での強制終了時は更新されない
-- 重要な進捗があった場合はこまめに更新を依頼すること
+| 種類 | 置き場所 |
+|------|----------|
+| タスク・課題・完了の経緯 | GitHub Issue / PR |
+| LINE 固有の gotcha | `docs/LINE_SETUP.md` |
+| Edge Function・cron の gotcha | `docs/EDGE_FUNCTIONS.md` |
+| ローカル環境の gotcha | `docs/SUPABASE_LOCAL.md` |
+| 開発フロー・CI・デプロイの gotcha | `docs/OPERATIONS.md` |
+| アーキテクチャ・DB 設計 | `docs/ARCHITECTURE.md` / `docs/DATABASE_DESIGN.md` |
