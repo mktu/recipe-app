@@ -10,9 +10,16 @@ description: セッション開始時に open Issue を読んで現在地を把�
 
 ## 1. 現在地を読む
 
+**`docs/OPERATIONS.md` を読む（必須。スキップしない）。**
+開発フロー・CI・デプロイの gotcha がここに集約されている。80行程度なので全文読んでよい。
+
 ```bash
 gh issue list --state open
 ```
+
+着手内容が決まった時点で、CLAUDE.md の「ドキュメント > 作業前に読む」表に従って
+該当 doc も読む（Edge Function なら `docs/EDGE_FUNCTIONS.md`、migration なら
+`docs/DATABASE_DESIGN.md` など）。
 
 ## 2. 残っている worktree を棚卸しする
 
@@ -45,7 +52,7 @@ PR がマージ済み（`state: MERGED`）で未コミットの変更が無い w
 - [パス（ブランチ / PR 状態）。なければ「なし」]
 
 **関係しそうな注意点:**
-[着手内容に関係しそうな gotcha を docs から抜粋。なければ「特になし」]
+[docs/OPERATIONS.md と、着手内容に対応する doc から関係しそうな gotcha を抜粋。なければ「特になし」]
 ```
 
 ## 4. 作業内容と worktree 利用を確認する

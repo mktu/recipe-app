@@ -25,6 +25,37 @@
 - `src/components/features/` - 機能別コンポーネント
 - `src/hooks/` - カスタム hooks
 
+## ドキュメント
+
+各 doc には**コードを読んでも分からない gotcha** が入っている。踏んでから気付くと手戻りが大きい。
+
+### 作業前に読む
+
+**以下に着手する前に、対応する doc を読むこと。** 該当 doc を読まずに着手しない。
+
+| これをする前に | これを読む |
+|---|---|
+| Edge Function・cron・バッチの変更 | `docs/EDGE_FUNCTIONS.md` |
+| migration・RPC・スキーマの変更 | `docs/DATABASE_DESIGN.md` |
+| LINE Bot・Webhook・Flex の変更 | `docs/LINE_SETUP.md` |
+| CI / PR / デプロイ設定の変更、CI 結果の判断 | `docs/OPERATIONS.md` |
+| ローカル環境のセットアップ・不調の調査 | `docs/SUPABASE_LOCAL.md` |
+| 機能の実装全般（プランニングの前） | `docs/ARCHITECTURE.md` |
+| スクレイピング対象サイトの追加・変更 | `docs/SCRAPING_POLICY.md` |
+
+> 特に `docs/OPERATIONS.md` には**判断を誤らせる類**の注意点が入っている
+> （例: `E2E Tests` は実質何も検証していないので、緑を品質の根拠にしてはいけない）。
+
+### 知見を書く場所
+
+セッション中に判明した「コードだけからは分からないこと」は、上表と同じ対応で書き戻す。
+行き先が無い横断的な事項は `docs/OPERATIONS.md`。
+
+| 種類 | 置き場所 |
+|------|----------|
+| タスク・課題・完了の経緯 | GitHub Issue / PR |
+| 開発フロー・CI・デプロイの gotcha | `docs/OPERATIONS.md` |
+
 ## 開発ルール
 
 ### ブランチ戦略（GitHub Flow）
@@ -134,8 +165,8 @@ supabase gen types typescript --local > src/types/database.ts
 - **ローカル Supabase:** `docs/SUPABASE_LOCAL.md` を参照
 - **LINE 開発環境:** `docs/LINE_SETUP.md` を参照
 - **アーキテクチャ・環境構成:** `docs/ARCHITECTURE.md` を参照
-- **Edge Functions・cron:** `docs/EDGE_FUNCTIONS.md` を参照
-- **開発フロー・CI・環境の gotcha:** `docs/OPERATIONS.md` を参照
+
+doc の一覧と、どの作業の前に何を読むかは「ドキュメント > 作業前に読む」を参照。
 
 ## 環境変数
 
@@ -171,21 +202,11 @@ LINE_CHANNEL_ACCESS_TOKEN=
 
 ### 実装タスク着手時
 
-GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
+GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に
+**「ドキュメント > 作業前に読む」表に従って該当 doc を読む**こと。
+最低でも `docs/ARCHITECTURE.md` は読んでアーキテクチャを把握する。
 
 ### セッション終了時
 
 `/end-session` を実行する（doc 追従チェックと worktree の後片付けを行う）。
-
-### 知見の置き場所
-
-セッション中に判明した「コードだけからは分からないこと」は、以下に書く。
-
-| 種類 | 置き場所 |
-|------|----------|
-| タスク・課題・完了の経緯 | GitHub Issue / PR |
-| LINE 固有の gotcha | `docs/LINE_SETUP.md` |
-| Edge Function・cron の gotcha | `docs/EDGE_FUNCTIONS.md` |
-| ローカル環境の gotcha | `docs/SUPABASE_LOCAL.md` |
-| 開発フロー・CI・デプロイの gotcha | `docs/OPERATIONS.md` |
-| アーキテクチャ・DB 設計 | `docs/ARCHITECTURE.md` / `docs/DATABASE_DESIGN.md` |
+セッション中に判明した gotcha の書き戻し先は「ドキュメント > 知見を書く場所」を参照。
