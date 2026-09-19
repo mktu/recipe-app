@@ -725,6 +725,7 @@ graph TB
 | ワークフロー | トリガー | 処理内容 |
 |------------|---------|---------|
 | `ci.yml` | PR → main / develop | Lint + Build + Functions Build |
+| `e2e.yml` | PR → main / develop | Playwright E2E（ローカル Supabase を起動して実行） |
 | `test-migrations.yml` | PR (migrations変更時) | マイグレーションテスト |
 | `supabase-migrate.yml` | Push → develop | staging DB マイグレーション |
 | `supabase-migrate.yml` | Push → main | 本番 DB マイグレーション |

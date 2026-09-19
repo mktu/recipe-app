@@ -29,13 +29,32 @@ PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用な�
 > 実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。
 > `npm run functions:build` を前段に追加して解消（詳細は `docs/EDGE_FUNCTIONS.md`）。
 
-### `E2E Tests` は現状ほぼ何も検証していない
+### `E2E Tests` は develop / main への PR で走る
 
-`e2e/` にテストが1本も無く、`--pass-with-no-tests` で緑にしているだけ。
-トリガーは main への push と `workflow_dispatch` のみで、**PR では走らない**。
-現時点でこのジョブが守れているのは「`supabase start` が通る」ことだけ。
+Issue #37 でレシピ追加フローのテストを入れ、トリガーを `pull_request: [develop, main]` に、
+実行を `npm run test:e2e`（`--pass-with-no-tests` なし）に変えた。
+カバーしているのは**追加フローのみ**。ホーム（#38）・詳細（#39）はまだ無いので、
+このジョブの緑は「レシピを URL から登録できる」ことの根拠にしかならない。
 
-実テストは #37〜#39 で書く。それまでこのジョブの緑を品質の根拠にしないこと。
+### テストが0本の間、E2E の fixtures は腐っても気付けなかった
+
+`e2e/fixtures/db.ts` は `users.onboarding_completed_at` と `onboarding_sessions` を触っていたが、
+どちらも `20260524000000_remove_onboarding.sql` で消えていた。テストが1本も無いので
+fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で修正）。
+
+> 教訓: 「基盤だけ先に入れてテストは後で」は、基盤が腐る速度に対して CI が無力になる。
+
+### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
+
+`playwright.config.ts` の `webServer.reuseExistingServer` はローカルで有効。
+**ポートが開いてさえいれば中身を確かめずに再利用する**ため、3000 番を別のアプリが
+使っていると、テストはそのアプリに対して走り全件 404 で落ちる（原因が極めて分かりにくい）。
+
+ぶつかったらポートを逃がす:
+
+```bash
+E2E_PORT=3100 npm run test:e2e
+```
 
 ## デプロイ・ホスティング
 

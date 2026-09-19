@@ -82,6 +82,16 @@ GitHub Actions が設定されていない場合や緊急時は、Supabase Dashb
 npm run functions:serve
 ```
 
+E2E（`npm run test:e2e`）も同じ理由で必要。ホーム一覧の検証が `get-recipes` を通るため、
+起動していないと `/api/recipes/list` が 503 になる。
+CI ではクリーンな `supabase start` が Edge Runtime ごと立ち上げるのでこの手順は不要。
+
+### worktree には `.env.local` が無い
+
+`.env.local` は追跡対象外なので、worktree を作った先には存在しない。
+`playwright.config.ts` はここから Supabase キーを読むため、worktree で E2E を回すなら
+メインのチェックアウトからコピーしておくこと。
+
 ### ローカルではアカウント削除ができない
 
 `DevAuthProvider` の `getAccessToken` が `null` を返すため。
