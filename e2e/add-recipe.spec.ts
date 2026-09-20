@@ -16,6 +16,15 @@ import { FIXTURE_RECIPE, startRecipeSite, type RecipeSite } from './fixtures/rec
  *
  * 解析対象のサイトはローカルの fixture サーバー（`fixtures/recipe-site.ts`）。
  * 確認画面の `parseRecipe()` はサーバー側で走るので `page.route()` では差し替えられない。
+ *
+ * ロケーターは `getByLabel` / `getByRole` を優先し、`getByPlaceholder` は
+ * 可視ラベルを持たない入力欄（検索欄など）に限る。
+ *
+ * 注意: `getByRole` の `name` は**既定で部分一致**。label が input に紐付いていないと
+ * アクセシブル名が placeholder 由来になるため、`getByRole('textbox', { name: 'タイトル' })` が
+ * placeholder「レシピのタイトル」に偶然ヒットし、**ロールで取れているように見えて
+ * 実は placeholder 依存**という状態になる（#37 で実際に踏んだ）。
+ * 新しいフォームのテストを書くときは、先に `htmlFor` / `id` が付いているか確認すること。
  */
 
 let site: RecipeSite
