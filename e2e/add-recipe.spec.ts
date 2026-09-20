@@ -45,7 +45,7 @@ test.afterEach(async () => {
 async function submitUrl(page: Page, url: string) {
   await page.goto('/recipes/add')
   await expect(page.getByRole('heading', { name: 'レシピを追加' })).toBeVisible()
-  await page.getByPlaceholder('https://cookpad.com/recipe/...').fill(url)
+  await page.getByLabel('レシピのURL').fill(url)
   await page.getByRole('button', { name: '次へ' }).click()
 }
 
@@ -54,11 +54,9 @@ test('URL 入力から保存までを通し、ホームの一覧に反映され�
 
   // --- 確認画面: パース結果が入っている ---
   await expect(page.getByRole('heading', { name: 'レシピを編集' })).toBeVisible()
-  await expect(page.getByPlaceholder('レシピのタイトル')).toHaveValue(FIXTURE_RECIPE.title)
-  await expect(page.getByPlaceholder('クックパッド、delish kitchen など')).toHaveValue(
-    FIXTURE_RECIPE.sourceName
-  )
-  await expect(page.getByPlaceholder('https://...')).toHaveValue(FIXTURE_RECIPE.imageUrl)
+  await expect(page.getByLabel('タイトル')).toHaveValue(FIXTURE_RECIPE.title)
+  await expect(page.getByLabel('出典')).toHaveValue(FIXTURE_RECIPE.sourceName)
+  await expect(page.getByLabel('画像URL')).toHaveValue(FIXTURE_RECIPE.imageUrl)
 
   // JSON-LD の食材が食材マスタに解決され、選択済みバッジとして出ている
   for (const name of FIXTURE_RECIPE.matchedIngredientNames) {
@@ -69,6 +67,8 @@ test('URL 入力から保存までを通し、ホームの一覧に反映され�
   await page.getByRole('button', { name: '追加' }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet).toBeVisible()
+  // この検索欄は可視ラベルを持たず placeholder がそのままアクセシブル名なので、
+  // getByPlaceholder で取るのが正しい（ラベルがあるのに紐付いていない、という状態ではない）
   await sheet.getByPlaceholder('食材を検索...').fill('にんじん')
   await sheet.getByText('にんじん', { exact: true }).click()
   await page.keyboard.press('Escape')
@@ -89,7 +89,7 @@ test('URL 入力から保存までを通し、ホームの一覧に反映され�
 
 test('不正な URL は確認画面へ進まない', async ({ page }) => {
   await page.goto('/recipes/add')
-  const input = page.getByPlaceholder('https://cookpad.com/recipe/...')
+  const input = page.getByLabel('レシピのURL')
   await input.fill('not-a-url')
   await page.getByRole('button', { name: '次へ' }).click()
 
