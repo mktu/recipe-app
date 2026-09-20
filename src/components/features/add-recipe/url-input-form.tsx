@@ -47,8 +47,11 @@ export function UrlInputForm() {
       <div className="space-y-2">
         <div className="relative">
           <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* 可視ラベルは親の見出し「レシピのURLを入力」なので、input 自身には名前が無い。
+              aria-label が無いとスクリーンリーダーは placeholder の URL 例を読み上げてしまう */}
           <Input
             type="url"
+            aria-label="レシピのURL"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://cookpad.com/recipe/..."
