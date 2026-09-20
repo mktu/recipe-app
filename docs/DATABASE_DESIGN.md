@@ -85,9 +85,10 @@
 - `updated_at`: Timestamp
 
 ユーザーが自分で書いた（または AI と相談して作った）レシピの本文。**`recipes` のスキーマは変えず**、
-図鑑側には通常どおりレシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる。
-リンク先が自分自身になるため、詳細画面の外部リンク・閲覧記録のリダイレクト・LINE Flex の uri が
-すべて従来のまま動く（Epic #172）。
+図鑑側には通常どおりレシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる（Epic #172）。
+
+> `url` が相対パスになることで既存の導線に手当てが要る箇所がある。対応状況は
+> `docs/ARCHITECTURE.md` の「レシピノートと図鑑の関係」を参照。
 
 > **「このレシピはノートか」の判定に URL は使わない。** `recipe_notes.recipe_id` の外部キーで分かるため、
 > `recipes` にフラグ列を足す必要もない。`recipe_id` が nullable なのは、将来のアレンジを図鑑に出すか
@@ -237,3 +238,25 @@ PostgreSQL ストアドプロシージャ（Supabase RPC）として定義され
 | `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
 | `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |
 | `get_recipes_short_cooking_time(p_user_id, p_limit)` | 調理時間が短いレシピ取得 | LINE Bot のカテゴリ検索 |
+
+### RPC の EXECUTE 権限（#173 で判明）
+
+**Postgres 関数の EXECUTE は既定で `anon` / `authenticated` に付く。**
+Supabase が `public` スキーマに対してデフォルト権限を設定しているため、
+`REVOKE EXECUTE ... FROM PUBLIC` だけでは剥がれない。
+
+**書き込み RPC を足したら `FROM PUBLIC, anon, authenticated` まで REVOKE すること。**
+
+```sql
+REVOKE EXECUTE ON FUNCTION <fn>(<引数型>) FROM PUBLIC, anon, authenticated;
+```
+
+確認:
+
+```sql
+SELECT has_function_privilege('anon', '<fn>(<引数型>)', 'EXECUTE');
+```
+
+> 上表の**読み取り RPC 5本は `SECURITY DEFINER` かつ `p_user_id` を引数に取る**ため、
+> この権限が付いたままだと RLS のバックストップを迂回して他ユーザーのデータを読めてしまう。
+> 調査結果と対応方針は #110 に記載済み（EXECUTE を絞るのと `SECURITY DEFINER` を外すの2段構え）。

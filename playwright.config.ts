@@ -6,6 +6,16 @@ import { config } from 'dotenv'
 // override: false で CI の環境変数（$GITHUB_ENV 経由）を上書きしない
 config({ path: '.env.local', override: false, quiet: true })
 
+/**
+ * dev サーバーのポート。
+ *
+ * `reuseExistingServer` はポートが開いてさえいれば**別プロジェクトのサーバーでも黙って再利用する**。
+ * 3000 番を他のアプリが使っていると、テストはそのアプリに対して走って 404 で落ちる。
+ * ぶつかったら `E2E_PORT=3100 npm run test:e2e` のように逃がす。
+ */
+const PORT = Number(process.env.E2E_PORT ?? 3000)
+const BASE_URL = `http://localhost:${PORT}`
+
 export default defineConfig({
   testDir: './e2e',
 
@@ -18,7 +28,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'html',
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
   },
 
@@ -30,8 +40,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `npm run dev -- --port ${PORT}`,
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {

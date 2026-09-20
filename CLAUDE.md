@@ -14,7 +14,7 @@
 - **Styling:** Tailwind CSS, shadcn/ui
 - **Backend/DB:** Supabase (Auth, PostgreSQL)
 - **LLM API:** Gemini 2.5 Flash (Vercel AI SDK 経由)
-- **Scraper:** JSON-LD 抽出（優先）+ Jina Reader API（フォールバック）
+- **Scraper:** JSON-LD 抽出（優先）→ `__NEXT_DATA__` 抽出 → OGP（最終フォールバック）
 - **Platform:** LINE LIFF
 
 ## ディレクトリ構造
@@ -24,6 +24,37 @@
 - `src/lib/` - ビジネスロジック（`auth/`, `db/`, `line/`, `scraper/`, `recipe/` 等）
 - `src/components/features/` - 機能別コンポーネント
 - `src/hooks/` - カスタム hooks
+
+## ドキュメント
+
+各 doc には**コードを読んでも分からない gotcha** が入っている。踏んでから気付くと手戻りが大きい。
+
+### 作業前に読む
+
+**以下に着手する前に、対応する doc を読むこと。** 該当 doc を読まずに着手しない。
+
+| これをする前に | これを読む |
+|---|---|
+| Edge Function・cron・バッチの変更 | `docs/EDGE_FUNCTIONS.md` |
+| migration・RPC・スキーマの変更 | `docs/DATABASE_DESIGN.md` |
+| LINE Bot・Webhook・Flex の変更 | `docs/LINE_SETUP.md` |
+| CI / PR / デプロイ設定の変更、CI 結果の判断 | `docs/OPERATIONS.md` |
+| ローカル環境のセットアップ・不調の調査 | `docs/SUPABASE_LOCAL.md` |
+| 機能の実装全般（プランニングの前） | `docs/ARCHITECTURE.md` |
+| スクレイピング対象サイトの追加・変更 | `docs/SCRAPING_POLICY.md` |
+
+> 特に `docs/OPERATIONS.md` には**判断を誤らせる類**の注意点が入っている
+> （例: `E2E Tests` は実質何も検証していないので、緑を品質の根拠にしてはいけない）。
+
+### 知見を書く場所
+
+セッション中に判明した「コードだけからは分からないこと」は、上表と同じ対応で書き戻す。
+行き先が無い横断的な事項は `docs/OPERATIONS.md`。
+
+| 種類 | 置き場所 |
+|------|----------|
+| タスク・課題・完了の経緯 | GitHub Issue / PR |
+| 開発フロー・CI・デプロイの gotcha | `docs/OPERATIONS.md` |
 
 ## 開発ルール
 
@@ -135,6 +166,8 @@ supabase gen types typescript --local > src/types/database.ts
 - **LINE 開発環境:** `docs/LINE_SETUP.md` を参照
 - **アーキテクチャ・環境構成:** `docs/ARCHITECTURE.md` を参照
 
+doc の一覧と、どの作業の前に何を読むかは「ドキュメント > 作業前に読む」を参照。
+
 ## 環境変数
 
 `.env.local` に以下を設定:
@@ -160,56 +193,20 @@ LINE_CHANNEL_ACCESS_TOKEN=
 
 ## セッション引き継ぎ
 
+**進捗の正本は GitHub Issues。** セッションをまたぐ状態ファイル（旧 `SESSION.md`）は廃止した。
+現在地は `gh issue list --state open` で取得し、環境・運用の gotcha は docs 側に置く。
+
 ### 新セッション開始時
 
-新しい AI セッションを開始したら、まず以下を確認:
-
-```
-SESSION.md を読んで現在の状態を把握してください
-```
+`/start-session` を実行する（open Issue の確認と worktree 利用判断を行う）。
 
 ### 実装タスク着手時
 
-GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に `docs/ARCHITECTURE.md` を読んでアーキテクチャを把握すること。
+GitHub Issues のタスクに着手する場合は、プランニング（EnterPlanMode）の前に
+**「ドキュメント > 作業前に読む」表に従って該当 doc を読む**こと。
+最低でも `docs/ARCHITECTURE.md` は読んでアーキテクチャを把握する。
 
-### SESSION.md の更新タイミング
+### セッション終了時
 
-以下のタイミングで `SESSION.md` を更新する:
-
-1. **大きなタスク完了時** - コミット後に更新
-2. **セッション終了時** - 「セッション終了」と依頼された場合
-3. **ブロッカー発生時** - 次回セッションで対応が必要な場合
-
-### SESSION.md の構成
-
-```markdown
-## 最終更新
-日時
-
-## 現在のフェーズ
-フェーズ X
-
-## 直近の完了タスク
-- [x] タスク1
-- [x] タスク2
-
-## 進行中のタスク
-- [ ] タスク3
-
-## 次にやること
-- [ ] タスク4
-
-## ブロッカー・注意点
-特記事項
-
-## 参照すべきファイル
-関連ファイルのリスト
-
-## コミット履歴（直近）
-直近のコミットログ
-```
-
-### 注意
-
-- Ctrl+C 等での強制終了時は更新されない
-- 重要な進捗があった場合はこまめに更新を依頼すること
+`/end-session` を実行する（doc 追従チェックと worktree の後片付けを行う）。
+セッション中に判明した gotcha の書き戻し先は「ドキュメント > 知見を書く場所」を参照。

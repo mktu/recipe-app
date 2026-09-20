@@ -11,11 +11,22 @@ export const E2E_LINE_USER_ID = 'dev-user-001'
 
 const admin = createClient(SUPABASE_URL, SECRET_KEY)
 
+async function getUserId(): Promise<string> {
+  const { data } = await admin
+    .from('users')
+    .select('id')
+    .eq('line_user_id', E2E_LINE_USER_ID)
+    .single()
+
+  if (!data) throw new Error('User not found. Call setupUser() first.')
+  return data.id as string
+}
+
 /**
  * テストユーザーを DB にセットアップする。
- * 既存データを削除してから INSERT することで、onboarding_completed_at を確実に制御する。
+ * 既存データを削除してから INSERT することで、テスト間で状態を持ち越さない。
  */
-export async function setupUser({ onboardingCompleted }: { onboardingCompleted: boolean }) {
+export async function setupUser() {
   await cleanUserData()
 
   const { error } = await admin
@@ -23,7 +34,6 @@ export async function setupUser({ onboardingCompleted }: { onboardingCompleted: 
     .insert({
       line_user_id: E2E_LINE_USER_ID,
       display_name: '開発ユーザー',
-      onboarding_completed_at: onboardingCompleted ? new Date().toISOString() : null,
     })
 
   if (error) throw new Error(`setupUser failed: ${error.message}`)
@@ -31,6 +41,9 @@ export async function setupUser({ onboardingCompleted }: { onboardingCompleted: 
 
 /**
  * テストユーザーのデータを全て削除する（テスト後のクリーンアップ）。
+ *
+ * `recipe_ingredients` と `recipe_notes` は `recipes` / `users` への FK が
+ * ON DELETE CASCADE のため個別の DELETE は要らない。
  */
 export async function cleanUserData() {
   const { data: user } = await admin
@@ -41,28 +54,47 @@ export async function cleanUserData() {
 
   if (!user) return
 
-  await Promise.all([
-    admin.from('recipes').delete().eq('user_id', user.id),
-    admin.from('onboarding_sessions').delete().eq('user_id', E2E_LINE_USER_ID),
-  ])
-
+  await admin.from('recipes').delete().eq('user_id', user.id)
   await admin.from('users').delete().eq('line_user_id', E2E_LINE_USER_ID)
 }
 
-/**
- * テスト用レシピをシードする。ホーム画面・詳細テストで使用。
- */
-export async function seedRecipes(count = 3) {
-  const { data: user } = await admin
-    .from('users')
-    .select('id')
-    .eq('line_user_id', E2E_LINE_USER_ID)
+export interface SeedRecipeInput {
+  url: string
+  title: string
+  sourceName?: string
+  cookingTimeMinutes?: number | null
+  ingredientsRaw?: { name: string; amount: string }[]
+}
+
+/** テスト用レシピを1件シードする */
+export async function seedRecipe(input: SeedRecipeInput) {
+  const userId = await getUserId()
+
+  const { data, error } = await admin
+    .from('recipes')
+    .insert({
+      user_id: userId,
+      url: input.url,
+      title: input.title,
+      source_name: input.sourceName ?? 'E2E テスト',
+      cooking_time_minutes: input.cookingTimeMinutes ?? null,
+      ingredients_raw: input.ingredientsRaw ?? [{ name: '鶏肉', amount: '200g' }],
+    })
+    .select()
     .single()
 
-  if (!user) throw new Error('User not found. Call setupUser() first.')
+  if (error) throw new Error(`seedRecipe failed: ${error.message}`)
+  return data
+}
+
+/**
+ * テスト用レシピをまとめてシードする。ホーム画面・詳細テストで使用。
+ */
+export async function seedRecipes(count = 3) {
+  const userId = await getUserId()
 
   const recipes = Array.from({ length: count }, (_, i) => ({
-    user_id: user.id,
+    user_id: userId,
     url: `https://delishkitchen.tv/recipes/e2e-test-${i + 1}`,
     title: `テストレシピ ${i + 1}`,
     source_name: 'DELISH KITCHEN',
@@ -72,4 +104,30 @@ export async function seedRecipes(count = 3) {
 
   const { data } = await admin.from('recipes').insert(recipes).select()
   return data ?? []
+}
+
+/** 指定 URL のレシピを取得する（保存結果の検証用） */
+export async function findRecipeByUrl(url: string) {
+  const userId = await getUserId()
+
+  const { data } = await admin
+    .from('recipes')
+    .select('id, title, url, source_name, cooking_time_minutes, ingredients_raw')
+    .eq('user_id', userId)
+    .eq('url', url)
+    .maybeSingle()
+
+  return data
+}
+
+/**
+ * 未マッチ食材の記録を消す。
+ *
+ * `matchIngredients()` は解析のたびに `unmatched_ingredients` へ行を足すが、
+ * このテーブルはユーザーに紐付かない（`recipe_id` は解析時点では null）ため
+ * `cleanUserData()` では落ちない。放置するとローカルのアンマッチ解析
+ * （`scripts/check-ingredient-match-rate.sh`）にテストの食材が混ざる。
+ */
+export async function cleanUnmatchedIngredients(rawNames: readonly string[]) {
+  await admin.from('unmatched_ingredients').delete().in('raw_name', [...rawNames])
 }

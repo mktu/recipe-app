@@ -397,8 +397,16 @@ erDiagram
 ### レシピノートと図鑑の関係
 
 ユーザーが自分で書いたレシピは `recipe_notes` に本文を持ち、図鑑側（`recipes`）には通常どおり
-レシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる。**`recipes` のスキーマは変えていない**ため、
-詳細画面の外部リンク・閲覧記録のリダイレクト・LINE Flex の uri が従来のまま動く。
+レシピ行を作って `url` に相対パス `/notes/<note_id>` を入れる。**`recipes` のスキーマは変えていない。**
+
+ただし `url` が相対パスになることで、既存の導線には手当てが要る箇所がある。
+
+| 箇所 | 状態 |
+|------|------|
+| LINE のカード → `/api/track/recipe/[id]` | **対応済み。** `NextResponse.redirect` は絶対 URL しか受け付けない（内部の `validateURL` がベース無しの `new URL()` に通す）ため、`new URL(recipe.url, request.url)` でリクエストのオリジンに解決する。外部サイトの絶対 URL はベースを無視して素通りする |
+| 詳細画面の再取得ボタン | **未対応（#176）。** 相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になる |
+| 詳細画面の「レシピサイトに移動」 | **未対応（#176）。** `target="_blank"` だと LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
+| LINE Flex の uri | 無改修で動く（track ルート経由のため） |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う
 - 書き込みは `create_recipe_note` / `update_recipe_note` RPC に集約し、ノート行・レシピ行・
@@ -717,6 +725,7 @@ graph TB
 | ワークフロー | トリガー | 処理内容 |
 |------------|---------|---------|
 | `ci.yml` | PR → main / develop | Lint + Build + Functions Build |
+| `e2e.yml` | PR → main / develop | Playwright E2E（ローカル Supabase を起動して実行） |
 | `test-migrations.yml` | PR (migrations変更時) | マイグレーションテスト |
 | `supabase-migrate.yml` | Push → develop | staging DB マイグレーション |
 | `supabase-migrate.yml` | Push → main | 本番 DB マイグレーション |

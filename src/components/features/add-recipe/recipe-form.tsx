@@ -27,20 +27,20 @@ export function RecipeForm({ url, initialValues, ingredientCategories, onSubmit,
       <FormField label="URL" labelClass="text-muted-foreground">
         <p className="truncate text-sm">{url}</p>
       </FormField>
-      <FormField label="タイトル" required>
-        <Input value={values.title} onChange={(e) => setters.setTitle(e.target.value)} placeholder="レシピのタイトル" disabled={isSubmitting} />
+      <FormField label="タイトル" htmlFor="recipe-title" required>
+        <Input id="recipe-title" value={values.title} onChange={(e) => setters.setTitle(e.target.value)} placeholder="レシピのタイトル" disabled={isSubmitting} />
       </FormField>
-      <FormField label="出典">
-        <Input value={values.sourceName} onChange={(e) => setters.setSourceName(e.target.value)} placeholder="クックパッド、delish kitchen など" disabled={isSubmitting} />
+      <FormField label="出典" htmlFor="recipe-source-name">
+        <Input id="recipe-source-name" value={values.sourceName} onChange={(e) => setters.setSourceName(e.target.value)} placeholder="クックパッド、delish kitchen など" disabled={isSubmitting} />
       </FormField>
-      <FormField label="画像URL">
-        <Input value={values.imageUrl} onChange={(e) => setters.setImageUrl(e.target.value)} placeholder="https://..." disabled={isSubmitting} />
+      <FormField label="画像URL" htmlFor="recipe-image-url">
+        <Input id="recipe-image-url" value={values.imageUrl} onChange={(e) => setters.setImageUrl(e.target.value)} placeholder="https://..." disabled={isSubmitting} />
       </FormField>
       <FormField label="メイン食材">
         <IngredientSelector categories={ingredientCategories} selectedIds={values.ingredientIds} onSelectionChange={setters.setIngredientIds} />
       </FormField>
-      <FormField label="メモ">
-        <Textarea value={values.memo} onChange={(e) => setters.setMemo(e.target.value)} placeholder="自分用のメモ" rows={3} disabled={isSubmitting} />
+      <FormField label="メモ" htmlFor="recipe-memo">
+        <Textarea id="recipe-memo" value={values.memo} onChange={(e) => setters.setMemo(e.target.value)} placeholder="自分用のメモ" rows={3} disabled={isSubmitting} />
       </FormField>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-3">
@@ -53,15 +53,21 @@ export function RecipeForm({ url, initialValues, ingredientCategories, onSubmit,
 
 interface FormFieldProps {
   label: string
+  /**
+   * 対応する入力欄の id。指定すると label と input が紐付き、
+   * スクリーンリーダーがラベルを読み、ラベルのクリックでフォーカスが移る。
+   * 単一の入力欄を持たないフィールド（URL の表示・メイン食材の選択 UI）では省略する。
+   */
+  htmlFor?: string
   required?: boolean
   labelClass?: string
   children: React.ReactNode
 }
 
-function FormField({ label, required, labelClass, children }: FormFieldProps) {
+function FormField({ label, htmlFor, required, labelClass, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <Label className={labelClass}>{label}{required && <span className="text-destructive"> *</span>}</Label>
+      <Label htmlFor={htmlFor} className={labelClass}>{label}{required && <span className="text-destructive"> *</span>}</Label>
       {children}
     </div>
   )

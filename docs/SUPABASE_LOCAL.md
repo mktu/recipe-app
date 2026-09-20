@@ -65,3 +65,47 @@ psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ### 手動適用（緊急時）
 
 GitHub Actions が設定されていない場合や緊急時は、Supabase Dashboard の **SQL Editor** で直接実行する。
+
+## ローカル開発の注意点
+
+### レシピ追加には `dev-user-001` の users 行が必要
+
+`supabase/seed.sql` で投入される。無いとレシピ作成が失敗するので、
+その場合は `npx supabase db reset` で seed を再投入する。
+
+### レシピ取得には `supabase functions serve` が別途必要
+
+解析・検索は Edge Function 経由なので、`npm run dev` だけでは動かない。
+別ターミナルで起動しておくこと（詳細は `docs/EDGE_FUNCTIONS.md`）。
+
+```bash
+npm run functions:serve
+```
+
+E2E（`npm run test:e2e`）も同じ理由で必要。ホーム一覧の検証が `get-recipes` を通るため、
+起動していないと `/api/recipes/list` が 503 になる。
+CI ではクリーンな `supabase start` が Edge Runtime ごと立ち上げるのでこの手順は不要。
+
+### worktree には `.env.local` が無い
+
+`.env.local` は追跡対象外なので、worktree を作った先には存在しない。
+`playwright.config.ts` はここから Supabase キーを読むため、worktree で E2E を回すなら
+メインのチェックアウトからコピーしておくこと。
+
+### ローカルではアカウント削除ができない
+
+`DevAuthProvider` の `getAccessToken` が `null` を返すため。
+削除フローの確認は staging で行う。
+
+### API は ID トークン検証必須
+
+dev 環境は `NEXT_PUBLIC_LIFF_ID` を空にすることでバイパスされる。
+クライアントからの API 呼び出しは `useAuthedFetch` を使うこと
+（`src/lib/auth/verify-line-token.ts` / `src/lib/api/auth-guard.ts`）。
+
+### Supabase キーの使い分け
+
+| 用途 | キー |
+|------|------|
+| アプリ全体 | `SUPABASE_SECRET_KEY`（`sb_secret_...`） |
+| Edge Functions 内部 | `SUPABASE_SERVICE_ROLE_KEY`（Supabase が自動インジェクト） |
