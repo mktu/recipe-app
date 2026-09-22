@@ -171,10 +171,13 @@ function SelectedSection({
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
+        {/* 外すのも操作なので、チップ本体をネイティブの button にしている（#38） */}
         {ingredients.map((ing) => (
-          <Badge key={ing.id} variant="default" className="cursor-pointer" onClick={() => onToggle(ing)}>
-            {ing.name}
-            <X className="ml-1 h-3 w-3" />
+          <Badge key={ing.id} variant="default" className="cursor-pointer" asChild>
+            <button type="button" onClick={() => onToggle(ing)} aria-label={`${ing.name} を絞り込みから外す`}>
+              {ing.name}
+              <X className="ml-1 h-3 w-3" />
+            </button>
           </Badge>
         ))}
       </div>

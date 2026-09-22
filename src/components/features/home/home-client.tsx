@@ -25,16 +25,16 @@ interface HomeClientProps {
 function useRecipeHandlers() {
   const router = useRouter()
   const authedFetch = useAuthedFetch()
-  const handleRecipeClick = useCallback((id: string) => {
+  // 詳細への遷移は RecipeCard の `<Link>` が行うので、ここは閲覧記録だけ
+  const trackRecipeView = useCallback((id: string) => {
     authedFetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
-    router.push(`/recipes/${id}`)
-  }, [router, authedFetch])
+  }, [authedFetch])
   const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
-  return { handleRecipeClick, handleAddRecipe }
+  return { trackRecipeView, handleAddRecipe }
 }
 
 export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
-  const { handleRecipeClick, handleAddRecipe } = useRecipeHandlers()
+  const { trackRecipeView, handleAddRecipe } = useRecipeHandlers()
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
@@ -76,7 +76,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
             recipes={recipes}
             isLoading={recipesLoading}
             hasFilters={filters.hasFilters}
-            onRecipeClick={handleRecipeClick}
+            onRecipeOpen={trackRecipeView}
             onAddRecipe={handleAddRecipe}
             onClearFilters={filters.clearFilters}
           />
