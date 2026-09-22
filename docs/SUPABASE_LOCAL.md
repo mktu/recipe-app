@@ -98,38 +98,27 @@ Edge Runtime コンテナ（`supabase_edge_runtime_recipe-app`）は**起動し�
 絶対パス**を握る。worktree で `npm run functions:serve` して、その worktree を消すと、
 コンテナは生きたまま存在しないパスを参照し続ける。
 
+**症状が原因から遠い。** ホーム一覧が全滅し、E2E は詳細・削除だけでなく
+`add-recipe.spec.ts` の既存テストまで一斉に落ちるので、自分の変更が壊したように見える。
+`docker logs supabase_edge_runtime_recipe-app` に出るまで分からない。
+
 ```
-worker boot error: failed to bootstrap runtime: failed to create the graph:
-Module not found "file:///.../.claude/worktrees/<消えた worktree>/supabase/functions/get-recipes/index.ts"
-```
-
-**症状が原因から遠い。** `/api/recipes/list` がエラーを飲み込むため、ホーム画面は
-ただの「レシピがまだ保存されていません」になり、DB にレシピがあっても空に見える。
-E2E も詳細・削除だけでなく **`add-recipe.spec.ts` の既存テストまで**一斉に落ちるので、
-自分の変更が壊したように見える。`docker logs supabase_edge_runtime_recipe-app` を見るまで分からない。
-
-復旧はメインのチェックアウトから serve し直すだけ:
-
-```bash
-npm run functions:build   # 生成物は gitignore なので worktree 側には無い
-npm run functions:serve
+worker boot error: ... Module not found
+"file:///.../.claude/worktrees/<消えた worktree>/supabase/functions/get-recipes/index.ts"
 ```
 
-> **worktree で E2E を回したら、片付ける前にメインのチェックアウトから serve し直すこと。**
-
-掴んでいるパスは Mounts から分かる:
+掴んでいるパスの確認と、メインのチェックアウトからの復旧:
 
 ```bash
 docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+
+# 生成物は gitignore なので worktree 側には無い。build から
+npm run functions:build && npm run functions:serve
 ```
 
-踏まないようにする仕掛けは3段に入れてある（#39）。
-
-| 仕掛け | 効くタイミング |
-|---|---|
-| `e2e/global-setup.ts` | E2E 実行前に `get-recipes` を probe し、原因を名指しして落とす |
-| `/start-session` / `/end-session` | worktree の棚卸し時に掴んでいるパスを確認する |
-| ホーム画面のエラー表示 | 取得失敗が EmptyState に化けないようにする（`RecipeListError`） |
+> 予防・検出は `/start-session` `/end-session`（worktree の棚卸し時）と
+> `e2e/global-setup.ts`（E2E 実行前の probe）に入れてある。ここは、
+> **どちらも通らずに症状だけ踏んだとき**の受け皿。
 
 ### ローカルではアカウント削除ができない
 
