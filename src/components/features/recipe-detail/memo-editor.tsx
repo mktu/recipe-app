@@ -35,6 +35,7 @@ export function MemoEditor({ initialValue, onSave, onCancel }: MemoEditorProps) 
     <div className="space-y-2">
       <textarea
         ref={textareaRef}
+        aria-label="メモ"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="メモを入力..."

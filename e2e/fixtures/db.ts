@@ -106,15 +106,35 @@ export async function seedRecipes(count = 3) {
   return data ?? []
 }
 
+const RECIPE_COLUMNS = 'id, title, url, source_name, cooking_time_minutes, ingredients_raw, memo'
+
 /** 指定 URL のレシピを取得する（保存結果の検証用） */
 export async function findRecipeByUrl(url: string) {
   const userId = await getUserId()
 
   const { data } = await admin
     .from('recipes')
-    .select('id, title, url, source_name, cooking_time_minutes, ingredients_raw')
+    .select(RECIPE_COLUMNS)
     .eq('user_id', userId)
     .eq('url', url)
+    .maybeSingle()
+
+  return data
+}
+
+/**
+ * 指定 ID のレシピを取得する（メモ更新・削除の検証用）。
+ *
+ * 削除されていれば `null` が返る。
+ */
+export async function findRecipeById(id: string) {
+  const userId = await getUserId()
+
+  const { data } = await admin
+    .from('recipes')
+    .select(RECIPE_COLUMNS)
+    .eq('user_id', userId)
+    .eq('id', id)
     .maybeSingle()
 
   return data

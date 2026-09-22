@@ -92,6 +92,31 @@ CI ではクリーンな `supabase start` が Edge Runtime ごと立ち上げる
 `playwright.config.ts` はここから Supabase キーを読むため、worktree で E2E を回すなら
 メインのチェックアウトからコピーしておくこと。
 
+### worktree から `functions:serve` すると、worktree を消した後も壊れたまま残る
+
+Edge Runtime コンテナ（`supabase_edge_runtime_recipe-app`）は**起動したディレクトリの
+絶対パス**を握る。worktree で `npm run functions:serve` して、その worktree を消すと、
+コンテナは生きたまま存在しないパスを参照し続ける。
+
+```
+worker boot error: failed to bootstrap runtime: failed to create the graph:
+Module not found "file:///.../.claude/worktrees/<消えた worktree>/supabase/functions/get-recipes/index.ts"
+```
+
+**症状が原因から遠い。** `/api/recipes/list` がエラーを飲み込むため、ホーム画面は
+ただの「レシピがまだ保存されていません」になり、DB にレシピがあっても空に見える。
+E2E も詳細・削除だけでなく **`add-recipe.spec.ts` の既存テストまで**一斉に落ちるので、
+自分の変更が壊したように見える。`docker logs supabase_edge_runtime_recipe-app` を見るまで分からない。
+
+復旧はメインのチェックアウトから serve し直すだけ:
+
+```bash
+npm run functions:build   # 生成物は gitignore なので worktree 側には無い
+npm run functions:serve
+```
+
+> **worktree で E2E を回したら、片付ける前にメインのチェックアウトから serve し直すこと。**
+
 ### ローカルではアカウント削除ができない
 
 `DevAuthProvider` の `getAccessToken` が `null` を返すため。
