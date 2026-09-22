@@ -139,6 +139,9 @@ npm run lint
 # shadcn/ui コンポーネント追加
 npx shadcn@latest add [component-name]
 
+# 開発用レシピの投入（自分で動かして確認するとき。--clean で削除）
+npm run seed:dev
+
 # 食材アンマッチ解析
 ./scripts/check-ingredient-match-rate.sh
 
