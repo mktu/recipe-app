@@ -9,7 +9,8 @@ interface RecipeListProps {
   recipes: RecipeWithIngredients[]
   isLoading: boolean
   hasFilters: boolean
-  onRecipeClick: (recipeId: string) => void
+  /** カードが開かれたときの閲覧記録。遷移は RecipeCard の `<Link>` が行う */
+  onRecipeOpen: (recipeId: string) => void
   onAddRecipe: () => void
   onClearFilters: () => void
 }
@@ -38,7 +39,7 @@ export function RecipeList({
   recipes,
   isLoading,
   hasFilters,
-  onRecipeClick,
+  onRecipeOpen,
   onAddRecipe,
   onClearFilters,
 }: RecipeListProps) {
@@ -62,7 +63,7 @@ export function RecipeList({
         <RecipeCard
           key={recipe.id}
           recipe={recipe}
-          onClick={() => onRecipeClick(recipe.id)}
+          onOpen={() => onRecipeOpen(recipe.id)}
         />
       ))}
     </div>

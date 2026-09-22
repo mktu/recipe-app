@@ -61,9 +61,53 @@ export async function cleanUserData() {
 export interface SeedRecipeInput {
   url: string
   title: string
-  sourceName?: string
+  sourceName?: string | null
   cookingTimeMinutes?: number | null
   ingredientsRaw?: { name: string; amount: string }[]
+  /** ソート（よく見た順）の検証用 */
+  viewCount?: number
+  /** ソート（最近見た順）の検証用。ISO 文字列 */
+  lastViewedAt?: string | null
+  /** ソート（新しい順 / 古い順）の検証用。同時 INSERT だと差が付かないので明示する */
+  createdAt?: string
+  /**
+   * 食材マスタ（`ingredients`）の名前。`recipe_ingredients` に `is_main` で紐付ける。
+   *
+   * 食材フィルターは ID 一致でしか絞らない（テキスト照合に回らない）ので、
+   * `ingredients_raw` に名前を書くだけでは引っかからない。
+   */
+  mainIngredientNames?: string[]
+}
+
+/**
+ * 食材マスタの ID を名前で引く。
+ *
+ * **ID をテストに直書きしてはいけない。** `ingredients.id` は `gen_random_uuid()` なので
+ * ローカルと CI（毎回クリーンな `supabase start`）で値が違う。
+ */
+export async function findIngredientIdByName(name: string): Promise<string> {
+  const { data } = await admin
+    .from('ingredients')
+    .select('id')
+    .eq('name', name)
+    .eq('needs_review', false)
+    .maybeSingle()
+
+  if (!data) throw new Error(`食材マスタに「${name}」がありません（supabase/migrations の seed を確認）`)
+  return data.id as string
+}
+
+async function linkMainIngredients(recipeId: string, names: string[]) {
+  const rows = await Promise.all(
+    names.map(async (name) => ({
+      recipe_id: recipeId,
+      ingredient_id: await findIngredientIdByName(name),
+      is_main: true,
+    }))
+  )
+
+  const { error } = await admin.from('recipe_ingredients').insert(rows)
+  if (error) throw new Error(`linkMainIngredients failed: ${error.message}`)
 }
 
 /** テスト用レシピを1件シードする */
@@ -76,34 +120,36 @@ export async function seedRecipe(input: SeedRecipeInput) {
       user_id: userId,
       url: input.url,
       title: input.title,
-      source_name: input.sourceName ?? 'E2E テスト',
+      source_name: input.sourceName === undefined ? 'E2E テスト' : input.sourceName,
       cooking_time_minutes: input.cookingTimeMinutes ?? null,
       ingredients_raw: input.ingredientsRaw ?? [{ name: '鶏肉', amount: '200g' }],
+      view_count: input.viewCount ?? 0,
+      last_viewed_at: input.lastViewedAt ?? null,
+      ...(input.createdAt ? { created_at: input.createdAt } : {}),
     })
     .select()
     .single()
 
   if (error) throw new Error(`seedRecipe failed: ${error.message}`)
+
+  if (input.mainIngredientNames?.length) {
+    await linkMainIngredients(data.id as string, input.mainIngredientNames)
+  }
+
   return data
 }
 
 /**
- * テスト用レシピをまとめてシードする。ホーム画面・詳細テストで使用。
+ * テスト用レシピをまとめてシードする（指定順に1件ずつ）。
+ *
+ * `recipe_ingredients` の紐付けが要るので bulk insert にはしていない。
  */
-export async function seedRecipes(count = 3) {
-  const userId = await getUserId()
-
-  const recipes = Array.from({ length: count }, (_, i) => ({
-    user_id: userId,
-    url: `https://delishkitchen.tv/recipes/e2e-test-${i + 1}`,
-    title: `テストレシピ ${i + 1}`,
-    source_name: 'DELISH KITCHEN',
-    cooking_time_minutes: (i + 1) * 10,
-    ingredients_raw: [{ name: '鶏肉', amount: '200g' }],
-  }))
-
-  const { data } = await admin.from('recipes').insert(recipes).select()
-  return data ?? []
+export async function seedRecipes(inputs: SeedRecipeInput[]) {
+  const seeded = []
+  for (const input of inputs) {
+    seeded.push(await seedRecipe(input))
+  }
+  return seeded
 }
 
 const RECIPE_COLUMNS = 'id, title, url, source_name, cooking_time_minutes, ingredients_raw, memo'
