@@ -15,6 +15,7 @@
     "preview:flex": "tsx scripts/preview-flex.ts",
     "collect:urls": "tsx scripts/collect-recipe-urls.ts",
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
+    "seed:dev": "tsx scripts/seed-dev-recipes.ts",
     "backfill:cooking-time": "tsx scripts/backfill-cooking-time.ts",
     "audit:auto-generated": "tsx scripts/audit-auto-generated.ts",
     "functions:build": "tsx scripts/build-edge-functions.ts",

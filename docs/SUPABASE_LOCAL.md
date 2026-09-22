@@ -92,6 +92,34 @@ CI ではクリーンな `supabase start` が Edge Runtime ごと立ち上げる
 `playwright.config.ts` はここから Supabase キーを読むため、worktree で E2E を回すなら
 メインのチェックアウトからコピーしておくこと。
 
+### worktree から `functions:serve` すると、worktree を消した後も壊れたまま残る
+
+Edge Runtime コンテナ（`supabase_edge_runtime_recipe-app`）は**起動したディレクトリの
+絶対パス**を握る。worktree で `npm run functions:serve` して、その worktree を消すと、
+コンテナは生きたまま存在しないパスを参照し続ける。
+
+**症状が原因から遠い。** ホーム一覧が全滅し、E2E は詳細・削除だけでなく
+`add-recipe.spec.ts` の既存テストまで一斉に落ちるので、自分の変更が壊したように見える。
+`docker logs supabase_edge_runtime_recipe-app` に出るまで分からない。
+
+```
+worker boot error: ... Module not found
+"file:///.../.claude/worktrees/<消えた worktree>/supabase/functions/get-recipes/index.ts"
+```
+
+掴んでいるパスの確認と、メインのチェックアウトからの復旧:
+
+```bash
+docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+
+# 生成物は gitignore なので worktree 側には無い。build から
+npm run functions:build && npm run functions:serve
+```
+
+> 予防・検出は `/start-session` `/end-session`（worktree の棚卸し時）と
+> `e2e/global-setup.ts`（E2E 実行前の probe）に入れてある。ここは、
+> **どちらも通らずに症状だけ踏んだとき**の受け皿。
+
 ### ローカルではアカウント削除ができない
 
 `DevAuthProvider` の `getAccessToken` が `null` を返すため。

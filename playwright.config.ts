@@ -19,6 +19,10 @@ const BASE_URL = `http://localhost:${PORT}`
 export default defineConfig({
   testDir: './e2e',
 
+  // Edge Runtime が死んでいると一覧が黙って空になり、全テストが原因不明に落ちる。
+  // テスト前に検出して原因を名指しする（`e2e/global-setup.ts`）。
+  globalSetup: './e2e/global-setup.ts',
+
   // DB 状態を共有するため並列実行は無効
   fullyParallel: false,
   workers: 1,

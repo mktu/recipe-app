@@ -81,7 +81,25 @@
 **CI チェック（PR 時に自動実行）:**
 - `npm run lint`
 - `npm run build`
+- `npm run test:e2e`（Playwright。develop / main 向けの PR で走る。draft でも走る）
 - マイグレーションテスト（DB変更時のみ）
+
+### E2E はローカルで常時回さない
+
+**実装したら、まず自分で動かして機能として価値があるかを確認する。** それが本流。
+E2E は PR（draft で可）を作れば CI が走らせるので、ローカルで回さなくても並行して検証される。
+
+ローカルで `npm run test:e2e` を回すのは、次のどちらかのときだけ。
+
+- `e2e/` を変更したとき
+- テストが参照するロケーター（`aria-label` / `role` / label）を変えたとき
+
+> ロケーター調整は試行回数が多く、CI 往復（約3分）より手元（dev サーバー再利用で約12秒）が速い。
+> 逆に機能実装のたびに回すと、`supabase` の起動・`functions:serve` のパス・worktree の
+> `.env.local`・ポート衝突と、前提を揃えるコストが毎回かかる（`docs/SUPABASE_LOCAL.md`）。
+
+**注意: ローカル実行は開発用データを消す。** fixture が `dev-user-001` のレシピを全削除するため、
+手で確認用に入れたデータも巻き込まれる。
 
 ### コーディング規約
 
@@ -138,6 +156,9 @@ npm run lint
 
 # shadcn/ui コンポーネント追加
 npx shadcn@latest add [component-name]
+
+# 開発用レシピの投入（自分で動かして確認するとき。--clean で削除）
+npm run seed:dev
 
 # 食材アンマッチ解析
 ./scripts/check-ingredient-match-rate.sh

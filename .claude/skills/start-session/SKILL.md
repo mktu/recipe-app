@@ -40,6 +40,24 @@ PR がマージ済み（`state: MERGED`）で未コミットの変更が無い w
 
 > 放置された worktree は `git status` のノイズになり、ブランチ名の衝突も起こす。
 
+### Edge Runtime が消えた worktree を掴んでいないか確認する
+
+前のセッションが `/end-session` を通らずに終わると、worktree だけ消えて Edge Runtime
+コンテナが残る。存在しないパスを参照し続けるので、**ローカルのホーム一覧が黙って空になる**
+（`docs/SUPABASE_LOCAL.md`）。症状が原因から遠く、E2E も全件落ちるので先に潰す。
+
+```bash
+docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+```
+
+出力のパスが存在しない、または今から使わない worktree を指していたら、
+メインのチェックアウトから serve し直す。
+
+```bash
+npm run functions:build   # 生成物は gitignore なので worktree 側には無い
+npm run functions:serve
+```
+
 ## 3. 状態サマリーを表示
 
 ```

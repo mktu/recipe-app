@@ -38,7 +38,13 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
-  const { recipes, availableSourceNames, isLoading: recipesLoading } = useRecipes({
+  const {
+    recipes,
+    availableSourceNames,
+    isLoading: recipesLoading,
+    error: recipesError,
+    refetch,
+  } = useRecipes({
     searchQuery: filters.searchQuery,
     ingredientIds: filters.selectedIngredientIds,
     sourceNames: filters.selectedSourceNames,
@@ -63,14 +69,18 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
       <main className="container mx-auto max-w-2xl space-y-4 p-4">
         <SearchBar value={filters.searchQuery} onChange={filters.setSearchQuery} />
         <FilterBar filters={filters} ingredientCategories={ingredientCategories} availableSourceNames={availableSourceNames} />
-        <RecipeList
-          recipes={recipes}
-          isLoading={recipesLoading}
-          hasFilters={filters.hasFilters}
-          onRecipeClick={handleRecipeClick}
-          onAddRecipe={handleAddRecipe}
-          onClearFilters={filters.clearFilters}
-        />
+        {recipesError ? (
+          <RecipeListError onRetry={refetch} />
+        ) : (
+          <RecipeList
+            recipes={recipes}
+            isLoading={recipesLoading}
+            hasFilters={filters.hasFilters}
+            onRecipeClick={handleRecipeClick}
+            onAddRecipe={handleAddRecipe}
+            onClearFilters={filters.clearFilters}
+          />
+        )}
       </main>
       <AddRecipeFAB onClick={handleAddRecipe} />
     </div>
@@ -81,6 +91,30 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <p className="text-muted-foreground">{children}</p>
+    </div>
+  )
+}
+
+/**
+ * 一覧の取得に失敗したことを出す。
+ *
+ * これを出さないと、`get-recipes` が落ちていても EmptyState（「レシピがまだ保存されて
+ * いません」）が出るだけで、**0件と取得失敗が見分けられない**。
+ * Edge Runtime が死んでいてローカルが丸一日壊れていても気付けなかった（#39）。
+ */
+function RecipeListError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-xl border border-destructive/50 p-6 text-center">
+      <p className="text-sm text-destructive">レシピの取得に失敗しました</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        通信状況を確認して、もう一度お試しください
+      </p>
+      <button
+        onClick={onRetry}
+        className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+      >
+        再読み込み
+      </button>
     </div>
   )
 }
