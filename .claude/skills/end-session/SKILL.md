@@ -62,6 +62,24 @@ gh pr list --head <branch> --state all --json number,state,mergedAt
 
 **削除は必ずユーザーに確認してから実行する。**
 
+### 削除前に Edge Runtime が worktree を掴んでいないか見る
+
+Edge Runtime コンテナは**起動したディレクトリの絶対パス**を握る。worktree で
+`npm run functions:serve` したまま worktree を消すと、コンテナは生きたまま存在しない
+パスを参照し続け、**ホーム一覧が黙って空になる**（`docs/SUPABASE_LOCAL.md`）。
+
+```bash
+docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+```
+
+出力に消す予定の worktree のパスが含まれていたら、**メインのチェックアウトから
+serve し直してから** worktree を削除する。
+
+```bash
+npm run functions:build   # 生成物は gitignore なので worktree 側には無い
+npm run functions:serve
+```
+
 このセッションが worktree の中にいる場合は `ExitWorktree` ツールで抜ける
 （`action: "remove"` で削除、`action: "keep"` で残す）。
 外から他の worktree を消す場合:

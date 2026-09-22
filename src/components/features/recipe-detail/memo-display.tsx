@@ -1,35 +1,24 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
-
 interface MemoDisplayProps {
   memo: string | null
   onClick: () => void
 }
 
 export function MemoDisplay({ memo, onClick }: MemoDisplayProps) {
-  // 見た目はカードのままだが、クリックしか受け付けないとキーボードでメモを開けない。
-  // role / tabIndex / Enter・Space を足してボタンとして扱えるようにしている。
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return
-    e.preventDefault()
-    onClick()
-  }
-
+  // 中身は <span>。<button> の content model は phrasing content なので <p> は入れられない。
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label="メモを編集"
+    <button
+      type="button"
       onClick={onClick}
-      onKeyDown={handleKeyDown}
-      className="min-h-[80px] cursor-pointer rounded-lg bg-muted/50 p-3 transition-colors hover:bg-muted"
+      aria-label="メモを編集"
+      className="block min-h-[80px] w-full cursor-pointer rounded-lg bg-muted/50 p-3 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       {memo ? (
-        <p className="whitespace-pre-wrap text-sm">{memo}</p>
+        <span className="block whitespace-pre-wrap text-sm">{memo}</span>
       ) : (
-        <p className="text-sm text-muted-foreground">タップしてメモを追加...</p>
+        <span className="block text-sm text-muted-foreground">タップしてメモを追加...</span>
       )}
-    </div>
+    </button>
   )
 }

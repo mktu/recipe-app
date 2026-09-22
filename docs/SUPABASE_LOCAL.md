@@ -117,6 +117,20 @@ npm run functions:serve
 
 > **worktree で E2E を回したら、片付ける前にメインのチェックアウトから serve し直すこと。**
 
+掴んでいるパスは Mounts から分かる:
+
+```bash
+docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+```
+
+踏まないようにする仕掛けは3段に入れてある（#39）。
+
+| 仕掛け | 効くタイミング |
+|---|---|
+| `e2e/global-setup.ts` | E2E 実行前に `get-recipes` を probe し、原因を名指しして落とす |
+| `/start-session` / `/end-session` | worktree の棚卸し時に掴んでいるパスを確認する |
+| ホーム画面のエラー表示 | 取得失敗が EmptyState に化けないようにする（`RecipeListError`） |
+
 ### ローカルではアカウント削除ができない
 
 `DevAuthProvider` の `getAccessToken` が `null` を返すため。
