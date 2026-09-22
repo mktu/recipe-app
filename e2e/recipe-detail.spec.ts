@@ -41,9 +41,9 @@ test.afterAll(async () => {
 /** ホームからカードをクリックして詳細へ遷移する */
 async function openDetailFromHome(page: Page, title: string) {
   await page.goto('/')
-  // カードは Card（div）に onClick が付いた作りなので、カード内の見出しを押して
-  // クリックを伝播させる。見出し自体は h3 なのでロールで取れる。
-  await page.getByRole('heading', { name: title }).click()
+  // カードは詳細ページへの `<Link>`（#38）。以前は onClick 付きの div で
+  // ロールが無く、見出しを押してクリックを伝播させる回避が要った。
+  await page.getByRole('link', { name: title }).click()
   await page.waitForURL(/\/recipes\/[0-9a-f-]+$/)
 }
 
