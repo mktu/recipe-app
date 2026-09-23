@@ -20,7 +20,8 @@ export const PLACEHOLDER_IMAGES = [
 export type PlaceholderImageKey = (typeof PLACEHOLDER_IMAGES)[number]['key']
 
 /**
- * 画像を持たないレシピ用の無地画像。LINE Flex は hero に画像 URL が必須なので、その穴埋めに使う。
+ * 画像を持たないレシピ用の「NO IMAGE」画像（お皿の線画）。LINE Flex は hero に画像 URL が必須なので、
+ * その穴埋めに使う。無地だと読み込み失敗と区別がつかないため、画像が無いことが伝わる絵にしている。
  * ノートで選べる候補には含めない（料理ジャンルを誤解させないため）
  */
 export const FALLBACK_IMAGE_PATH = '/placeholders/default.png'

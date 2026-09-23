@@ -23,7 +23,7 @@ describe('toFlexImageUrl', () => {
     expect(toFlexImageUrl('/placeholders/japanese.png')).toBe(`${APP_URL}/placeholders/japanese.png`)
   })
 
-  it('画像を持たないレシピには無地の画像を当てる', () => {
+  it('画像を持たないレシピには NO IMAGE 画像を当てる', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', APP_URL)
     expect(toFlexImageUrl(null)).toBe(`${APP_URL}/placeholders/default.png`)
     expect(toFlexImageUrl('')).toBe(`${APP_URL}/placeholders/default.png`)

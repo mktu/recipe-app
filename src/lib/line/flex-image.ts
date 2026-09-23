@@ -12,7 +12,7 @@ function isRelativePath(url: string): boolean {
  * **Flex の image は絶対 https URL しか受け付けない。** `recipes.image_url` には外部サイトの
  * 絶対 URL と、ノートのプレースホルダー（`/placeholders/<key>.png`）の相対パスが混在するため、
  * 相対パスは `NEXT_PUBLIC_APP_URL` と合成する（track URL と同じやり方。`recipe-card-mapper.ts`）。
- * 画像を持たないレシピには無地の画像を当てる。
+ * 画像を持たないレシピには「NO IMAGE」画像を当てる。
  *
  * `NEXT_PUBLIC_APP_URL` が未設定だと絶対 URL を作れないので null を返し、呼び出し側は
  * image を省く。不正な URL を渡すと reply 全体が 400 で落ちるため、画像なしのほうがまし。
