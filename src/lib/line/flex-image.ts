@@ -7,23 +7,38 @@ function isRelativePath(url: string): boolean {
 }
 
 /**
+ * Flex に渡せる絶対 https URL にする。渡せなければ null。
+ *
+ * 相対パスは `NEXT_PUBLIC_APP_URL` と合成する（track URL と同じやり方。`recipe-card-mapper.ts`）。
+ * APP_URL が未設定のとき、`http://localhost:3000`（`.env.example`）のように https でないとき、
+ * 外部サイトの画像が http のとき、URL として解釈できないときはいずれも null。
+ */
+function toHttpsUrl(url: string): string | null {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (isRelativePath(url) && !appUrl) return null
+
+  try {
+    const resolved = isRelativePath(url) ? new URL(url, appUrl) : new URL(url)
+    return resolved.protocol === 'https:' ? resolved.toString() : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Flex の image に渡す URL を決める。
  *
- * **Flex の image は絶対 https URL しか受け付けない。** `recipes.image_url` には外部サイトの
- * 絶対 URL と、ノートのプレースホルダー（`/placeholders/<key>.png`）の相対パスが混在するため、
- * 相対パスは `NEXT_PUBLIC_APP_URL` と合成する（track URL と同じやり方。`recipe-card-mapper.ts`）。
- * 画像を持たないレシピには「NO IMAGE」画像を当てる。
+ * **Flex の image は絶対 https URL しか受け付けず、1つでも不正だと reply 全体が 400 で落ちる。**
+ * 失敗はユーザーには「既読のみで無反応」に見えて原因を追いにくい（#170）。
+ * `recipes.image_url` には外部サイトの絶対 URL と、ノートのプレースホルダー
+ * （`/placeholders/<key>.png`）の相対パスが混在するため、ここで Flex に渡せる形に揃える。
  *
- * `NEXT_PUBLIC_APP_URL` が未設定だと絶対 URL を作れないので null を返し、呼び出し側は
- * image を省く。不正な URL を渡すと reply 全体が 400 で落ちるため、画像なしのほうがまし。
+ * - 画像を持たないレシピ、画像が Flex に渡せない（http など）レシピには「NO IMAGE」画像を当てる
+ * - その NO IMAGE 画像も渡せない（APP_URL が未設定・http）ときは null を返し、呼び出し側は image を省く
  */
 export function toFlexImageUrl(imageUrl: string | null | undefined): string | null {
-  const url = imageUrl || FALLBACK_IMAGE_PATH
-  if (!isRelativePath(url)) return url
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
-  if (!appUrl) return null
-  return new URL(url, appUrl).toString()
+  const url = imageUrl ? toHttpsUrl(imageUrl) : null
+  return url ?? toHttpsUrl(FALLBACK_IMAGE_PATH)
 }
 
 /** カードの hero 画像。URL を作れないときは hero ごと省く */

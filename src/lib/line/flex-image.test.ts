@@ -34,6 +34,22 @@ describe('toFlexImageUrl', () => {
     expect(toFlexImageUrl('/placeholders/japanese.png')).toBeNull()
     expect(toFlexImageUrl(null)).toBeNull()
   })
+
+  it('APP_URL が http だと Flex に渡せないので null を返す（.env.example の localhost）', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000')
+    expect(toFlexImageUrl('/placeholders/japanese.png')).toBeNull()
+    expect(toFlexImageUrl(null)).toBeNull()
+  })
+
+  it('外部サイトの画像が http なら NO IMAGE 画像に差し替える', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', APP_URL)
+    expect(toFlexImageUrl('http://cdn.example.org/a.jpg')).toBe(`${APP_URL}/placeholders/default.png`)
+  })
+
+  it('URL として解釈できない値でも例外を投げず NO IMAGE 画像に差し替える', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', APP_URL)
+    expect(toFlexImageUrl('not a url')).toBe(`${APP_URL}/placeholders/default.png`)
+  })
 })
 
 describe('Flex の image コンポーネント', () => {
