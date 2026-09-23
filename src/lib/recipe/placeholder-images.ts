@@ -1,7 +1,8 @@
 /**
  * レシピノートのプレースホルダー画像（Issue #174）
  *
- * 実体は `public/placeholders/<key>.png`。ノートは `recipe_notes.image_key` に key を持ち、
+ * 実体は `public/placeholders/<key>.png`（`npm run generate:placeholders` で生成。
+ * 候補を足すときは `scripts/generate-placeholder-images.ts` にアイコンも描く）。ノートは `recipe_notes.image_key` に key を持ち、
  * 図鑑側の `recipes.image_url` には RPC がこのパスを書き込む（表示側は image_url だけを読む）。
  *
  * **パスの規則は SQL 側と二重に持っている。** `create_recipe_note` / `update_recipe_note` が
@@ -14,6 +15,7 @@ export const PLACEHOLDER_IMAGES = [
   { key: 'chinese', label: '中華' },
   { key: 'noodle', label: '麺' },
   { key: 'soup', label: 'スープ' },
+  { key: 'salad', label: 'サラダ' },
   { key: 'dessert', label: 'デザート' },
 ] as const
 
