@@ -79,7 +79,7 @@
 - `title`: String
 - `ingredients`: JSONB (材料。例: `[{"name": "なす", "amount": "2本"}]`)
 - `steps`: JSONB (調理手順の配列。例: `["なすを乱切りにする", "炒める"]`)
-- `image_key`: String (プレースホルダー画像の識別子)
+- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ)
 - `servings`: String (「2人分」など。任意)
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
@@ -98,6 +98,13 @@
 `create_recipe_note` / `update_recipe_note`（`supabase/migrations/20260913000000_add_recipe_notes.sql`）
 にまとめてある。PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では
 原子性を張れない。削除は専用 RPC を持たず、対のレシピ行を消せば CASCADE でノートも消える。
+
+**画像は `image_key` が正本、`recipes.image_url` は表示用の写し。** RPC が
+`note_placeholder_image_url(image_key)`（`/placeholders/<key>.png`）を `image_url` に書き込む
+（`supabase/migrations/20260923000000_set_note_image_url.sql`）。表示側は `image_url` だけを読むので、
+図鑑側はノートを知らないまま画像を出せる。アセットを差し替え・リネームするときは、
+`image_key` から `image_url` を作り直す migration を流す。規則はアプリ側の
+`src/lib/recipe/placeholder-images.ts` と二重に持っているので、変えるなら両方直すこと。
 
 ## ER図（概要）
 

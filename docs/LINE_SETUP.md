@@ -117,6 +117,14 @@ catch 内のエラー通知もそこで失敗し、webhook が 500 になる。
 
 未設定だと LINE トーク上の規約・プライバシーリンクが機能しない。
 
+**Flex の画像もこれに依存する（#174）。** Flex の image は絶対 https URL しか受け付けないが、
+ノートのプレースホルダーと画像なしレシピの代替画像は自前アセットの相対パス（`/placeholders/...`）なので、
+`src/lib/line/flex-image.ts` がこの値と合成する。**未設定のときと、http のとき**
+（`.env.example` の `http://localhost:3000` のまま ngrok でローカルに繋いだ場合など）は Flex に渡せないため、
+不正な URL で reply 全体を 400 にしないよう **image を省いて送る**（カードに画像が出ない）。
+ローカルで画像まで確認したいときは、ngrok の https URL を APP_URL に入れる。
+外部サイトの画像が http の場合は NO IMAGE 画像に差し替える。
+
 ### staging の Webhook URL
 
 ```
