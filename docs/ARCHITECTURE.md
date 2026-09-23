@@ -407,6 +407,7 @@ erDiagram
 | 詳細画面の再取得ボタン | **未対応（#176）。** 相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になる |
 | 詳細画面の「レシピサイトに移動」 | **未対応（#176）。** `target="_blank"` だと LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
 | LINE Flex の uri | 無改修で動く（track ルート経由のため） |
+| 画像（`recipes.image_url`） | **対応済み（#174）。** RPC がノートの `image_key` から相対パス `/placeholders/<key>.png` を書き込むので、一覧・詳細は素の `<img>` のまま動く。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う
 - 書き込みは `create_recipe_note` / `update_recipe_note` RPC に集約し、ノート行・レシピ行・

@@ -1,4 +1,5 @@
 import type { messagingApi } from '@line/bot-sdk'
+import { createHeroImage, createThumbnail } from './flex-image'
 
 export interface RecipeCardData {
   title: string
@@ -18,8 +19,6 @@ const COLORS = {
   textMuted: '#888888',    // 薄いテキスト（ソース名など）
 }
 
-const DEFAULT_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image'
-
 /**
  * アクションの label の上限（LINE 仕様）
  *
@@ -31,10 +30,6 @@ const ACTION_LABEL_MAX = 40
 /** レシピタイトルをアクションの label に使える長さへ丸める */
 function toActionLabel(title: string): string {
   return title.length > ACTION_LABEL_MAX ? title.slice(0, ACTION_LABEL_MAX) : title
-}
-
-function createHeroImage(imageUrl: string | null | undefined): messagingApi.FlexImage {
-  return { type: 'image', url: imageUrl || DEFAULT_IMAGE, size: 'full', aspectRatio: '20:13', aspectMode: 'cover' }
 }
 
 function createBodyContents(
@@ -168,7 +163,7 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
     paddingEnd: 'md',
     action: { type: 'uri', label: toActionLabel(recipe.title), uri: recipe.url },
     contents: [
-      { type: 'image', url: recipe.imageUrl || DEFAULT_IMAGE, size: 'sm', aspectRatio: '1:1', aspectMode: 'cover', flex: 0 },
+      ...createThumbnail(recipe.imageUrl),
       { type: 'box', layout: 'vertical', justifyContent: 'center', contents: textContents },
     ],
   }
