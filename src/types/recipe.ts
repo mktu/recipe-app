@@ -107,6 +107,31 @@ export interface CreateRecipeNoteInput {
 }
 
 /**
+ * レシピノート（閲覧・編集画面用）
+ *
+ * メモ・調理時間・表示用の画像 URL は `recipes` 側にしか無いので、対のレシピ行から引く。
+ * `recipeId` が null のノート（将来のアレンジ用。Epic #172）ではこれらも null になる。
+ */
+export interface RecipeNoteDetail {
+  id: string
+  recipeId: string | null
+  title: string
+  ingredients: IngredientRaw[]
+  steps: string[]
+  imageKey: string | null
+  imageUrl: string | null
+  servings: string | null
+  memo: string | null
+  cookingTimeMinutes: number | null
+}
+
+/** ノートの編集内容（API の入力）。材料の食材 ID はサーバー側で解決するので持たない */
+export type RecipeNoteFields = Pick<
+  UpdateRecipeNoteInput,
+  'title' | 'ingredients' | 'steps' | 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'
+>
+
+/**
  * レシピノート更新入力
  *
  * 更新は**全項目の置き換え**（PUT セマンティクス）。`update_recipe_note` の任意引数は

@@ -155,6 +155,7 @@ graph TB
             Detail["/recipes/id Detail"]
             Add["/recipes/add Add"]
             Confirm["/recipes/add/confirm Confirm"]
+            Note["/notes/id Note"]
         end
 
         subgraph Public["Pages - Public"]
@@ -166,6 +167,7 @@ graph TB
         subgraph APIRoutes["API Routes"]
             RecipeAPI["/api/recipes"]
             ParseAPI["/api/recipes/parse"]
+            NoteAPI["/api/notes/id"]
             WebhookAPI["/api/webhook/line"]
         end
     end
@@ -192,6 +194,7 @@ graph TB
     LINEApp -->|Webhook| WebhookAPI
 
     Pages --> RecipeAPI
+    Pages --> NoteAPI
     RecipeAPI --> GetRecipes
 
     GetRecipes --> DB
@@ -217,6 +220,7 @@ graph TB
 | `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
+| `/notes/[id]` | 必須 | レシピノートの閲覧・編集（材料・手順）。保存すると図鑑のレシピ行へ書き戻す |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |
 | `/terms` | 不要 | 利用規約 |
@@ -234,6 +238,7 @@ graph TB
 | `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | IDトークン | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__ / OGP） |
+| `/api/notes/[id]` | GET/PUT | IDトークン | レシピノートの取得・更新（PUT は全項目置き換え。食材 ID はサーバー側で材料名から解決） |
 | `/api/track/recipe/[id]` | GET/POST | POSTのみIDトークン | 閲覧記録（GET: LINE用リダイレクト・認証不要、POST: LIFF用） |
 | `/api/webhook/line` | POST | LINE署名検証 | LINE Webhook（`validateSignature`） |
 
@@ -404,12 +409,16 @@ erDiagram
 | 箇所 | 状態 |
 |------|------|
 | LINE のカード → `/api/track/recipe/[id]` | **対応済み。** `NextResponse.redirect` は絶対 URL しか受け付けない（内部の `validateURL` がベース無しの `new URL()` に通す）ため、`new URL(recipe.url, request.url)` でリクエストのオリジンに解決する。外部サイトの絶対 URL はベースを無視して素通りする |
-| 詳細画面の再取得ボタン | **未対応（#176）。** 相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になる |
-| 詳細画面の「レシピサイトに移動」 | **未対応（#176）。** `target="_blank"` だと LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
+| 詳細画面の再取得ボタン | **対応済み（#176）。** ノートでは出さない（相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になるため） |
+| 詳細画面の「レシピサイトに移動」 | **対応済み（#176）。** ノートでは「ノートを開く」を `next/link` で同一タブに遷移させる。`target="_blank"` だと LINE の内蔵ブラウザでは LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
 | LINE Flex の uri | 無改修で動く（track ルート経由のため） |
 | 画像（`recipes.image_url`） | **対応済み（#174）。** RPC がノートの `image_key` から相対パス `/placeholders/<key>.png` を書き込むので、一覧・詳細は素の `<img>` のまま動く。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
-- 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う
+- 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う。
+  詳細画面は `fetchRecipeById` が `recipe_notes(id)` を埋め込んで返す `noteId` で出し分ける
+- タイトルが変わったら `title_embedding` を NULL に落とし、`embedding_retry_count` を 0 に戻す
+  （generate-embeddings は NULL の行しか拾わないため）。ノート経由は `update_recipe_note`、
+  汎用の `PATCH /api/recipes/[id]` は `updateRecipe` が、それぞれ旧タイトルと比べて行う
 - 書き込みは `create_recipe_note` / `update_recipe_note` RPC に集約し、ノート行・レシピ行・
   `recipe_ingredients`・`unmatched_ingredients` を単一トランザクションで書く
   （PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では原子性を張れない）
