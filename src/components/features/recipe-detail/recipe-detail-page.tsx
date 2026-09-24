@@ -54,6 +54,7 @@ export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPagePr
         <p className="text-center text-sm text-muted-foreground">登録日: {createdAt}</p>
         <RecipeActions
           url={recipe.url}
+          noteId={recipe.noteId}
           isRescraping={isRescraping}
           onRescrape={handleRescrape}
           onDelete={deleteRecipe}

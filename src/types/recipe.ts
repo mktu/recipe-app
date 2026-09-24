@@ -79,6 +79,11 @@ export interface UpdateRecipeInput {
 /** レシピ詳細（詳細画面用） */
 export interface RecipeDetail extends RecipeWithIngredients {
   ingredientsRaw: IngredientRaw[]
+  /**
+   * 対になるレシピノートの ID。外部サイトのブックマークなら null。
+   * 「ノートかどうか」は `url` を見ずにこれで判定する（Epic #172 の論点 B）。
+   */
+  noteId: string | null
 }
 
 /** マッチしなかった食材1件分（unmatched_ingredients への記録用） */
