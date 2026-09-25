@@ -4,9 +4,11 @@ import { useCallback, useState } from 'react'
 import { isPlaceholderImageKey, type PlaceholderImageKey } from '@/lib/recipe/placeholder-images'
 import type { RecipeNoteDetail, RecipeNoteFields } from '@/types/recipe'
 
-/** 行を並べ替え・削除しても入力欄の状態が別の行に移らないよう、index ではなく key で識別する */
+/** 行を削除しても入力欄の状態が別の行に移らないよう、index ではなく key で識別する */
 export interface IngredientRow { key: number; name: string; amount: string }
 export interface StepRow { key: number; text: string }
+/** 材料名のサジェスト元（食材マスタ） */
+export interface IngredientOption { id: string; name: string }
 
 let nextKey = 0
 const newKey = () => nextKey++
@@ -18,11 +20,9 @@ function initialRows<T, R>(items: T[], toRow: (item: T) => R, empty: () => R): R
   return items.length > 0 ? items.map(toRow) : [empty()]
 }
 
-/** 調理時間の入力欄の値を API の値に変換する。空欄は null、解釈できなければ undefined */
-function parseCookingTime(value: string): number | null | undefined {
-  if (!value.trim()) return null
-  const minutes = Number(value)
-  return Number.isInteger(minutes) && minutes > 0 ? minutes : undefined
+/** 調理時間の選択値を API の値に変換する。未選択は null */
+function parseCookingTime(value: string): number | null {
+  return value ? Number(value) : null
 }
 
 export function useNoteForm(note: RecipeNoteDetail) {
@@ -43,17 +43,15 @@ export function useNoteForm(note: RecipeNoteDetail) {
   /** 送信内容を組み立てる。入力に誤りがあればエラーメッセージを返す */
   const toFields = useCallback((): { fields: RecipeNoteFields } | { error: string } => {
     if (!title.trim()) return { error: 'タイトルを入力してください' }
-    const cookingTimeMinutes = parseCookingTime(cookingTime)
-    if (cookingTimeMinutes === undefined) return { error: '調理時間は1以上の整数で入力してください' }
     return {
       fields: {
         title: title.trim(),
         ingredients: ingredients.map(({ name, amount }) => ({ name, amount })),
         steps: steps.map((s) => s.text),
         imageKey,
-        servings: servings.trim() || null,
+        servings: servings || null,
         memo: memo.trim() || null,
-        cookingTimeMinutes,
+        cookingTimeMinutes: parseCookingTime(cookingTime),
       },
     }
   }, [title, cookingTime, ingredients, steps, imageKey, servings, memo])

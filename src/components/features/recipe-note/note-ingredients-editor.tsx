@@ -3,16 +3,22 @@
 import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { emptyIngredient, type IngredientRow } from './use-note-form'
+import { IngredientNameInput } from './ingredient-name-input'
+import { emptyIngredient, type IngredientOption, type IngredientRow } from './use-note-form'
 
 interface NoteIngredientsEditorProps {
   rows: IngredientRow[]
   onChange: (rows: IngredientRow[]) => void
+  /** 材料名のサジェスト元（食材マスタ） */
+  ingredients: IngredientOption[]
   disabled: boolean
 }
 
-/** 材料の編集。名前と分量を分けて持つ（スクレイピング経路と違い、分量を正しく保存できる） */
-export function NoteIngredientsEditor({ rows, onChange, disabled }: NoteIngredientsEditorProps) {
+/**
+ * 材料の編集。名前と分量を分けて持つ（スクレイピング経路と違い、分量を正しく保存できる）。
+ * 分量は「大さじ2」「1/4個」「少々」と表記の幅が広いので、選択式にせず自由入力にしている。
+ */
+export function NoteIngredientsEditor({ rows, onChange, ingredients, disabled }: NoteIngredientsEditorProps) {
   const update = (key: number, patch: Partial<IngredientRow>) =>
     onChange(rows.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
@@ -20,13 +26,13 @@ export function NoteIngredientsEditor({ rows, onChange, disabled }: NoteIngredie
     <fieldset className="space-y-2">
       <legend className="mb-2 text-sm font-medium">材料</legend>
       {rows.map((row, index) => (
-        <div key={row.key} className="flex gap-2">
-          <Input
-            aria-label={`材料${index + 1}の名前`}
+        <div key={row.key} className="flex items-start gap-2">
+          <IngredientNameInput
+            label={`材料${index + 1}の名前`}
+            groupLabel={`材料${index + 1}`}
             value={row.name}
-            onChange={(e) => update(row.key, { name: e.target.value })}
-            placeholder="なす"
-            className="flex-1"
+            onChange={(name) => update(row.key, { name })}
+            ingredients={ingredients}
             disabled={disabled}
           />
           <Input

@@ -9,16 +9,19 @@ import type { RecipeNoteDetail, RecipeNoteFields } from '@/types/recipe'
 import { PlaceholderImagePicker } from './placeholder-image-picker'
 import { NoteIngredientsEditor } from './note-ingredients-editor'
 import { NoteStepsEditor } from './note-steps-editor'
-import { useNoteForm } from './use-note-form'
+import { NoteSelect } from './note-select'
+import { cookingTimeOptions, servingsOptions } from './note-select-options'
+import { useNoteForm, type IngredientOption } from './use-note-form'
 
 interface NoteEditorProps {
   note: RecipeNoteDetail
+  ingredients: IngredientOption[]
   onSave: (fields: RecipeNoteFields) => Promise<void>
   onCancel: () => void
 }
 
 /** ノートをその場で編集する。保存すると図鑑のレシピ行にも書き戻される（PUT /api/notes/[id]） */
-export function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
+export function NoteEditor({ note, ingredients, onSave, onCancel }: NoteEditorProps) {
   const { values, setters, toFields } = useNoteForm(note)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -40,19 +43,19 @@ export function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h1 className="text-lg font-bold">ノートを編集</h1>
-      <Field label="タイトル" htmlFor="note-title">
-        <Input id="note-title" value={values.title} onChange={(e) => setters.setTitle(e.target.value)} disabled={isSaving} />
+      <Field label="タイトル" htmlFor="note-title" required>
+        <Input id="note-title" required value={values.title} onChange={(e) => setters.setTitle(e.target.value)} disabled={isSaving} />
       </Field>
       <div className="flex gap-3">
-        <Field label="分量" htmlFor="note-servings">
-          <Input id="note-servings" value={values.servings} onChange={(e) => setters.setServings(e.target.value)} placeholder="2人分" disabled={isSaving} />
+        <Field label="何人分" htmlFor="note-servings">
+          <NoteSelect id="note-servings" value={values.servings} onChange={setters.setServings} options={servingsOptions(note.servings ?? '')} disabled={isSaving} />
         </Field>
-        <Field label="調理時間（分）" htmlFor="note-cooking-time">
-          <Input id="note-cooking-time" type="number" inputMode="numeric" min={1} value={values.cookingTime} onChange={(e) => setters.setCookingTime(e.target.value)} disabled={isSaving} />
+        <Field label="調理時間" htmlFor="note-cooking-time">
+          <NoteSelect id="note-cooking-time" value={values.cookingTime} onChange={setters.setCookingTime} options={cookingTimeOptions(note.cookingTimeMinutes?.toString() ?? '')} disabled={isSaving} />
         </Field>
       </div>
       <PlaceholderImagePicker value={values.imageKey} onChange={setters.setImageKey} />
-      <NoteIngredientsEditor rows={values.ingredients} onChange={setters.setIngredients} disabled={isSaving} />
+      <NoteIngredientsEditor rows={values.ingredients} onChange={setters.setIngredients} ingredients={ingredients} disabled={isSaving} />
       <NoteStepsEditor rows={values.steps} onChange={setters.setSteps} disabled={isSaving} />
       <Field label="メモ" htmlFor="note-memo">
         <Textarea id="note-memo" value={values.memo} onChange={(e) => setters.setMemo(e.target.value)} rows={3} disabled={isSaving} />
@@ -66,10 +69,18 @@ export function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
   )
 }
 
-function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
+interface FieldProps {
+  label: string
+  htmlFor: string
+  /** 必須マークを付ける。入力側にも `required` を付けて、支援技術に必須を伝えること */
+  required?: boolean
+  children: React.ReactNode
+}
+
+function Field({ label, htmlFor, required, children }: FieldProps) {
   return (
     <div className="flex-1 space-y-2">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor}>{label}{required && <span aria-hidden className="text-destructive"> *</span>}</Label>
       {children}
     </div>
   )
