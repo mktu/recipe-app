@@ -26,7 +26,8 @@ export function NoteIngredientsEditor({ rows, onChange, ingredients, disabled }:
     <fieldset className="space-y-2">
       <legend className="mb-2 text-sm font-medium">材料</legend>
       {rows.map((row, index) => (
-        <div key={row.key} className="flex items-start gap-2">
+        <div key={row.key} className="relative flex items-start gap-2">
+          {/* relative: 材料名の候補パネルの位置の基準（IngredientNameInput） */}
           <IngredientNameInput
             label={`材料${index + 1}の名前`}
             groupLabel={`材料${index + 1}`}

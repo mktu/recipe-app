@@ -34,6 +34,9 @@ interface IngredientNameInputProps {
  * ネイティブの `<datalist>` はこの正規化ができず「きゃ」で「キャベツ」が出ないので使わない。
  * 調味料などマスタに無い材料も書けるよう、候補は補助にとどめて自由入力を許す。
  * 候補はボタンなので、フォーカスが候補に移っても一覧は閉じない（外に出たら閉じる）。
+ *
+ * 候補は下の行に重ねて出す（絶対配置）。流し込むと出るたびに下の行が押し下げられて、
+ * 押そうとした場所がずれる。位置の基準は親の行（`relative`）で、行の幅いっぱいに広げる。
  */
 export function IngredientNameInput({ label, groupLabel, value, onChange, ingredients, disabled }: IngredientNameInputProps) {
   const [isFocused, setIsFocused] = useState(false)
@@ -44,10 +47,14 @@ export function IngredientNameInput({ label, groupLabel, value, onChange, ingred
   }
 
   return (
-    <div className="flex-1 space-y-1" onFocus={() => setIsFocused(true)} onBlur={handleBlur}>
+    <div className="flex-1" onFocus={() => setIsFocused(true)} onBlur={handleBlur}>
       <Input aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} placeholder="なす" autoComplete="off" disabled={disabled} />
       {isFocused && suggestions.length > 0 && (
-        <div role="group" aria-label={`${groupLabel}の候補`} className="flex flex-wrap gap-1">
+        <div
+          role="group"
+          aria-label={`${groupLabel}の候補`}
+          className="absolute inset-x-0 top-full z-10 mt-1 flex flex-wrap gap-1 rounded-md border bg-popover p-2 shadow-md"
+        >
           {suggestions.map((s) => (
             <button
               key={s.id}
