@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  FALLBACK_IMAGE_PATH,
   PLACEHOLDER_IMAGES,
   placeholderImagePath,
   type PlaceholderImageKey,
@@ -37,7 +38,8 @@ export function PlaceholderImagePicker({ value, onChange }: PlaceholderImagePick
             checked={value === null}
             onChange={() => onChange(null)}
           />
-          <span className="flex flex-1 items-center justify-center text-2xl">🍳</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={FALLBACK_IMAGE_PATH} alt="" className="h-full w-full object-cover" />
           <span className={LABEL_CLASS}>なし</span>
         </label>
         {PLACEHOLDER_IMAGES.map(({ key, label }) => (

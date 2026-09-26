@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { createServerClient } from '@/lib/db/client'
 import { recordRecipeView } from '@/lib/db/queries/recipes'
 import { requireLineUser } from '@/lib/api/auth-guard'
+import { toTrackRedirectUrl } from '@/lib/line/track-redirect'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -9,7 +10,7 @@ interface RouteContext {
 
 /**
  * GET /api/track/recipe/[id]
- * LINE用: 閲覧を記録して元サイトURLにリダイレクト
+ * LINE用: 閲覧を記録して元サイトURLにリダイレクト（ノートは LIFF URL に振り替える）
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
@@ -25,11 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // レスポンス後に関数を生存させてバックグラウンド実行
   after(() => recordRecipeView(id).catch(console.error))
 
-  // NextResponse.redirect は絶対 URL しか受け付けない（内部の validateURL が
-  // ベース無しの new URL() に通すため相対パスは例外になる）。レシピノートの
-  // url は相対パス /notes/<note_id> なので、リクエストのオリジンで解決する。
-  // 外部サイトの絶対 URL はベースを無視して素通りする。
-  return NextResponse.redirect(new URL(recipe.url, request.url), 302)
+  return NextResponse.redirect(toTrackRedirectUrl(recipe.url, request.url), 302)
 }
 
 /**

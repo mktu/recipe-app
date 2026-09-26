@@ -6,7 +6,7 @@
  * （実際に解析まで通したい場合は `npm run test:recipe` を使う）。
  *
  * 見た目の確認で詰まりやすいケースを一通り含めてある:
- * 画像なし / 長いタイトル / メモ複数行 / 材料が空 / 出典なし / 食材が多い。
+ * 画像なし / 長いタイトル / メモ複数行 / 材料が空 / 出典なし / 食材が多い / レシピノート。
  *
  * 使い方:
  *   npm run seed:dev            # 投入（既にあれば飛ばす）
@@ -118,6 +118,7 @@ async function main() {
   const supabaseUrl = loadLocalEnv()
   const { createClient } = await import('@supabase/supabase-js')
   const { linkIngredientsForRecipes } = await import('../src/lib/recipe/link-ingredients')
+  const { seedDevNotes, cleanDevNotes } = await import('./seed-dev-notes')
 
   const admin = createClient(supabaseUrl, process.env.SUPABASE_SECRET_KEY ?? '')
 
@@ -143,7 +144,8 @@ async function main() {
       .like('url', `${SEED_URL_PREFIX}%`)
       .select('id')
 
-    console.log(`🧹 ${data?.length ?? 0} 件削除しました`)
+    const notes = await cleanDevNotes(admin, user.id)
+    console.log(`🧹 ${data?.length ?? 0} 件、ノート ${notes} 件を削除しました`)
     return
   }
 
@@ -156,8 +158,10 @@ async function main() {
   const existingUrls = new Set((existing ?? []).map((r) => r.url))
   const toInsert = SEED_RECIPES.filter((r) => !existingUrls.has(SEED_URL_PREFIX + r.slug))
 
+  await seedDevNotes(admin, user.id, DEV_LINE_USER_ID)
+
   if (toInsert.length === 0) {
-    console.log('✅ すべて投入済みです')
+    console.log('✅ レシピはすべて投入済みです')
     return
   }
 
