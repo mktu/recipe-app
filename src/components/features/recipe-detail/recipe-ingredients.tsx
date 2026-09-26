@@ -5,9 +5,13 @@ import type { IngredientRaw } from '@/types/recipe'
 
 interface RecipeIngredientsProps {
   ingredients: IngredientRaw[]
+  /** 材料が空のときの案内。ノートは再取得できないので、既定の文言を差し替える */
+  emptyMessage?: string
 }
 
-export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
+const DEFAULT_EMPTY_MESSAGE = '材料情報がありません。「レシピ情報を再取得」をお試しください。'
+
+export function RecipeIngredients({ ingredients, emptyMessage = DEFAULT_EMPTY_MESSAGE }: RecipeIngredientsProps) {
   if (ingredients.length === 0) {
     return (
       <Card>
@@ -15,9 +19,7 @@ export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
           <CardTitle className="text-base">材料</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            材料情報がありません。「レシピ情報を再取得」をお試しください。
-          </p>
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
         </CardContent>
       </Card>
     )

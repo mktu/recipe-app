@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import type { RecipeIngredient } from '@/types/recipe'
+import { FALLBACK_IMAGE_PATH } from '@/lib/recipe/placeholder-images'
 
 interface RecipeHeaderProps {
   title: string
@@ -15,12 +16,8 @@ export function RecipeHeader({ title, sourceName, imageUrl, mainIngredients }: R
     <div className="space-y-4">
       {/* 画像 */}
       <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-6xl">🍳</div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl ?? FALLBACK_IMAGE_PATH} alt={imageUrl ? title : ''} className="h-full w-full object-cover" />
       </div>
 
       {/* タイトル・ソース名 */}

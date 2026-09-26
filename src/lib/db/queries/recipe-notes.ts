@@ -1,8 +1,10 @@
 import { createServerClient } from '@/lib/db/client'
 import { getUserIdByLineUserId } from '@/lib/db/queries/users'
-import type { Json } from '@/types/database'
+import type { Json, Tables } from '@/types/database'
 import type {
   CreateRecipeNoteInput,
+  IngredientRaw,
+  RecipeNoteDetail,
   UpdateRecipeNoteInput,
   UnmatchedIngredient,
 } from '@/types/recipe'
@@ -10,6 +12,17 @@ import type {
 export interface RecipeNoteResult {
   noteId: string
   recipeId: string
+}
+
+/**
+ * 「ノートが無い」とみなす SQLSTATE。
+ * `update_recipe_note` の所有者チェック失敗（no_data_found）と、ID が UUID として不正な場合
+ * （invalid_text_representation）。
+ */
+const NOTE_NOT_FOUND_CODES = new Set(['P0002', '22P02'])
+
+export function isNoteNotFoundError(error: RecipeNoteError | null): boolean {
+  return !!error?.code && NOTE_NOT_FOUND_CODES.has(error.code)
 }
 
 export interface RecipeNoteError {
@@ -104,6 +117,54 @@ export async function createRecipeNote(
   }
 }
 
+type RecipeNoteRow = Pick<
+  Tables<'recipe_notes'>,
+  'id' | 'recipe_id' | 'title' | 'ingredients' | 'steps' | 'image_key' | 'servings'
+> & {
+  recipes: Pick<Tables<'recipes'>, 'image_url' | 'memo' | 'cooking_time_minutes'> | null
+}
+
+function toRecipeNoteDetail(row: RecipeNoteRow): RecipeNoteDetail {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id,
+    title: row.title,
+    ingredients: Array.isArray(row.ingredients) ? (row.ingredients as unknown as IngredientRaw[]) : [],
+    steps: Array.isArray(row.steps) ? (row.steps as unknown as string[]) : [],
+    imageKey: row.image_key,
+    imageUrl: row.recipes?.image_url ?? null,
+    servings: row.servings,
+    memo: row.recipes?.memo ?? null,
+    cookingTimeMinutes: row.recipes?.cooking_time_minutes ?? null,
+  }
+}
+
+/** ノートを1件取得する。メモ・調理時間・画像は対のレシピ行から引く */
+export async function fetchRecipeNoteById(
+  lineUserId: string,
+  noteId: string
+): Promise<{ data: RecipeNoteDetail | null; error: Error | null }> {
+  const client = createServerClient()
+
+  try {
+    const userId = await getUserIdByLineUserId(client, lineUserId)
+    if (!userId) return { data: null, error: new Error('ユーザーが見つかりません') }
+
+    // 不正な UUID もエラーで返るので、図鑑の詳細（fetchRecipeById）と同じく見つからない扱いにする
+    const { data, error } = await client
+      .from('recipe_notes')
+      .select('id, recipe_id, title, ingredients, steps, image_key, servings, recipes(image_url, memo, cooking_time_minutes)')
+      .eq('id', noteId)
+      .eq('user_id', userId)
+      .single()
+
+    if (error || !data) return { data: null, error: null }
+    return { data: toRecipeNoteDetail(data), error: null }
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
+  }
+}
+
 /**
  * ノートを更新し、図鑑のレシピ行へ書き戻す。
  *
@@ -112,15 +173,17 @@ export async function createRecipeNote(
  *
  * タイトルが変わった場合は RPC 側で `title_embedding` を NULL に落とすため、
  * generate-embeddings が次回実行時に拾い直す。
+ *
+ * ノートが無い・他人のノートのときは RPC が `no_data_found` で失敗する（`isNoteNotFoundError` で判定する）。
  */
 export async function updateRecipeNote(
   input: UpdateRecipeNoteInput
-): Promise<{ error: Error | null }> {
+): Promise<{ error: RecipeNoteError | null }> {
   const client = createServerClient()
 
   try {
     const userId = await getUserIdByLineUserId(client, input.lineUserId)
-    if (!userId) return { error: new Error('ユーザーが見つかりません') }
+    if (!userId) return { error: { message: 'ユーザーが見つかりません' } }
 
     const { error } = await client.rpc('update_recipe_note', {
       ...buildNoteRpcArgs(input, userId),
@@ -131,6 +194,6 @@ export async function updateRecipeNote(
     return { error: null }
   } catch (err) {
     console.error('[updateRecipeNote] Error:', err)
-    return { error: err instanceof Error ? err : new Error('Unknown error') }
+    return { error: toRecipeNoteError(err) }
   }
 }

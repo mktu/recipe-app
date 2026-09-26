@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
 import { getUserIdByLineUserId } from '@/lib/db/queries/users'
-import type { Database, Json, TablesInsert } from '@/types/database'
+import type { Database, Json, TablesInsert, TablesUpdate } from '@/types/database'
 import type { RecipeDetail, RecipeIngredient, IngredientRaw, UpdateRecipeInput } from '@/types/recipe'
 
 type TypedSupabaseClient = SupabaseClient<Database>
@@ -44,16 +44,18 @@ export async function fetchRecipeById(
     const userId = await getUserIdByLineUserId(client, lineUserId)
     if (!userId) return { data: null, error: new Error('ユーザーが見つかりません') }
 
-    const { data: recipe, error: recipeError } = await client
+    // recipe_notes.recipe_id は UNIQUE なので、埋め込みは配列ではなく1件か null で返る
+    const { data: row, error: recipeError } = await client
       .from('recipes')
-      .select('*')
+      .select('*, recipe_notes(id)')
       .eq('id', recipeId)
       .eq('user_id', userId)
       .single()
 
-    if (recipeError || !recipe) {
+    if (recipeError || !row) {
       return { data: null, error: null }
     }
+    const { recipe_notes: note, ...recipe } = row
 
     const { data: ingredientRows } = await client
       .from('recipe_ingredients')
@@ -74,7 +76,7 @@ export async function fetchRecipeById(
       ? (recipe.ingredients_raw as unknown as IngredientRaw[])
       : []
 
-    return { data: { ...recipe, mainIngredients, ingredientsRaw }, error: null }
+    return { data: { ...recipe, mainIngredients, ingredientsRaw, noteId: note?.id ?? null }, error: null }
   } catch (err) {
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
@@ -131,6 +133,31 @@ function buildRecipeUpdate(updates: UpdateRecipeInput): TablesInsert<'recipes'> 
   return recipeUpdate
 }
 
+/**
+ * タイトルが変わるなら埋め込みを無効化する列を返す。
+ *
+ * generate-embeddings は `title_embedding IS NULL` かつリトライ上限未満の行しか拾わないため、
+ * 落とさないと古いタイトルの埋め込みが残り続ける。リトライ回数も戻すのは、過去に失敗を
+ * 重ねた行が再生成の対象から外れたままになるのを防ぐため（`update_recipe_note` と同じ扱い）。
+ * 再取得ダイアログは変更が無くても title を送るので、値を比べてから落とす。
+ */
+async function buildEmbeddingReset(
+  client: TypedSupabaseClient,
+  recipeId: string,
+  userId: string,
+  newTitle: string | undefined
+): Promise<TablesUpdate<'recipes'>> {
+  if (typeof newTitle !== 'string') return {}
+  const { data } = await client
+    .from('recipes')
+    .select('title')
+    .eq('id', recipeId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!data || data.title === newTitle) return {}
+  return { title_embedding: null, embedding_generated_at: null, embedding_retry_count: 0 }
+}
+
 /** レシピを更新（食材・メモ・メタ情報等） */
 export async function updateRecipe(
   lineUserId: string,
@@ -143,7 +170,10 @@ export async function updateRecipe(
     const userId = await getUserIdByLineUserId(client, lineUserId)
     if (!userId) return { error: new Error('ユーザーが見つかりません') }
 
-    const recipeUpdate = buildRecipeUpdate(updates)
+    const recipeUpdate = {
+      ...buildRecipeUpdate(updates),
+      ...(await buildEmbeddingReset(client, recipeId, userId, updates.title)),
+    }
 
     const { error: updateError } = await client
       .from('recipes')
