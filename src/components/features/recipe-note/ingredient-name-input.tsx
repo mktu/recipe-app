@@ -48,7 +48,8 @@ export function IngredientNameInput({ label, groupLabel, value, onChange, ingred
 
   return (
     <div className="flex-1" onFocus={() => setIsFocused(true)} onBlur={handleBlur}>
-      <Input aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} placeholder="なす" autoComplete="off" disabled={disabled} />
+      {/* 候補を選んでもフォーカスは入力欄に残るので、打ち直したら一覧を開き直す（onFocus は再発火しない） */}
+      <Input aria-label={label} value={value} onChange={(e) => { onChange(e.target.value); setIsFocused(true) }} placeholder="なす" autoComplete="off" disabled={disabled} />
       {isFocused && suggestions.length > 0 && (
         <div
           role="group"
@@ -59,6 +60,10 @@ export function IngredientNameInput({ label, groupLabel, value, onChange, ingred
             <button
               key={s.id}
               type="button"
+              // iOS の WebKit（LINE の内蔵ブラウザ含む）はボタンを押してもフォーカスを与えない。
+              // 放っておくと入力欄の blur で relatedTarget が null になり、onClick の前に一覧が閉じる。
+              // 押下の既定動作を止めて入力欄のフォーカスを保つ（Chromium では再現しない）
+              onMouseDown={(e) => e.preventDefault()}
               className="rounded-full border bg-background px-3 py-1 text-sm hover:bg-muted"
               onClick={() => { onChange(s.name); setIsFocused(false) }}
             >
