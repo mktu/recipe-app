@@ -79,6 +79,11 @@ export interface UpdateRecipeInput {
 /** レシピ詳細（詳細画面用） */
 export interface RecipeDetail extends RecipeWithIngredients {
   ingredientsRaw: IngredientRaw[]
+  /**
+   * 対になるレシピノートの ID。外部サイトのブックマークなら null。
+   * 「ノートかどうか」は `url` を見ずにこれで判定する（Epic #172 の論点 B）。
+   */
+  noteId: string | null
 }
 
 /** マッチしなかった食材1件分（unmatched_ingredients への記録用） */
@@ -100,6 +105,31 @@ export interface CreateRecipeNoteInput {
   memo?: string
   cookingTimeMinutes?: number | null
 }
+
+/**
+ * レシピノート（閲覧・編集画面用）
+ *
+ * メモ・調理時間・表示用の画像 URL は `recipes` 側にしか無いので、対のレシピ行から引く。
+ * `recipeId` が null のノート（将来のアレンジ用。Epic #172）ではこれらも null になる。
+ */
+export interface RecipeNoteDetail {
+  id: string
+  recipeId: string | null
+  title: string
+  ingredients: IngredientRaw[]
+  steps: string[]
+  imageKey: string | null
+  imageUrl: string | null
+  servings: string | null
+  memo: string | null
+  cookingTimeMinutes: number | null
+}
+
+/** ノートの編集内容（API の入力）。材料の食材 ID はサーバー側で解決するので持たない */
+export type RecipeNoteFields = Pick<
+  UpdateRecipeNoteInput,
+  'title' | 'ingredients' | 'steps' | 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'
+>
 
 /**
  * レシピノート更新入力

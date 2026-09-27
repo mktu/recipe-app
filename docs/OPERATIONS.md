@@ -78,6 +78,21 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 E2E_PORT=3100 npm run test:e2e
 ```
 
+### iOS の WebKit はボタンを押してもフォーカスを与えない（Chromium では再現しない）
+
+**LINE の内蔵ブラウザ（iPhone）は WebKit。** Chromium はボタンのクリックでフォーカスを移すが、WebKit は移さない。
+そのため「blur の `relatedTarget` が候補ボタンなら閉じない」のような判定は、iPhone でだけ壊れる
+（blur 時の `relatedTarget` が null になり、`onClick` より先に一覧が閉じてタップが空振りする。#176 の材料名サジェスト）。
+押下の既定動作を止めてフォーカスを保つ（`onMouseDown={(e) => e.preventDefault()}`）。
+
+**E2E も手元の確認スクリプトも Chromium なので検出できない。** フォーカス・タップまわりを触ったら WebKit で確かめる。
+
+```bash
+npx playwright install webkit   # 初回のみ
+```
+
+スクリプトで `webkit.launch()` と `devices['iPhone 13']` を使えば再現できる（#176 で、修正前は空振りし修正後は通ることを確認した）。
+
 ## デプロイ・ホスティング
 
 ### Vercel Preview の Deployment Protection は Off

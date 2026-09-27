@@ -125,6 +125,16 @@ catch 内のエラー通知もそこで失敗し、webhook が 500 になる。
 ローカルで画像まで確認したいときは、ngrok の https URL を APP_URL に入れる。
 外部サイトの画像が http の場合は NO IMAGE 画像に差し替える。
 
+### LINE から保護ページを開くときは LIFF URL を使う（#176）
+
+LINE の内蔵ブラウザでアプリの https URL を直接開いても **LIFF のコンテキストにならない**。
+`liff.init` 後に未ログインと判定され、LINE ログインの往復が走る（戻り先が元のページになる保証も無い）。
+保護ページへのリンクは `https://liff.line.me/{LIFF_ID}/<path>` にすること
+（リッチメニューの「レシピ追加」、カテゴリ検索の「もっと見る」、閲覧記録ルートのノート振り替えが該当）。
+
+> ローカルの DevAuth（`NEXT_PUBLIC_LIFF_ID` 空）は LIFF を丸ごとバイパスするので、この経路は手元では検証できない。
+> staging の実機で確かめる。
+
 ### staging の Webhook URL
 
 ```

@@ -5,6 +5,7 @@ import { Clock, Utensils } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { RecipeWithIngredients } from '@/types/recipe'
+import { FALLBACK_IMAGE_PATH } from '@/lib/recipe/placeholder-images'
 
 interface RecipeCardProps {
   recipe: RecipeWithIngredients
@@ -37,12 +38,8 @@ function RecipeMeta({ cookingTime, ingredientCount }: { cookingTime: number | nu
 function RecipeThumbnail({ imageUrl, title }: { imageUrl: string | null; title: string }) {
   return (
     <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
-      {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-3xl">🍳</div>
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={imageUrl ?? FALLBACK_IMAGE_PATH} alt={imageUrl ? title : ''} className="h-full w-full object-cover" />
     </div>
   )
 }

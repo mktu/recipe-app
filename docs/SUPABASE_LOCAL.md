@@ -73,6 +73,18 @@ GitHub Actions が設定されていない場合や緊急時は、Supabase Dashb
 `supabase/seed.sql` で投入される。無いとレシピ作成が失敗するので、
 その場合は `npx supabase db reset` で seed を再投入する。
 
+### pull したマイグレーションはローカルに自動では当たらない
+
+develop を取り込んでも、ローカル DB は古い定義のまま動き続ける。**エラーにならず、黙って古い挙動になる**ので
+原因に気付きにくい（#176 の実例: `20260923000000_set_note_image_url.sql` が未適用で、ノートを作っても
+`recipes.image_url` が空のままだった。RPC が古い定義のまま置き換わっていなかったため）。
+
+```bash
+supabase migration up   # 未適用分だけ当てる。手で入れたデータは残る
+```
+
+`supabase db reset` でも揃うが、seed 以外のデータ（`npm run seed:dev` で入れたもの等）は消える。
+
 ### レシピ取得には `supabase functions serve` が別途必要
 
 解析・検索は Edge Function 経由なので、`npm run dev` だけでは動かない。
