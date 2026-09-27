@@ -411,10 +411,10 @@ erDiagram
 
 | 箇所 | 状態 |
 |------|------|
-| LINE のカード → `/api/track/recipe/[id]` | **対応済み（#176）。** ノート（相対パス）は LIFF URL `https://liff.line.me/{LIFF_ID}/notes/<id>` に振り替える（`src/lib/line/track-redirect.ts`）。LINE の内蔵ブラウザで普通の https URL を開いても LIFF のコンテキストにならず、保護ページの認証が通らないため。LIFF_ID が空の dev ではリクエストのオリジンで解決する（`NextResponse.redirect` は絶対 URL しか受け付けない）。外部サイトの絶対 URL は素通り。**実機確認は #175 で staging にノートが入ってから** |
+| LINE のカード | **対応済み（#176, #175）。** ノートのカードは track ルートを挟まず、LIFF URL `https://liff.line.me/{LIFF_ID}/notes/<id>?from=line` を直接載せる（`toRecipeCardUrl`）。LINE の内蔵ブラウザで普通の https URL を開いても LIFF のコンテキストにならないうえ、302 で LIFF に飛ばすと閉じた後に空白ページが残るため（`docs/LINE_SETUP.md`）。閲覧記録はノート画面が `from=line` を見て `POST /api/track/recipe/[id]` で行う。外部サイトのレシピは従来どおり track ルートの GET 経由。LIFF_ID が空の dev はノートも track ルートに回す |
+| `/api/track/recipe/[id]` の GET | 以前に送ったトーク履歴上のノートのカードのため、相対パスは LIFF URL に 302 で振り替える（`toTrackRedirectUrl`）。LIFF_ID が空の dev ではリクエストのオリジンで解決する（`NextResponse.redirect` は絶対 URL しか受け付けない）。外部サイトの絶対 URL は素通り |
 | 詳細画面の再取得ボタン | **対応済み（#176）。** ノートでは出さない（相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になるため） |
 | 詳細画面の「レシピサイトに移動」 | **対応済み（#176）。** ノートでは「ノートを開く」を `next/link` で同一タブに遷移させる。`target="_blank"` だと LINE の内蔵ブラウザでは LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
-| LINE Flex の uri | 無改修で動く（track ルート経由のため） |
 | 画像（`recipes.image_url`） | **対応済み（#174）。** RPC がノートの `image_key` から相対パス `/placeholders/<key>.png` を書き込むので、一覧・詳細は素の `<img>` のまま動く。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う。

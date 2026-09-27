@@ -1,10 +1,29 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { toTrackRedirectUrl } from './track-redirect'
+import { toRecipeCardUrl, toTrackRedirectUrl } from './track-redirect'
 
 const REQUEST_URL = 'https://recipe.example.com/api/track/recipe/abc'
 
 afterEach(() => {
   vi.unstubAllEnvs()
+})
+
+describe('toRecipeCardUrl', () => {
+  it('ノート（相対パス）は track ルートを挟まず LIFF URL を載せ、LINE から開いた印を付ける', () => {
+    vi.stubEnv('NEXT_PUBLIC_LIFF_ID', '1234-abcd')
+    expect(toRecipeCardUrl({ id: 'r1', url: '/notes/n1' })).toBe('https://liff.line.me/1234-abcd/notes/n1?from=line')
+  })
+
+  it('外部サイトのレシピは track ルートを経由する', () => {
+    vi.stubEnv('NEXT_PUBLIC_LIFF_ID', '1234-abcd')
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://recipe.example.com')
+    expect(toRecipeCardUrl({ id: 'r1', url: 'https://cookpad.com/recipe/1' })).toBe('https://recipe.example.com/api/track/recipe/r1')
+  })
+
+  it('LIFF_ID が空（dev）ならノートも track ルートに回す', () => {
+    vi.stubEnv('NEXT_PUBLIC_LIFF_ID', '')
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://recipe.example.com')
+    expect(toRecipeCardUrl({ id: 'r1', url: '/notes/n1' })).toBe('https://recipe.example.com/api/track/recipe/r1')
+  })
 })
 
 describe('toTrackRedirectUrl', () => {

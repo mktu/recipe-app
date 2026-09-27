@@ -8,12 +8,15 @@ import { CenteredMessage, LoadingState } from '@/components/features/recipe-deta
 import { NoteEditor } from './note-editor'
 import { NoteView } from './note-view'
 import { useRecipeNote } from './use-recipe-note'
+import { useTrackLineView } from './use-track-line-view'
 import type { IngredientOption } from './use-note-form'
 
 interface RecipeNotePageProps {
   noteId: string
   /** 材料名のサジェスト元（食材マスタ） */
   ingredients: IngredientOption[]
+  /** LINE のカードから開かれた（`?from=line`）。閲覧をここで記録する */
+  fromLine: boolean
 }
 
 /**
@@ -22,9 +25,10 @@ interface RecipeNotePageProps {
  * LINE のカードからは閲覧記録のリダイレクト経由でここに直接着地するので、
  * 戻り先は履歴ではなく図鑑の詳細画面に固定する。
  */
-export function RecipeNotePage({ noteId, ingredients }: RecipeNotePageProps) {
+export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePageProps) {
   const { note, isLoading, isAuthenticated, error, saveNote } = useRecipeNote(noteId)
   const [isEditing, setIsEditing] = useState(false)
+  useTrackLineView(fromLine, note?.recipeId)
 
   if (isLoading) return <LoadingState />
   if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
