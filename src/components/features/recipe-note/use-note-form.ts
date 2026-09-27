@@ -25,7 +25,22 @@ function parseCookingTime(value: string): number | null {
   return value ? Number(value) : null
 }
 
-export function useNoteForm(note: RecipeNoteDetail) {
+/** 新規作成（#175）の初期値。材料・手順は空の1行ずつで始まる */
+const EMPTY_NOTE: RecipeNoteDetail = {
+  id: '',
+  recipeId: null,
+  title: '',
+  ingredients: [],
+  steps: [],
+  imageKey: null,
+  imageUrl: null,
+  servings: null,
+  memo: null,
+  cookingTimeMinutes: null,
+}
+
+/** 編集なら既存のノートを渡す。新規作成では省略して空のフォームで始める */
+export function useNoteForm(note: RecipeNoteDetail = EMPTY_NOTE) {
   const [title, setTitle] = useState(note.title)
   const [servings, setServings] = useState(note.servings ?? '')
   const [cookingTime, setCookingTime] = useState(note.cookingTimeMinutes?.toString() ?? '')

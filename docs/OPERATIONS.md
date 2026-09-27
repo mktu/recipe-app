@@ -116,10 +116,11 @@ Issue 化するか判断が必要な、コードだけからは分からない�
 
 - **Vercel Dashboard で Node.js を 24.x に設定**
   （Settings → Build & Development Settings → Node.js Version）
-- **`ingredients_raw` の `amount` が全件空**（本番29件、登録初日から）。
+- **スクレイピング経路の `ingredients_raw` は `amount` が全件空**（本番29件、登録初日から）。
   `{"name":"うどん 2玉","amount":""}` のように分量が `name` 側に入っており、
   `docs/DATABASE_DESIGN.md` の想定（`{name:"なす", amount:"2本"}`）と乖離している。
-  #170 の調査中に発見。Issue 化するか要判断
+  #170 の調査中に発見。ノート経由（#175 の `POST /api/notes`）は名前と分量を分けて保存するので、
+  残るのは既存のブックマーク分。Issue 化するか要判断
 
 ## 主要な参照ポインタ（非自明なものだけ）
 

@@ -1,9 +1,8 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useAuthedFetch } from '@/hooks/use-authed-fetch'
@@ -15,6 +14,7 @@ import { SortSelect } from './sort-select'
 import { FilterBar } from './filter-bar'
 import { RecipeList } from './recipe-list'
 import { AddRecipeFAB } from './add-recipe-fab'
+import { AddRecipeSheet } from './add-recipe-sheet'
 import type { SortOrder, IngredientsByCategory } from '@/types/recipe'
 
 interface HomeClientProps {
@@ -23,18 +23,19 @@ interface HomeClientProps {
 }
 
 function useRecipeHandlers() {
-  const router = useRouter()
   const authedFetch = useAuthedFetch()
   // 詳細への遷移は RecipeCard の `<Link>` が行うので、ここは閲覧記録だけ
   const trackRecipeView = useCallback((id: string) => {
     authedFetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
   }, [authedFetch])
-  const handleAddRecipe = useCallback(() => router.push('/recipes/add'), [router])
-  return { trackRecipeView, handleAddRecipe }
+  // FAB と空状態の「レシピを追加」は、どちらも追加方法の選択（URL / ノート）を開く
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false)
+  const handleAddRecipe = useCallback(() => setIsAddSheetOpen(true), [])
+  return { trackRecipeView, handleAddRecipe, isAddSheetOpen, setIsAddSheetOpen }
 }
 
 export function HomeClient({ ingredientCategories, initialFilters }: HomeClientProps) {
-  const { trackRecipeView, handleAddRecipe } = useRecipeHandlers()
+  const { trackRecipeView, handleAddRecipe, isAddSheetOpen, setIsAddSheetOpen } = useRecipeHandlers()
   const { isLoading: authLoading, isAuthenticated, error: authError, relogin } = useAuth()
   const filters = useRecipeFilters(ingredientCategories, initialFilters)
 
@@ -83,6 +84,7 @@ export function HomeClient({ ingredientCategories, initialFilters }: HomeClientP
         )}
       </main>
       <AddRecipeFAB onClick={handleAddRecipe} />
+      <AddRecipeSheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen} />
     </div>
   )
 }
