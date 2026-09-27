@@ -16,7 +16,13 @@
 - `title`: String
 - `url`: String (user_id + url で Unique)
 - `source_name`: String (例: クックパッド)
-- `ingredients_raw`: JSONB (材料リスト。例: `[{"name": "なす", "amount": "2本"}, {"name": "鶏もも肉", "amount": "300g"}]`)
+- `ingredients_raw`: JSONB (材料リスト `[{name, amount}]`。**由来によって中身が2種類ある**)
+  - 外部サイト由来: **`amount` は常に空**。分量を保存しない方針（`docs/SCRAPING_POLICY.md`）のため、
+    `parse-recipe.ts` が `amount: ''` を決め打ちする。サイトが分量込みで返す場合は `name` 側に混ざる
+    （例: `[{"name": "うどん 2玉", "amount": ""}]`）
+  - レシピノート由来: 名前と分量を分けて持つ（例: `[{"name": "なす", "amount": "2本"}]`）。
+    `recipe_notes.ingredients` の写し
+  - **外部由来の空の `amount` はバグではなく仕様。** 読む側（詳細画面の材料一覧など）は空の行がある前提で扱う
 - `tags`: String[] (ジャンル等)
 - `image_url`: String
 - `memo`: String (ユーザーメモ)
