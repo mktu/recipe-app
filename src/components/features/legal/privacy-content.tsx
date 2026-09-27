@@ -80,8 +80,8 @@ function ExternalServicesSection() {
           データベースホスティング・認証サービスとして利用。ユーザーデータおよびレシピデータを保管しています
         </li>
         <li>
-          <strong>Vercel Analytics</strong>:
-          サービス改善のためのアクセス解析に利用
+          <strong>Vercel Analytics / Speed Insights</strong>:
+          サービス改善のためのアクセス解析および表示速度の計測に利用
         </li>
       </ul>
       <p>
