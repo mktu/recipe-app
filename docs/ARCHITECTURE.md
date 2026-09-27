@@ -155,6 +155,7 @@ graph TB
             Detail["/recipes/id Detail"]
             Add["/recipes/add Add"]
             Confirm["/recipes/add/confirm Confirm"]
+            NewNote["/notes/new New Note"]
             Note["/notes/id Note"]
         end
 
@@ -167,7 +168,7 @@ graph TB
         subgraph APIRoutes["API Routes"]
             RecipeAPI["/api/recipes"]
             ParseAPI["/api/recipes/parse"]
-            NoteAPI["/api/notes/id"]
+            NoteAPI["/api/notes, /api/notes/id"]
             WebhookAPI["/api/webhook/line"]
         end
     end
@@ -220,6 +221,7 @@ graph TB
 | `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
+| `/notes/new` | 必須 | レシピノートの新規作成。保存すると図鑑にレシピ行も作られ、`/notes/[id]` へ置き換えで遷移する。入口はホームの追加ボタン（「URL から追加」と「ノートを書く」を選ぶシート） |
 | `/notes/[id]` | 必須 | レシピノートの閲覧・編集（材料・手順）。保存すると図鑑のレシピ行へ書き戻す |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |
@@ -238,6 +240,7 @@ graph TB
 | `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | IDトークン | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__ / OGP） |
+| `/api/notes` | POST | IDトークン | レシピノート作成（ノート行と図鑑のレシピ行を対で作る。食材 ID はサーバー側で材料名から解決、`imageKey` は `parseNoteFields` で検証し不正なら 400） |
 | `/api/notes/[id]` | GET/PUT | IDトークン | レシピノートの取得・更新（PUT は全項目置き換え。食材 ID はサーバー側で材料名から解決） |
 | `/api/track/recipe/[id]` | GET/POST | POSTのみIDトークン | 閲覧記録（GET: LINE用リダイレクト・認証不要、POST: LIFF用） |
 | `/api/webhook/line` | POST | LINE署名検証 | LINE Webhook（`validateSignature`） |
