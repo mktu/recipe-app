@@ -14,14 +14,19 @@ import { cookingTimeOptions, servingsOptions } from './note-select-options'
 import { useNoteForm, type IngredientOption } from './use-note-form'
 
 interface NoteEditorProps {
-  note: RecipeNoteDetail
+  heading: string
+  /** 編集するノート。新規作成では渡さない */
+  note?: RecipeNoteDetail
   ingredients: IngredientOption[]
   onSave: (fields: RecipeNoteFields) => Promise<void>
   onCancel: () => void
 }
 
-/** ノートをその場で編集する。保存すると図鑑のレシピ行にも書き戻される（PUT /api/notes/[id]） */
-export function NoteEditor({ note, ingredients, onSave, onCancel }: NoteEditorProps) {
+/**
+ * ノートの入力フォーム。編集（PUT /api/notes/[id]）と新規作成（POST /api/notes）で共有する。
+ * どちらも保存すると図鑑のレシピ行に反映される。
+ */
+export function NoteEditor({ heading, note, ingredients, onSave, onCancel }: NoteEditorProps) {
   const { values, setters, toFields } = useNoteForm(note)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -42,16 +47,16 @@ export function NoteEditor({ note, ingredients, onSave, onCancel }: NoteEditorPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h1 className="text-lg font-bold">ノートを編集</h1>
+      <h1 className="text-lg font-bold">{heading}</h1>
       <Field label="タイトル" htmlFor="note-title" required>
         <Input id="note-title" required value={values.title} onChange={(e) => setters.setTitle(e.target.value)} disabled={isSaving} />
       </Field>
       <div className="flex gap-3">
         <Field label="何人分" htmlFor="note-servings">
-          <NoteSelect id="note-servings" value={values.servings} onChange={setters.setServings} options={servingsOptions(note.servings ?? '')} disabled={isSaving} />
+          <NoteSelect id="note-servings" value={values.servings} onChange={setters.setServings} options={servingsOptions(note?.servings ?? '')} disabled={isSaving} />
         </Field>
         <Field label="調理時間" htmlFor="note-cooking-time">
-          <NoteSelect id="note-cooking-time" value={values.cookingTime} onChange={setters.setCookingTime} options={cookingTimeOptions(note.cookingTimeMinutes?.toString() ?? '')} disabled={isSaving} />
+          <NoteSelect id="note-cooking-time" value={values.cookingTime} onChange={setters.setCookingTime} options={cookingTimeOptions(note?.cookingTimeMinutes?.toString() ?? '')} disabled={isSaving} />
         </Field>
       </div>
       <PlaceholderImagePicker value={values.imageKey} onChange={setters.setImageKey} />

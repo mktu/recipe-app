@@ -100,9 +100,9 @@ export interface CreateRecipeNoteInput {
   steps: string[]
   ingredientIds: string[]
   unmatchedIngredients?: UnmatchedIngredient[]
-  imageKey?: string
-  servings?: string
-  memo?: string
+  imageKey?: string | null
+  servings?: string | null
+  memo?: string | null
   cookingTimeMinutes?: number | null
 }
 

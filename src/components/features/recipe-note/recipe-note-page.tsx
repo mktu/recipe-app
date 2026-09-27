@@ -43,6 +43,7 @@ export function RecipeNotePage({ noteId, ingredients }: RecipeNotePageProps) {
       </Button>
       {isEditing ? (
         <NoteEditor
+          heading="ノートを編集"
           note={note}
           ingredients={ingredients}
           onSave={async (fields) => { await saveNote(fields); setIsEditing(false) }}

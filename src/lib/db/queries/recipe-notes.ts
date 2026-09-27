@@ -62,15 +62,7 @@ function toRecipeNoteError(err: unknown): RecipeNoteError {
  * RPC 側の任意引数は `DEFAULT NULL` なので、ここで落とした項目は NULL で上書きされる。
  * 更新時の取りこぼしを防ぐのは `UpdateRecipeNoteInput` 側の必須化（null を明示させる）。
  */
-type NoteRpcArgsInput = Omit<
-  CreateRecipeNoteInput,
-  'lineUserId' | 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'
-> & {
-  imageKey?: string | null
-  servings?: string | null
-  memo?: string | null
-  cookingTimeMinutes?: number | null
-}
+type NoteRpcArgsInput = Omit<CreateRecipeNoteInput, 'lineUserId'>
 
 function buildNoteRpcArgs(input: NoteRpcArgsInput, userId: string) {
   return {
