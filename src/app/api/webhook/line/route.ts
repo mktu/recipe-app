@@ -78,7 +78,7 @@ async function replyHelp(replyToken: string): Promise<void> {
 
 【レシピを保存する】
 レシピサイトのURLをこのトークに送るだけ！
-AIが自動で食材を解析して保存します。
+レシピ名と食材を自動で読み取って保存します。
 
 【レシピを探す】
 「探す」と送るとカテゴリから選べます。

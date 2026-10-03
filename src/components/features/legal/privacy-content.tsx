@@ -9,19 +9,7 @@ export function PrivacyContent() {
         本サービスにおける個人情報の取り扱いについて説明します。
       </p>
 
-      <Section title="1. 収集する情報">
-        <p>本サービスでは、以下の情報を収集します。</p>
-        <ul className="ml-4 list-disc space-y-1">
-          <li>LINEアカウント情報（ユーザーID、表示名）</li>
-          <li>ユーザーが登録したレシピURL</li>
-          <li>
-            登録URLから取得したレシピのメタデータ（タイトル、サイト名、画像URL、調理時間等）
-          </li>
-          <li>レシピに関連する食材タグ、メモ等の情報</li>
-          <li>レシピの閲覧回数・最終閲覧日時等の利用状況</li>
-          <li>サービス利用に関するログ情報</li>
-        </ul>
-      </Section>
+      <CollectedInfoSection />
 
       <Section title="2. 情報の利用目的">
         <p>収集した情報は、以下の目的で利用します。</p>
@@ -54,6 +42,27 @@ export function PrivacyContent() {
   )
 }
 
+function CollectedInfoSection() {
+  return (
+    <Section title="1. 収集する情報">
+      <p>本サービスでは、以下の情報を収集します。</p>
+      <ul className="ml-4 list-disc space-y-1">
+        <li>LINEアカウント情報（ユーザーID、表示名）</li>
+        <li>ユーザーが登録したレシピURL</li>
+        <li>
+          登録URLから取得したレシピのメタデータ（タイトル、サイト名、画像URL、調理時間等）
+        </li>
+        <li>レシピに関連する食材タグ、メモ等の情報</li>
+        <li>
+          ユーザーが作成したレシピノートの内容（タイトル、材料・分量、調理手順、人数、メモ等）
+        </li>
+        <li>レシピの閲覧回数・最終閲覧日時等の利用状況</li>
+        <li>サービス利用に関するログ情報</li>
+      </ul>
+    </Section>
+  )
+}
+
 function ExternalServicesSection() {
   return (
     <Section title="4. 外部サービスとの連携">
@@ -64,15 +73,15 @@ function ExternalServicesSection() {
         </li>
         <li>
           <strong>Google（Gemini API）</strong>:
-          レシピタイトルの検索最適化（埋め込みベクトル生成）および食材名のエイリアス自動生成のために利用。送信されるデータにはユーザーが登録したレシピサイトのタイトル・食材情報が含まれます。送信データはGoogleの利用規約に基づき、サービスの提供・改善およびAIモデルの学習に利用される場合があります（詳細はGoogleのプライバシーポリシーをご確認ください）
+          レシピタイトルの検索最適化（埋め込みベクトル生成）および食材名のエイリアス自動生成のために利用。送信されるデータには、ユーザーが登録したレシピのタイトル・食材名（レシピノートのタイトル・材料名を含みます）および検索キーワードが含まれます。レシピノートの調理手順・メモは送信しません。送信データはGoogleの利用規約に基づき、サービスの提供・改善およびAIモデルの学習に利用される場合があります（詳細はGoogleのプライバシーポリシーをご確認ください）
         </li>
         <li>
           <strong>Supabase</strong>:
           データベースホスティング・認証サービスとして利用。ユーザーデータおよびレシピデータを保管しています
         </li>
         <li>
-          <strong>Vercel Analytics</strong>:
-          サービス改善のためのアクセス解析に利用
+          <strong>Vercel Analytics / Speed Insights</strong>:
+          サービス改善のためのアクセス解析および表示速度の計測に利用
         </li>
       </ul>
       <p>
