@@ -21,8 +21,12 @@ export type Line =
   | { type: 'bullet'; text: string; indented: boolean }
   | { type: 'numbered'; text: string; indented: boolean }
   | { type: 'text'; text: string }
+  /** 表の行（`| 鶏むね肉 | 300g |`）。フォーマット違反なので中身は読まず、登録を止める */
+  | { type: 'table' }
 
 const HEADING = /^(#{1,6})\s+(.*?)\s*#*$/
+/** `|` で始まり `|` で終わる行。区切り行（`|---|`）も含む */
+const TABLE_ROW = /^\s*\|.*\|\s*$/
 const BULLET = /^\s*(?:[-*+・●○◯◦]|•)\s*(.*)$/
 /** `1.` `1)` `1．` `１、` `(1)` `（1）` `①` `Step 1:` */
 const NUMBERED =
@@ -56,6 +60,7 @@ function headingText(text: string): string {
 
 export function classifyLine(raw: string): Line {
   if (!raw.trim()) return { type: 'blank' }
+  if (TABLE_ROW.test(raw)) return { type: 'table' }
   const heading = raw.match(HEADING)
   if (heading) return headingLine(heading[1].length, headingText(heading[2]))
 

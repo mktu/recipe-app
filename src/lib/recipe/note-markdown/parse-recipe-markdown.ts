@@ -40,6 +40,7 @@ export function parseRecipeMarkdown(text: string): ParseRecipeMarkdownResult {
   const blockingReasons = [
     ...(title ? [] : ['タイトルがありません']),
     ...(ingredients.length > 0 ? [] : ['材料がありません']),
+    ...(hasTable(preamble, sections) ? [TABLE_REASON] : []),
   ]
   return { fields, warnings, registrable: blockingReasons.length === 0, blockingReasons }
 }
@@ -54,6 +55,16 @@ export function looksLikeRecipeMarkdown(text: string): boolean {
   const { sections } = segment(extractBodyLines(text))
   const kinds = new Set(sections.map((s) => s.kind))
   return kinds.has('ingredients') && kinds.has('steps')
+}
+
+/**
+ * 表はフォーマット違反として登録を止める（プロンプトで禁止している）。
+ * 読めた分だけ黙って登録すると、表にあった材料が抜けていることにユーザーが気付けない
+ */
+const TABLE_REASON = '表が含まれています。表を使わない形式で出力し直してください'
+
+function hasTable(preamble: Line[], sections: Section[]): boolean {
+  return [...preamble, ...sections.flatMap((s) => s.lines)].some((l) => l.type === 'table')
 }
 
 function linesOf(sections: Segments['sections'], kind: Section['kind']): Line[] {

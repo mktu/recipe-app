@@ -142,6 +142,41 @@ describe('parseRecipeMarkdown: 材料のグループ', () => {
   })
 })
 
+describe('parseRecipeMarkdown: 表（フォーマット違反）', () => {
+  const TABLE_REASON = '表が含まれています。表を使わない形式で出力し直してください'
+
+  it('材料が表なら登録を止め、表の行を材料に入れない', () => {
+    const md = '# a\n## 材料\n| 材料 | 分量 |\n|---|---|\n| 鶏むね肉 | 300g |\n## 手順\n1. 焼く'
+    const result = parseRecipeMarkdown(md)
+    expect(result.fields.ingredients).toEqual([])
+    expect(result.registrable).toBe(false)
+    expect(result.blockingReasons).toEqual(['材料がありません', TABLE_REASON])
+  })
+
+  it('材料の一部だけが表でも登録を止める（黙って一部だけ登録しない）', () => {
+    const md = '# a\n## 材料\n- 塩 少々\n| 鶏むね肉 | 300g |\n## 手順\n1. 焼く'
+    const result = parseRecipeMarkdown(md)
+    expect(result.fields.ingredients).toEqual([{ name: '塩', amount: '少々' }])
+    expect(result.registrable).toBe(false)
+    expect(result.blockingReasons).toEqual([TABLE_REASON])
+  })
+
+  it('材料以外のセクションの表でも登録を止める', () => {
+    const md = '# a\n## 材料\n- 塩\n## 手順\n1. ふる\n## メモ\n| 栄養 | 値 |'
+    expect(parseRecipeMarkdown(md).blockingReasons).toEqual([TABLE_REASON])
+  })
+
+  it('本文の外（終端マーカーの後ろ）の表は対象にしない', () => {
+    const md = '[レシピ入力]\n# a\n## 材料\n- 塩\n## 手順\n1. ふる\n[ここまで]\n| 補足 | 表 |'
+    expect(parseRecipeMarkdown(md).registrable).toBe(true)
+  })
+
+  it('材料名の中の「|」1つだけでは表とみなさない', () => {
+    const md = '# a\n## 材料\n- 塩|胡椒 少々\n## 手順\n1. ふる'
+    expect(parseRecipeMarkdown(md).registrable).toBe(true)
+  })
+})
+
 describe('parseRecipeMarkdown: 登録してよいかの判定', () => {
   it('どんな入力でも例外を投げない', () => {
     for (const text of ['', '   ', '```', '[レシピ入力]', '#', '## 材料\n## 手順', '鶏むね肉 レモン']) {
