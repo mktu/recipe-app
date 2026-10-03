@@ -42,6 +42,7 @@
 | ローカル環境のセットアップ・不調の調査 | `docs/SUPABASE_LOCAL.md` |
 | 機能の実装全般（プランニングの前） | `docs/ARCHITECTURE.md` |
 | スクレイピング対象サイトの追加・変更 | `docs/SCRAPING_POLICY.md` |
+| レシピノートの Markdown フォーマット・パーサ・AI 用プロンプトの変更 | `docs/NOTE_MARKDOWN_FORMAT.md` |
 
 > 特に `docs/OPERATIONS.md` には**判断を誤らせる類**の注意点が入っている
 > （例: `E2E Tests` は実質何も検証していないので、緑を品質の根拠にしてはいけない）。
