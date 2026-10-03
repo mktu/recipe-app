@@ -8,8 +8,17 @@
 /** AI 用プロンプトに出力させる接頭語。表記はこれを正とする */
 export const RECIPE_INPUT_PREFIX = '[レシピ入力]'
 
+/**
+ * 終端マーカー。AI 用プロンプトで最終行に出力させ、これより後ろ（締めの言葉）を捨てる。
+ * プロンプトで「Markdown 以外は出力しない」と指示しても締めの一文は漏れやすく、
+ * LINE はワンパスなので漏れるとメモに入ったまま登録される。無ければ今までどおり読む
+ */
+export const RECIPE_INPUT_END_MARKER = '[ここまで]'
+
 /** 括弧の表記ゆれ（[] / 【】 / 全角の［］）と前後の空白を許容する */
 const PREFIX_PATTERN = /^\s*[[［【]\s*レシピ入力\s*[\]］】]\s*/
+/** 終端マーカーは、それだけで1行を成すときに限る（手順の文中の言及で切らないため） */
+const END_MARKER_PATTERN = /^\s*[[［【]\s*ここまで\s*[\]］】]\s*$/
 
 const FENCE_PATTERN = /^\s*(```|~~~)/
 
@@ -32,10 +41,16 @@ export function hasRecipeInputPrefix(text: string): boolean {
  * パース対象の本文を行の配列で返す
  *
  * 1. 接頭語の行があれば、そこより前（前置き）を捨て、接頭語そのものを外す
- * 2. コードフェンスで囲まれていれば、最初のブロックの中身だけを取る
+ * 2. 終端マーカーの行があれば、そこから後ろ（締めの言葉）を捨てる
+ * 3. コードフェンスで囲まれていれば、最初のブロックの中身だけを取る
  */
 export function extractBodyLines(text: string): string[] {
-  return stripFence(stripPrefix(toLines(text)))
+  return stripFence(stripAfterEndMarker(stripPrefix(toLines(text))))
+}
+
+function stripAfterEndMarker(lines: string[]): string[] {
+  const index = lines.findIndex((line) => END_MARKER_PATTERN.test(line))
+  return index < 0 ? lines : lines.slice(0, index)
 }
 
 function stripPrefix(lines: string[]): string[] {

@@ -27,6 +27,18 @@ describe('parseRecipeMarkdown: 前置き・締めの言葉', () => {
     expect(warnings.map((w) => w.line)).toEqual(['いかがでしょうか？', 'ぜひ作ってみてください！'])
   })
 
+  it('終端マーカーがあれば、最後のメモに締めの言葉が入らない', () => {
+    const md = `[レシピ入力]\n${RECIPE}\n## メモ\n冷蔵で2日\n[ここまで]\nぜひ作ってみてください！`
+    const { fields, warnings } = parseRecipeMarkdown(md)
+    expect(fields.memo).toBe('冷蔵で2日')
+    expect(warnings).toEqual([])
+  })
+
+  it('終端マーカーが無ければ、最後のメモに締めの言葉が入る（既知の限界）', () => {
+    const md = `[レシピ入力]\n${RECIPE}\n## メモ\n冷蔵で2日\nぜひ作ってみてください！`
+    expect(parseRecipeMarkdown(md).fields.memo).toBe('冷蔵で2日\nぜひ作ってみてください！')
+  })
+
   it('タイトルの前にある前置きはタイトルにしない', () => {
     const md = `はい、作りましょう。\n${RECIPE}`
     expect(parseRecipeMarkdown(md).fields.title).toBe('豚の生姜焼き')

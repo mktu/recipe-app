@@ -49,6 +49,20 @@ describe('extractBodyLines', () => {
     expect(extractBodyLines('```markdown\n# a')).toEqual(['# a'])
   })
 
+  it('終端マーカーより後ろ（締めの言葉）を捨てる', () => {
+    expect(extractBodyLines('[レシピ入力]\n# a\n[ここまで]\nいかがでしょうか？')).toEqual(['', '# a'])
+    expect(extractBodyLines('# a\n【ここまで】\nいかが')).toEqual(['# a'])
+  })
+
+  it('終端マーカーがフェンスの中にあっても外にあっても中身を取る', () => {
+    expect(extractBodyLines('```\n[レシピ入力]\n# a\n[ここまで]\n```\nいかが')).toEqual(['', '# a'])
+    expect(extractBodyLines('[レシピ入力]\n```\n# a\n```\n[ここまで]\nいかが')).toEqual(['# a'])
+  })
+
+  it('文中の「[ここまで]」では切らない', () => {
+    expect(extractBodyLines('# a\n1. [ここまで] 混ぜる\n2. 焼く')).toEqual(['# a', '1. [ここまで] 混ぜる', '2. 焼く'])
+  })
+
   it('接頭語もフェンスも無ければそのまま返す', () => {
     expect(extractBodyLines('# a\n## 材料')).toEqual(['# a', '## 材料'])
   })
