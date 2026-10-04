@@ -13,11 +13,13 @@ const toHalfWidth = (s: string) => s.replace(/[０-９．]/g, (c) => String.from
 /**
  * 「20分」「1時間」「1時間30分」「1.5時間」「20〜30分」を分に直す。範囲は長いほうを取る。
  * 読めなければ null
+ *
+ * 範囲は記号で分けて後ろ側だけを読む。`30分〜1時間` のように単位がまたがっても、
+ * 後ろ側を単独の時間として解釈すれば長いほうになる。範囲の記号には全角チルダ `～` も含める
  */
 export function parseDurationMinutes(text: string): number | null {
   const normalized = toHalfWidth(text).replace(/\s/g, '')
-  const range = normalized.match(/^[\d.]+[〜~\-]([\d.]+.*)$/)
-  const target = range ? range[1] : normalized
+  const target = normalized.split(/[〜~～\-]/).at(-1) ?? ''
   const match = target.match(/^(?:([\d.]+)時間(?:半)?)?(?:([\d.]+)分)?/)
   if (!match || (!match[1] && !match[2])) return null
   const hours = Number(match[1] ?? 0) + (target.includes('時間半') ? 0.5 : 0)

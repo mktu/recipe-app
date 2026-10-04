@@ -74,7 +74,40 @@ describe('parseRecipeMarkdown: 記法の崩れ', () => {
 
   it('手順の折り返しと入れ子の箇条書きは前の手順の続きにする', () => {
     const md = '# a\n## 材料\n- 塩\n## 手順\n1. 鍋に湯を沸かし、\n塩を入れる\n2. 麺をゆでる\n   - 表示時間より1分短く'
-    expect(parseRecipeMarkdown(md).fields.steps).toEqual(['鍋に湯を沸かし、塩を入れる', '麺をゆでる表示時間より1分短く'])
+    expect(parseRecipeMarkdown(md).fields.steps).toEqual(['鍋に湯を沸かし、塩を入れる', '麺をゆでる。表示時間より1分短く'])
+  })
+
+  it('子箇条書きは句点を挟んでつなぐ（前が句読点で終わっていれば挟まない）', () => {
+    const md = '# a\n## 材料\n- 玉ねぎ\n## 手順\n1. 玉ねぎを炒める\n   - 弱火で20分\n   - 焦がさないように\n2. 塩をふる。\n   - 少しずつ'
+    expect(parseRecipeMarkdown(md).fields.steps).toEqual([
+      '玉ねぎを炒める。弱火で20分。焦がさないように',
+      '塩をふる。少しずつ',
+    ])
+  })
+
+  it('水平線（--- / *** / ___）を材料・手順にしない', () => {
+    const md = '# a\n## 材料\n- 鶏肉 300g\n\n---\n\n## 作り方\n1. 焼く\n\n* * *\n\n___'
+    const result = parseRecipeMarkdown(md)
+    expect(result.fields.ingredients).toEqual([{ name: '鶏肉', amount: '300g' }])
+    expect(result.fields.steps).toEqual(['焼く'])
+    expect(result.warnings).toEqual([])
+  })
+
+  it('【材料】（2人分）のように括弧の後ろに補足が続く見出しを認める', () => {
+    for (const heading of ['【材料】（2人分）', '**材料**（2人分）', '## 【材料】2人分']) {
+      const md = `# a\n${heading}\n- 大根 1/2本\n【作り方】\n1. 煮る`
+      const { fields, registrable } = parseRecipeMarkdown(md)
+      expect(fields.ingredients).toEqual([{ name: '大根', amount: '1/2本' }])
+      expect(fields.servings).toBe('2人分')
+      expect(registrable).toBe(true)
+    }
+  })
+
+  it('「下ごしらえ」も手順として読み、作り方と文書順につなぐ', () => {
+    const md = '# a\n## 材料\n- 豚肉\n## 下ごしらえ\n1. 筋を切る\n2. 生姜をすりおろす\n## 作り方\n1. 焼く\n2. タレを絡める'
+    const result = parseRecipeMarkdown(md)
+    expect(result.fields.steps).toEqual(['筋を切る', '生姜をすりおろす', '焼く', 'タレを絡める'])
+    expect(result.warnings).toEqual([])
   })
 
   it('太字を外す', () => {
@@ -127,6 +160,21 @@ describe('parseRecipeMarkdown: 材料のグループ', () => {
 
   it('太字だけの行をタイトルとして認める', () => {
     expect(parseRecipeMarkdown('**生姜焼き**\n## 材料\n- 豚肉').fields.title).toBe('生姜焼き')
+  })
+
+  it('◎ や ◆ で揃えた材料行を消さず、記号をグループとして分量の側に残す', () => {
+    const md = '# a\n## 材料\n- 大根 1/2本\n◎醤油 大さじ2\n◎みりん 大さじ2\n◆ 酒 50ml\n## 手順\n1. ◎を合わせる'
+    expect(parseRecipeMarkdown(md).fields.ingredients).toEqual([
+      { name: '大根', amount: '1/2本' },
+      { name: '醤油', amount: '大さじ2（◎）' },
+      { name: 'みりん', amount: '大さじ2（◎）' },
+      { name: '酒', amount: '50ml（◆）' },
+    ])
+  })
+
+  it('分量を含まない ◆ の行はこれまでどおりグループ見出しにする', () => {
+    const md = '# a\n## 材料\n◆合わせ調味料\n- 醤油 大さじ1\n## 手順\n1. 焼く'
+    expect(parseRecipeMarkdown(md).fields.ingredients).toEqual([{ name: '醤油', amount: '大さじ1（合わせ調味料）' }])
   })
 
   it('行頭の (A) をグループとして扱う', () => {

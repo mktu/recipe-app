@@ -7,7 +7,8 @@ export type SectionKind = 'ingredients' | 'steps' | 'memo'
 /** 見出しの別名。比較は小文字化・空白除去したうえで完全一致 */
 const SECTION_ALIASES: Record<SectionKind, string[]> = {
   ingredients: ['材料', '材料リスト', '食材', 'ingredients'],
-  steps: ['手順', '作り方', 'つくり方', '調理手順', 'steps', 'instructions', 'directions'],
+  /** AI は手順を「下ごしらえ」と「作り方」に分けがちなので、下ごしらえも手順に入れる（文書順に連結） */
+  steps: ['手順', '作り方', 'つくり方', '調理手順', '下ごしらえ', '下準備', '準備', 'steps', 'instructions', 'directions'],
   memo: ['メモ', 'ポイント', 'コツ', 'コツ・ポイント', 'ポイント・コツ', '備考', 'memo', 'notes', 'tips'],
 }
 
@@ -27,6 +28,11 @@ export type Line =
 const HEADING = /^(#{1,6})\s+(.*?)\s*#*$/
 /** `|` で始まり `|` で終わる行。区切り行（`|---|`）も含む */
 const TABLE_ROW = /^\s*\|.*\|\s*$/
+/**
+ * 水平線（`---` `***` `___`、間に空白があってもよい）。ChatGPT はセクションの間によく入れる。
+ * 箇条書きより先に判定しないと、`---` が「--」という材料・手順になる
+ */
+const HORIZONTAL_RULE = /^\s*([-*_])(?:\s*\1){2,}\s*$/
 const BULLET = /^\s*(?:[-*+・●○◯◦]|•)\s*(.*)$/
 /** `1.` `1)` `1．` `１、` `(1)` `（1）` `①` `Step 1:` */
 const NUMBERED =
@@ -35,6 +41,8 @@ const NUMBERED =
 const DECORATION = /^[\s*_■□◆◇▼▽【<＜[［]+|[\s*_】>＞\]］:：]+$/g
 /** 別名の後ろの補足。`材料（2人分）` */
 const ALIAS_WITH_NOTE = /^(.+?)(?:\s*[(（](.*)[)）])?$/
+/** 閉じ括弧の後ろに続く補足。`【材料】2人分`（飾りの開き括弧は外した後なので `材料】2人分`） */
+const ALIAS_WITH_BRACKET_NOTE = /^(.+?)[】\]］]\s*(.+)$/
 /** `#` 見出しに限り、空白区切りの補足も認める。`## 材料 2人分` */
 const ALIAS_WITH_SPACED_NOTE = /^(\S+?)\s+(.+)$/
 
@@ -59,7 +67,7 @@ function headingText(text: string): string {
 }
 
 export function classifyLine(raw: string): Line {
-  if (!raw.trim()) return { type: 'blank' }
+  if (!raw.trim() || HORIZONTAL_RULE.test(raw)) return { type: 'blank' }
   if (TABLE_ROW.test(raw)) return { type: 'table' }
   const heading = raw.match(HEADING)
   if (heading) return headingLine(heading[1].length, headingText(heading[2]))
@@ -90,10 +98,11 @@ function headingLine(level: number, text: string): Line {
  */
 function matchSection(raw: string, level: number | null): Line | null {
   const undecorated = raw.replace(DECORATION, '')
-  const patterns = level === null ? [ALIAS_WITH_NOTE] : [ALIAS_WITH_NOTE, ALIAS_WITH_SPACED_NOTE]
+  const patterns = [ALIAS_WITH_NOTE, ALIAS_WITH_BRACKET_NOTE, ...(level === null ? [] : [ALIAS_WITH_SPACED_NOTE])]
   for (const pattern of patterns) {
     const parts = undecorated.match(pattern)
-    const kind = parts && findSectionKind(parts[1])
+    // `【材料】（2人分）` は先頭の飾りしか外れないので、名前の側に残った閉じ括弧などをもう一度外す
+    const kind = parts && findSectionKind(parts[1].replace(DECORATION, ''))
     if (kind) return { type: 'section', kind, level, note: parts[2]?.trim() || null }
   }
   return null

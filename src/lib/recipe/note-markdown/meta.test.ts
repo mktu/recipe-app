@@ -13,6 +13,12 @@ describe('parseDurationMinutes', () => {
 
   it('範囲は長いほうを取る', () => {
     expect(parseDurationMinutes('20〜30分')).toBe(30)
+    expect(parseDurationMinutes('20～30分')).toBe(30)
+  })
+
+  it('単位をまたぐ範囲も長いほうを取る', () => {
+    expect(parseDurationMinutes('30分〜1時間')).toBe(60)
+    expect(parseDurationMinutes('30分〜1時間半')).toBe(90)
   })
 
   it('読めなければ null', () => {

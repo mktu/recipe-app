@@ -9,11 +9,16 @@ import type { IngredientRaw } from '@/types/recipe'
 
 const DIGIT = '[0-9０-９]'
 const QUALIFIER = '(?:約|およそ|各)?'
+/**
+ * 数字の続き。範囲の記号は `〜`（波ダッシュ）`~` に加え、Windows の IME が出す全角チルダ `～` も含める。
+ * `と` は数字に挟まれたときだけ（`大さじ1と1/2`）
+ */
+const DIGIT_CONTINUATION = '(?:[0-9０-９./／〜~～\\-・]|と(?=[0-9０-９]))*'
 
 /** 数字で始まる分量。`300g` `1/2個` `2〜3本` `1かけ（10g）` */
-const NUMERIC_AMOUNT = `${DIGIT}[0-9０-９./／〜~\\-・]*\\s*[^\\s0-9０-９]{0,6}(?:[(（][^)）]*[)）])?`
-/** 計量スプーン・カップ。`大さじ2` `小さじ1/2` `1カップ` */
-const SPOON_AMOUNT = `(?:大さじ|小さじ|カップ)\\s*${DIGIT}[0-9０-９./／・〜~]*(?:[(（][^)）]*[)）])?`
+const NUMERIC_AMOUNT = `${DIGIT}${DIGIT_CONTINUATION}\\s*[^\\s0-9０-９]{0,6}(?:[(（][^)）]*[)）])?`
+/** 計量スプーン・カップ。`大さじ2` `小さじ1/2` `大さじ1と1/2` `1カップ` */
+const SPOON_AMOUNT = `(?:大さじ|小さじ|カップ)\\s*${DIGIT}${DIGIT_CONTINUATION}(?:[(（][^)）]*[)）])?`
 /** 数字を含まない分量 */
 const WORD_AMOUNT =
   '少々|適量|適宜|少量|ひとつまみ|ひとつかみ|ひとかけ|お好みで|好みで|お好み|たっぷり|半分|1片'
@@ -76,15 +81,19 @@ const GROUP_LABEL = /^(?:[【<＜[［(（]([^】>＞\]］)）]{1,15})[】>＞\]�
 export function parseGroupLabel(text: string): string | null {
   const match = text.trim().match(GROUP_LABEL)
   if (!match) return null
+  // `◎醤油 大さじ2` は見出しではなく、記号で揃えた材料の行（日本語のレシピの定番）
+  if (match[2] && splitIngredientLine(match[2]).amount) return null
   return (match[1] ?? match[2] ?? match[3]).trim() || null
 }
 
 /** 行頭のグループ記号。`【A】醤油 大さじ1` `(A)みりん 大さじ1` */
 const INLINE_GROUP = /^[【[［(（<＜]([^】\]］)）>＞]{1,4})[】\]］)）>＞]\s*(.+)$/
+/** 行頭の記号で揃えた材料。`◎醤油 大さじ2`。手順で「◎を合わせる」と参照されるので記号をグループにする */
+const INLINE_SYMBOL_GROUP = /^([■□◆◇◎☆★])\s*(.+)$/
 
 /** 材料名の前にグループが書かれていれば分ける。名前に残すと照合で「A醤油」になって外れる */
 export function splitInlineGroup(text: string): { group: string | null; text: string } {
-  const match = text.match(INLINE_GROUP)
+  const match = text.match(INLINE_GROUP) ?? text.match(INLINE_SYMBOL_GROUP)
   return match ? { group: match[1].trim(), text: match[2] } : { group: null, text }
 }
 

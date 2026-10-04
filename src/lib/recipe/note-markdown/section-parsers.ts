@@ -59,7 +59,7 @@ export function parseStepLines(lines: Line[], warnings: ParseWarning[]): string[
   for (const line of lines) {
     const kind = classifyStepLine(line, attached, steps.length > 0)
     if (kind === 'new') steps.push(textOf(line))
-    if (kind === 'continuation') steps[steps.length - 1] += textOf(line)
+    if (kind === 'continuation') steps[steps.length - 1] = joinStep(steps[steps.length - 1], line)
     if (kind === 'skip') warnings.push({ message: '手順の番号が無い行を読み飛ばしました', line: textOf(line) })
     attached = kind === 'new' || kind === 'continuation'
   }
@@ -74,6 +74,20 @@ function classifyStepLine(line: Line, attached: boolean, hasStep: boolean): Step
   }
   if (line.type !== 'text') return 'ignore'
   return attached ? 'continuation' : 'skip'
+}
+
+const SENTENCE_END = /[。．.!！?？)）」』]$/
+
+/**
+ * 続きの行を前の手順につなぐ
+ *
+ * 地の文は折り返し（「鍋に湯を沸かし、」+「塩を入れる」）なのでそのままつなぐ。
+ * 子箇条書きは別の文なので、前の文が句読点で終わっていなければ「。」を挟む
+ */
+function joinStep(previous: string, line: Line): string {
+  const isSubItem = line.type === 'bullet' || line.type === 'numbered'
+  const separator = isSubItem && !SENTENCE_END.test(previous) ? '。' : ''
+  return previous + separator + textOf(line)
 }
 
 function textOf(line: Line): string {

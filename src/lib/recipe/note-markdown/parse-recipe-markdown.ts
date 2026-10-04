@@ -19,8 +19,8 @@ export function parseRecipeMarkdown(text: string): ParseRecipeMarkdownResult {
   const { preamble, sections } = segment(extractBodyLines(text))
 
   const title = readTitle(preamble, warnings)
-  const ingredients = parseIngredientLines(linesOf(sections, 'ingredients'), warnings)
-  const steps = parseStepLines(linesOf(sections, 'steps'), warnings)
+  const ingredients = sectionsOf(sections, 'ingredients').flatMap((s) => parseIngredientLines(s.lines, warnings))
+  const steps = sectionsOf(sections, 'steps').flatMap((s) => parseStepLines(s.lines, warnings))
   const memoLines = sections.filter((s) => s.kind === 'memo').map((s) => parseMemoLines(s.lines))
   const memo = memoLines.map((lines) => lines.join('\n')).filter(Boolean).join('\n\n')
   const metaTexts = [...preamble.flatMap(textOf), ...memoLines.flat()]
@@ -67,8 +67,12 @@ function hasTable(preamble: Line[], sections: Section[]): boolean {
   return [...preamble, ...sections.flatMap((s) => s.lines)].some((l) => l.type === 'table')
 }
 
-function linesOf(sections: Segments['sections'], kind: Section['kind']): Line[] {
-  return sections.filter((s) => s.kind === kind).flatMap((s) => s.lines)
+/**
+ * 同じ種類のセクションを文書順に返す（「下ごしらえ」と「作り方」はどちらも手順）。
+ * 読み取りはセクションごとに行い、番号の有無やグループがセクションをまたいで影響しないようにする
+ */
+function sectionsOf(sections: Segments['sections'], kind: Section['kind']): Section[] {
+  return sections.filter((s) => s.kind === kind)
 }
 
 function textOf(line: Line): string[] {

@@ -34,6 +34,16 @@ describe('splitIngredientLine', () => {
     expect(splitIngredientLine('鶏もも肉 1枚（300g）')).toEqual({ name: '鶏もも肉', amount: '1枚（300g）' })
   })
 
+  it('「大さじ1と1/2」と全角チルダ「～」の分量を分ける（名前に入ると食材照合に失敗する）', () => {
+    expect(splitIngredientLine('醤油 大さじ1と1/2')).toEqual({ name: '醤油', amount: '大さじ1と1/2' })
+    expect(splitIngredientLine('醤油大さじ1と1/2')).toEqual({ name: '醤油', amount: '大さじ1と1/2' })
+    expect(splitIngredientLine('トマト 2～3個')).toEqual({ name: 'トマト', amount: '2～3個' })
+  })
+
+  it('数字に挟まれていない「と」は分量にしない', () => {
+    expect(splitIngredientLine('塩とこしょう')).toEqual({ name: '塩とこしょう', amount: '' })
+  })
+
   it('分量が無ければ行全体を名前にする', () => {
     expect(splitIngredientLine('塩')).toEqual({ name: '塩', amount: '' })
     expect(splitIngredientLine('サラダ油')).toEqual({ name: 'サラダ油', amount: '' })
