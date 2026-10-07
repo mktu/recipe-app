@@ -29,6 +29,15 @@ PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用な�
 > 実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。
 > `npm run functions:build` を前段に追加して解消（詳細は `docs/EDGE_FUNCTIONS.md`）。
 
+### 単体テスト（vitest）は `CI` ジョブで走る
+
+`ci.yml` の `lint-and-build` が lint の後に `npm test` を実行する（#211）。それまでは
+CI に含まれておらず、**手元で誰かが回したときにしか検証されていなかった**。
+特に `src/lib/recipe/note-markdown/` のパーサは、LINE 経由だと確認画面なしで登録されるため、
+壊れても利用者側で気付きにくい。単体テストはここで止める前提で書く。
+
+環境変数・DB は不要（純粋なロジックのテストのみ）。`e2e/` は `vitest.config.ts` で除外済み。
+
 ### `E2E Tests` は develop / main への PR で走る
 
 Issue #37 でレシピ追加フローのテストを入れ、トリガーを `pull_request: [develop, main]` に、
@@ -59,11 +68,12 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 
 ### CI の Node と、ローカル / 本番の Node がずれている
 
-`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは軒並み `node-version: '20'` 固定**。
-`e2e.yml` だけは `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
+`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは元々 `node-version: '20'` 固定**だった。
+`e2e.yml` は `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
 `@supabase/supabase-js` の `createClient()` が `RealtimeClient` の初期化で落ちるため。
+`ci.yml` も #211 で `.nvmrc` に揃えた（本番と同じ Node で build・単体テストを通すため）。
 
-残り（`ci.yml` / `test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
+残り（`test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
 **ローカルで通ったコードが CI だけ落ちる**余地が残っているので、揃えるかは要判断。
 
 ### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
