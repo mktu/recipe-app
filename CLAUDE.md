@@ -81,6 +81,7 @@
 
 **CI チェック（PR 時に自動実行）:**
 - `npm run lint`
+- `npm test`（vitest。単体テスト）
 - `npm run build`
 - `npm run test:e2e`（Playwright。develop / main 向けの PR で走る。draft でも走る）
 - マイグレーションテスト（DB変更時のみ）

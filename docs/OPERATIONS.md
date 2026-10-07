@@ -59,11 +59,12 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 
 ### CI の Node と、ローカル / 本番の Node がずれている
 
-`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは軒並み `node-version: '20'` 固定**。
-`e2e.yml` だけは `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
+`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは元々 `node-version: '20'` 固定**だった。
+`e2e.yml` は `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
 `@supabase/supabase-js` の `createClient()` が `RealtimeClient` の初期化で落ちるため。
+`ci.yml` も #211 で `.nvmrc` に揃えた（本番と同じ Node で build・単体テストを通すため）。
 
-残り（`ci.yml` / `test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
+残り（`test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
 **ローカルで通ったコードが CI だけ落ちる**余地が残っているので、揃えるかは要判断。
 
 ### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
