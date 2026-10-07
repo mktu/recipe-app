@@ -29,15 +29,6 @@ PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用な�
 > 実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。
 > `npm run functions:build` を前段に追加して解消（詳細は `docs/EDGE_FUNCTIONS.md`）。
 
-### 単体テスト（vitest）は `CI` ジョブで走る
-
-`ci.yml` の `lint-and-build` が lint の後に `npm test` を実行する（#211）。それまでは
-CI に含まれておらず、**手元で誰かが回したときにしか検証されていなかった**。
-特に `src/lib/recipe/note-markdown/` のパーサは、LINE 経由だと確認画面なしで登録されるため、
-壊れても利用者側で気付きにくい。単体テストはここで止める前提で書く。
-
-環境変数・DB は不要（純粋なロジックのテストのみ）。`e2e/` は `vitest.config.ts` で除外済み。
-
 ### `E2E Tests` は develop / main への PR で走る
 
 Issue #37 でレシピ追加フローのテストを入れ、トリガーを `pull_request: [develop, main]` に、
