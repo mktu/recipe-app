@@ -2,6 +2,7 @@ import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage } from './flex-message'
 import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './recipe-lists'
 import { toCard } from './recipe-card-mapper'
+import { replyErrorText } from './reply-error'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
@@ -61,21 +62,6 @@ export async function handleSearchCategoryPrompt(
 
 async function replyText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
   await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
-}
-
-/**
- * catch 内からのエラー通知用。失敗しても投げない
- *
- * 本命の reply が失敗した時点で replyToken が使えなくなっていることがあり、
- * そのまま投げると webhook 全体が 500 になってユーザーには「既読のみ・無反応」に見える。
- * ここで握ってログに残せば、少なくとも原因が追える形で終われる。
- */
-async function replyErrorText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
-  try {
-    await replyText(client, replyToken, text)
-  } catch (err) {
-    console.error('[LINE Webhook] エラー通知の返信にも失敗:', err)
-  }
 }
 
 /** よく作るレシピを返す（view_count 上位） */

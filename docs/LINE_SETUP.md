@@ -143,6 +143,17 @@ LIFF を閉じると、リダイレクトしただけの**空白ページが下�
 > ローカルの DevAuth（`NEXT_PUBLIC_LIFF_ID` 空）は LIFF を丸ごとバイパスするので、この経路は手元では検証できない。
 > staging の実機で確かめる。
 
+### テキストメッセージの振り分け順（#208）
+
+キーワード（完全一致）→ **接頭語 `[レシピ入力]` 付きのレシピ Markdown（ノート登録）→ 接頭語の無いレシピらしい文（接頭語を付けるよう案内）**
+→ URL（URL 登録）→ それ以外（検索）。判定は `resolveMessageRoute`（`src/lib/line/message-route.ts`）。
+
+**レシピ Markdown の判定は URL より前に置くこと。** AI は参考 URL を本文に含めがちで、後に回すと URL 登録に流れる。
+登録してよいかはパーサの `registrable` だけで決め、Webhook 側で条件を書き直さない（`docs/NOTE_MARKDOWN_FORMAT.md`）。
+
+ローカルでは `npm run test:bot -- --file recipe.md` で、複数行の Markdown をファイルから流して確かめられる
+（返信はモック。登録は**ローカル DB に実際に書き込まれる**ので、確認後に消す）。
+
 ### staging の Webhook URL
 
 ```
