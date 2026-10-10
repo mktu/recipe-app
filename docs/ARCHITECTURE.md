@@ -241,7 +241,7 @@ graph TB
 | `/api/recipes/[id]` | GET/PATCH/DELETE | IDトークン | レシピ詳細取得・更新（メモ）・削除 |
 | `/api/recipes/list` | POST | IDトークン | 一覧取得（Edge Function経由） |
 | `/api/recipes/parse` | POST | IDトークン | URL解析（JSON-LD / __NEXT_DATA__ / OGP） |
-| `/api/notes` | POST | IDトークン | レシピノート作成（ノート行と図鑑のレシピ行を対で作る。食材 ID はサーバー側で材料名から解決、`imageKey` は `parseNoteFields` で検証し不正なら 400） |
+| `/api/notes` | POST | IDトークン | レシピノート作成（ノート行と図鑑のレシピ行を対で作る。食材 ID はサーバー側で材料名から解決し、この処理は LINE の Markdown 登録と共通の `saveRecipeNote`。`imageKey` は `parseNoteFields` で検証し不正なら 400） |
 | `/api/notes/[id]` | GET/PUT | IDトークン | レシピノートの取得・更新（PUT は全項目置き換え。食材 ID はサーバー側で材料名から解決） |
 | `/api/track/recipe/[id]` | GET/POST | POSTのみIDトークン | 閲覧記録（GET: LINE用リダイレクト・認証不要、POST: LIFF用） |
 | `/api/webhook/line` | POST | LINE署名検証 | LINE Webhook（`validateSignature`） |
@@ -461,7 +461,7 @@ graph TB
 
 ### ユーザー登録フロー
 
-ユーザーは **LINE Bot を友達追加したタイミング**で登録される（下図）。加えて、Webhook 側の `ensureUser()` は **URL 送信時・検索メッセージ受信時**にも呼ばれるため、友達追加イベントを取りこぼした場合でも初回操作時に遅延登録される（`src/app/api/webhook/line/route.ts`、`src/lib/line/url-handler.ts`、`src/lib/line/search-handler.ts`）。
+ユーザーは **LINE Bot を友達追加したタイミング**で登録される（下図）。加えて、Webhook 側の `ensureUser()` は **URL 送信時・検索メッセージ受信時・レシピ Markdown の登録時**にも呼ばれるため、友達追加イベントを取りこぼした場合でも初回操作時に遅延登録される（`src/app/api/webhook/line/route.ts`、`src/lib/line/url-handler.ts`、`src/lib/line/search-handler.ts`、`src/lib/line/note-import-handler.ts`）。
 
 ```mermaid
 sequenceDiagram
@@ -479,7 +479,7 @@ sequenceDiagram
     LINE-->>User: ウェルカムメッセージ
 ```
 
-> follow イベント以外（URL 送信・検索）での登録は `ensureUser()` による冪等な確保処理（存在すれば何もしない）。ウェルカムメッセージは follow イベント時のみ送信される。
+> follow イベント以外（URL 送信・検索・レシピ Markdown）での登録は `ensureUser()` による冪等な確保処理（存在すれば何もしない）。ウェルカムメッセージは follow イベント時のみ送信される。
 
 ### LINE LIFF 認証フロー
 

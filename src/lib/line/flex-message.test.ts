@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createVerticalListMessage, type RecipeCardData } from './flex-message'
+import { createSingleRecipeMessage, createVerticalListMessage, type RecipeCardData } from './flex-message'
 
 /** LINE のアクション label 上限。超えると reply 全体が 400 で落ちる */
 const ACTION_LABEL_MAX = 40
@@ -52,5 +52,16 @@ describe('createVerticalListMessage', () => {
     const message = createVerticalListMessage([card(longTitle)], 'https://liff.line.me/x', 1)
 
     expect(JSON.stringify(message)).toContain(longTitle)
+  })
+})
+
+describe('createSingleRecipeMessage', () => {
+  it('タイトルが長くても altText を400文字以内に収める（見出しの無いノートは本文の行がタイトルになる）', () => {
+    const message = createSingleRecipeMessage(card('あ'.repeat(1000)))
+    expect(message.altText.length).toBeLessThanOrEqual(400)
+  })
+
+  it('短いタイトルの altText はそのまま', () => {
+    expect(createSingleRecipeMessage(card('だしたまぶっかけ')).altText).toBe('レシピ: だしたまぶっかけ')
   })
 })

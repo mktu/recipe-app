@@ -5,6 +5,7 @@
  *   npm run test:bot "食材"
  *   npm run test:bot "鶏肉 玉ねぎ"
  *   npm run test:bot "使い方"
+ *   npm run test:bot -- --file recipe.md   # [レシピ入力] 付きの Markdown はノートとして登録される
  *
  * 前提条件:
  *   - ローカル Supabase が起動していること (supabase start)
@@ -39,6 +40,8 @@ async function main() {
   const { isIngredientSearchKeyword, handleIngredientSearchPrompt, handleSearch, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } = await import(
     '../src/lib/line/search-handler'
   )
+  const { resolveMessageRoute } = await import('../src/lib/line/message-route')
+  const { handleRecipeNoteImport, replyRecipePrefixHint } = await import('../src/lib/line/note-import-handler')
   const { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites } = await import(
     '../src/lib/line/category-handler'
   )
@@ -132,7 +135,12 @@ async function main() {
     process.exit(1)
   }
 
-  const text = args[0]
+  // --file <path>: 複数行のメッセージ（レシピ Markdown など）をファイルから読む
+  if (args[0] === '--file' && !args[1]) {
+    console.error('使い方: npm run test:bot -- --file <Markdown のパス>')
+    process.exit(1)
+  }
+  const text = args[0] === '--file' ? fs.readFileSync(args[1], 'utf-8') : args[0]
   console.log('🧪 LINE Bot Response Test')
   console.log('='.repeat(40))
   console.log(`📤 Input: "${text}"`)
@@ -189,9 +197,16 @@ AIが自動で食材を解析して保存します。
       console.log('\n🔀 Route: Ingredient Search Prompt')
       await handleIngredientSearchPrompt(client, replyToken, LINE_USER_ID)
     } else {
-      // 通常の検索
-      console.log('\n🔀 Route: Search')
-      await handleSearch(client, replyToken, LINE_USER_ID, text, ensureUser)
+      // キーワード以外は Webhook と同じく resolveMessageRoute で振り分ける（URL 登録はここでは扱わない）
+      const route = resolveMessageRoute(text)
+      console.log(`\n🔀 Route: ${route}`)
+      if (route === 'note') {
+        await handleRecipeNoteImport(client, replyToken, LINE_USER_ID, text, ensureUser)
+      } else if (route === 'note-hint') {
+        await replyRecipePrefixHint(client, replyToken)
+      } else {
+        await handleSearch(client, replyToken, LINE_USER_ID, text, ensureUser)
+      }
     }
 
     const response = getResponse()

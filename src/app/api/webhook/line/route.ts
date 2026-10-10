@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/db/client'
 import { handleSearch, isIngredientSearchKeyword, handleIngredientSearchPrompt, isRecentlyViewedKeyword, isMostViewedKeyword, handleRecentlyViewed, handleMostViewed } from '@/lib/line/search-handler'
 import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFewIngredientsKeyword, isOkiniiriKeyword, isRecentlyAddedKeyword, handleSearchCategoryPrompt, handleYokuTsukuru, handleShortCookingTime, handleFewIngredients, handleFavorites, handleRecentlyAdded } from '@/lib/line/category-handler'
 import { replyTest, processUrl } from '@/lib/line/url-handler'
+import { extractUrls, resolveMessageRoute, type MessageRoute } from '@/lib/line/message-route'
+import { handleRecipeNoteImport, replyRecipePrefixHint } from '@/lib/line/note-import-handler'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -13,12 +15,6 @@ const config = {
 const client = new messagingApi.MessagingApiClient({
   channelAccessToken: config.channelAccessToken,
 })
-
-/** テキストからURLを抽出 */
-function extractUrls(text: string): string[] {
-  const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/g
-  return text.match(urlRegex) || []
-}
 
 /** ヘルプキーワードかどうかを判定 */
 function isHelpKeyword(text: string): boolean {
@@ -140,6 +136,17 @@ async function handleFollowEvent(event: webhook.Event): Promise<void> {
   })
 }
 
+/** キーワード以外のメッセージを、行き先（`resolveMessageRoute`）ごとに処理 */
+function handleByRoute(text: string, replyToken: string, userId: string): Promise<void> {
+  const handlers: Record<MessageRoute, () => Promise<void>> = {
+    note: () => handleRecipeNoteImport(client, replyToken, userId, text, ensureUser),
+    'note-hint': () => replyRecipePrefixHint(client, replyToken),
+    url: () => processUrl(client, replyToken, userId, extractUrls(text)[0], ensureUser),
+    search: () => handleSearch(client, replyToken, userId, text, ensureUser),
+  }
+  return handlers[resolveMessageRoute(text)]()
+}
+
 /** メッセージイベントを処理 */
 async function handleMessageEvent(event: webhook.Event): Promise<void> {
   if (event.type !== 'message' || event.message.type !== 'text') return
@@ -150,13 +157,7 @@ async function handleMessageEvent(event: webhook.Event): Promise<void> {
 
   if (await handleKeyword(text, replyToken, userId)) return
 
-  const urls = extractUrls(text)
-  if (urls.length > 0) {
-    await processUrl(client, replyToken, userId, urls[0], ensureUser)
-    return
-  }
-
-  await handleSearch(client, replyToken, userId, text, ensureUser)
+  await handleByRoute(text, replyToken, userId)
 }
 
 /**

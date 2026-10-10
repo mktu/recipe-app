@@ -5,6 +5,7 @@ import { searchRecipesForBot, SearchRecipeResult } from './search-recipes'
 import { fetchRecentlyViewedForBot, fetchMostViewedForBot } from './recipe-lists'
 import { buildIngredientQuickReply } from './quick-reply'
 import { toCard } from './recipe-card-mapper'
+import { replyErrorText, replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 type ReplyParams = { client: MessagingApiClient; replyToken: string }
@@ -43,24 +44,6 @@ function buildLiffUrl(searchText: string): string {
   return `${baseUrl}?${new URLSearchParams({ q: trimmed }).toString()}`
 }
 
-async function replyText(params: ReplyParams, text: string): Promise<void> {
-  await params.client.replyMessage({ replyToken: params.replyToken, messages: [{ type: 'text', text }] })
-}
-
-/**
- * catch 内からのエラー通知用。失敗しても投げない
- *
- * 本命の reply が失敗した時点で replyToken が使えなくなっていることがあり、
- * そのまま投げると webhook 全体が 500 になってユーザーには「既読のみ・無反応」に見える。
- */
-async function replyErrorText(params: ReplyParams, text: string): Promise<void> {
-  try {
-    await replyText(params, text)
-  } catch (err) {
-    console.error('[LINE Webhook] エラー通知の返信にも失敗:', err)
-  }
-}
-
 async function replyWithRecipes(
   params: ReplyParams,
   recipes: SearchRecipeResult[],
@@ -88,21 +71,21 @@ export async function handleSearch(
     const query = await parseSearchQuery(text)
 
     if (isEmptyQuery(query)) {
-      await replyText(params, 'レシピURLを送ってください 🍳\n\n食材名やキーワードで検索もできます。')
+      await replyText(params.client, params.replyToken, 'レシピURLを送ってください 🍳\n\n食材名やキーワードで検索もできます。')
       return
     }
 
     const recipes = await searchRecipesForBot(lineUserId, query, 10)
 
     if (recipes.length === 0) {
-      await replyText(params, '該当するレシピが見つかりませんでした 🔍')
+      await replyText(params.client, params.replyToken, '該当するレシピが見つかりませんでした 🔍')
       return
     }
 
     await replyWithRecipes(params, recipes, text)
   } catch (err) {
     console.error('[LINE Webhook] Search error:', err)
-    await replyErrorText(params, '検索中にエラーが発生しました。')
+    await replyErrorText(params.client, params.replyToken, '検索中にエラーが発生しました。')
   }
 }
 
@@ -116,7 +99,7 @@ export async function handleRecentlyViewed(
   try {
     const recipes = await fetchRecentlyViewedForBot(lineUserId)
     if (recipes.length === 0) {
-      await replyText(params, 'まだ閲覧履歴がありません。検索してレシピを見てみましょう！')
+      await replyText(params.client, params.replyToken, 'まだ閲覧履歴がありません。検索してレシピを見てみましょう！')
       return
     }
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
@@ -126,7 +109,7 @@ export async function handleRecentlyViewed(
     })
   } catch (err) {
     console.error('[LINE Webhook] Recently viewed error:', err)
-    await replyErrorText(params, '閲覧履歴の取得中にエラーが発生しました。')
+    await replyErrorText(params.client, params.replyToken, '閲覧履歴の取得中にエラーが発生しました。')
   }
 }
 
@@ -140,7 +123,7 @@ export async function handleMostViewed(
   try {
     const recipes = await fetchMostViewedForBot(lineUserId)
     if (recipes.length === 0) {
-      await replyText(params, 'まだ閲覧履歴がありません。検索してレシピを見てみましょう！')
+      await replyText(params.client, params.replyToken, 'まだ閲覧履歴がありません。検索してレシピを見てみましょう！')
       return
     }
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
@@ -150,7 +133,7 @@ export async function handleMostViewed(
     })
   } catch (err) {
     console.error('[LINE Webhook] Most viewed error:', err)
-    await replyErrorText(params, 'よく見るレシピの取得中にエラーが発生しました。')
+    await replyErrorText(params.client, params.replyToken, 'よく見るレシピの取得中にエラーが発生しました。')
   }
 }
 
