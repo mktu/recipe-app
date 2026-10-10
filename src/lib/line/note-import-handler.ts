@@ -2,13 +2,9 @@ import type { messagingApi } from '@line/bot-sdk'
 import { parseRecipeMarkdown } from '@/lib/recipe/note-markdown/parse-recipe-markdown'
 import { saveRecipeNote } from '@/lib/recipe/save-recipe-note'
 import { buildNotRegistrableText, buildPrefixHintText, buildRegisteredMessages } from './note-import-messages'
-import { replyErrorText } from './reply-error'
+import { pushTextSafely, replyErrorText, replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
-
-async function replyText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
-  await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
-}
 
 /**
  * 接頭語付きのレシピ Markdown をノートとして登録し、結果を返信する（#208）
@@ -34,7 +30,7 @@ export async function handleRecipeNoteImport(
     const { data, error } = await saveRecipeNote(lineUserId, parsed.fields)
     if (error || !data) throw new Error(error?.message ?? 'レシピノートの作成に失敗しました')
 
-    await replyRegistered(client, replyToken, buildRegisteredMessages(parsed.fields, parsed.warnings, data))
+    await replyRegistered(client, replyToken, lineUserId, buildRegisteredMessages(parsed.fields, parsed.warnings, data))
   } catch (err) {
     console.error('[LINE Webhook] Note import error:', err)
     await replyErrorText(client, replyToken, '⚠️ レシピノートの登録に失敗しました。時間をおいてもう一度送ってください。')
@@ -42,19 +38,22 @@ export async function handleRecipeNoteImport(
 }
 
 /**
- * 登録済みの結果を返信する。ここでの失敗を「登録に失敗」と伝えると、
- * ユーザーが送り直して同じノートが2件できるので、登録はできたことを伝える
+ * 登録済みの結果を返信する
+ *
+ * ここでの失敗を「登録に失敗」と伝えたり、無反応にしたりすると、ユーザーが送り直して同じノートが2件できる。
+ * 失敗した reply の replyToken は再利用できないので、「登録はできた」ことは push で伝える
  */
 async function replyRegistered(
   client: MessagingApiClient,
   replyToken: string,
+  lineUserId: string,
   messages: messagingApi.Message[]
 ): Promise<void> {
   try {
     await client.replyMessage({ replyToken, messages })
   } catch (err) {
     console.error('[LINE Webhook] Note import reply error:', err)
-    await replyErrorText(client, replyToken, '✅ レシピノートは登録しました。結果の表示に失敗したので、レシピ一覧から確認してください。')
+    await pushTextSafely(client, lineUserId, '✅ レシピノートは登録しました。結果の表示に失敗したので、レシピ一覧から確認してください。')
   }
 }
 

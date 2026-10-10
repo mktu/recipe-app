@@ -1,5 +1,6 @@
 import type { messagingApi } from '@line/bot-sdk'
 import type { RecipeNoteResult } from '@/lib/db/queries/recipe-notes'
+import { NOTE_SOURCE_NAME } from '@/lib/recipe/note-source-name'
 import { RECIPE_INPUT_PREFIX } from '@/lib/recipe/note-markdown/prefix'
 import type { ParseWarning } from '@/lib/recipe/note-markdown/types'
 import type { RecipeNoteFields } from '@/types/recipe'
@@ -7,9 +8,6 @@ import { createSingleRecipeMessage } from './flex-message'
 import { toRecipeCardUrl } from './track-redirect'
 
 type Message = messagingApi.Message
-
-/** ノート経由のレシピの `source_name`。`create_recipe_note` RPC が書き込む値と同じ */
-const NOTE_SOURCE_NAME = 'マイレシピ'
 
 /**
  * 返信に載せる警告の上限。崩れた入力だと警告が何十件も出ることがあり、
@@ -60,11 +58,15 @@ export function buildNotRegistrableText(blockingReasons: string[]): string {
   ].join('\n\n')
 }
 
-/** 接頭語が無いレシピらしい文への案内。検索には流さない */
+/**
+ * 接頭語が無いレシピらしい文への案内。検索には流さない
+ *
+ * 接頭語は**文中に置き、行頭には出さない。** 行頭にあると、案内をそのまま送り返されたときに
+ * ノート登録として扱われ「タイトルがありません」が返る（接頭語は行頭にあるときだけ認めるため）
+ */
 export function buildPrefixHintText(): string {
   return [
-    '📝 レシピを登録したいときは、1行目に次の文字を付けて送ってください。',
-    RECIPE_INPUT_PREFIX,
+    `📝 レシピを登録したいときは、1行目に ${RECIPE_INPUT_PREFIX} と書いて送ってください。`,
     '材料や食材で検索したいときは、食材名だけを送ってください。',
   ].join('\n\n')
 }

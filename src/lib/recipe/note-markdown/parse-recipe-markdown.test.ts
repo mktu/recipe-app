@@ -46,8 +46,18 @@ describe('parseRecipeMarkdown: 想定フォーマット', () => {
   })
 
   it('接頭語の有無どちらでも同じ結果になる（LINE #208 と Web #178 の両方から来る）', () => {
-    const withPrefix = parseRecipeMarkdown(`[レシピ入力]\n${BASIC}`)
+    const withPrefix = parseRecipeMarkdown(`[レシピ入力]\n${BASIC}\n[ここまで]`)
     expect(withPrefix).toEqual(parseRecipeMarkdown(BASIC))
+  })
+
+  it('接頭語があるのに終端マーカーが無ければ、途中で切れた可能性を警告の先頭に出す（登録は止めない）', () => {
+    const result = parseRecipeMarkdown(`[レシピ入力]\n${BASIC}`)
+    expect(result.registrable).toBe(true)
+    expect(result.warnings[0].message).toContain('[ここまで]')
+  })
+
+  it('接頭語も終端マーカーも無い入力（手で書いた Markdown）には切れの警告を出さない', () => {
+    expect(parseRecipeMarkdown(BASIC).warnings).toEqual([])
   })
 
   it('タイトル直下のメタ行から調理時間と人数を取る', () => {

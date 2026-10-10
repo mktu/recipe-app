@@ -20,12 +20,15 @@ export function extractUrls(text: string): string[] {
 /**
  * 行き先を決める。キーワード判定（完全一致）の後に呼ぶ
  *
- * **レシピ Markdown の判定は URL より前。** AI は参考 URL を本文に含めることがあり、
- * 後に回すと URL 登録に流れてしまう。接頭語の無いレシピらしい文も同じ理由で URL より前に見る。
+ * - **接頭語付きの判定は URL より前。** AI は参考 URL を本文に含めることがあり、
+ *   後に回すと URL 登録に流れてしまう
+ * - **接頭語の無いレシピらしい文の判定は URL より後。** `looksLikeRecipeMarkdown` は `【材料】` `**作り方**`
+ *   のような見出しも拾うので、レシピサイトの共有文（本文＋URL）まで案内に回り、従来の URL 登録が黙って変わる。
+ *   AI の出力はプロンプト（#214）経由でほぼ接頭語が付くので、こちらを優先しても失うものは小さい
  */
 export function resolveMessageRoute(text: string): MessageRoute {
   if (hasRecipeInputPrefix(text)) return 'note'
-  if (looksLikeRecipeMarkdown(text)) return 'note-hint'
   if (extractUrls(text).length > 0) return 'url'
+  if (looksLikeRecipeMarkdown(text)) return 'note-hint'
   return 'search'
 }

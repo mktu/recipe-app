@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { resolveMessageRoute } from './message-route'
+import { buildPrefixHintText } from './note-import-messages'
+import { looksLikeRecipeMarkdown } from '@/lib/recipe/note-markdown/parse-recipe-markdown'
 
 const RECIPE_BODY = `# 鶏むね肉のレモン蒸し
 
@@ -29,8 +31,14 @@ describe('resolveMessageRoute', () => {
     expect(resolveMessageRoute(RECIPE_BODY)).toBe('note-hint')
   })
 
-  it('接頭語の無いレシピらしい文は、URL を含んでいても案内', () => {
-    expect(resolveMessageRoute(`${RECIPE_BODY}\n\n参考: https://example.com/recipe/123`)).toBe('note-hint')
+  it('接頭語の無いレシピらしい文でも、URL を含めば従来どおり URL 登録（レシピサイトの共有文）', () => {
+    const shared = '【材料】\n豚肉 200g\n【作り方】\n1. 焼く\nhttps://cookpad.com/recipe/123'
+    expect(looksLikeRecipeMarkdown(shared)).toBe(true)
+    expect(resolveMessageRoute(shared)).toBe('url')
+  })
+
+  it('案内文をそのまま送り返されてもノート登録にしない', () => {
+    expect(resolveMessageRoute(buildPrefixHintText())).not.toBe('note')
   })
 
   it('URL だけなら URL 登録', () => {

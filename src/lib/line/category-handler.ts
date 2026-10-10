@@ -2,7 +2,7 @@ import { messagingApi } from '@line/bot-sdk'
 import { createVerticalListMessage } from './flex-message'
 import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './recipe-lists'
 import { toCard } from './recipe-card-mapper'
-import { replyErrorText } from './reply-error'
+import { replyErrorText, replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
@@ -58,10 +58,6 @@ export async function handleSearchCategoryPrompt(
       },
     ],
   })
-}
-
-async function replyText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
-  await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
 }
 
 /** よく作るレシピを返す（view_count 上位） */

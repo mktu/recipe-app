@@ -79,7 +79,9 @@ describe('buildNotRegistrableText', () => {
 })
 
 describe('buildPrefixHintText', () => {
-  it('接頭語を単独の行で示す（そのままコピーできるように）', () => {
-    expect(buildPrefixHintText().split('\n')).toContain('[レシピ入力]')
+  it('接頭語を示すが、行頭には置かない（送り返されてもノート登録にならない）', () => {
+    const text = buildPrefixHintText()
+    expect(text).toContain('[レシピ入力]')
+    expect(text.split('\n').some((line) => line.trimStart().startsWith('[レシピ入力]'))).toBe(false)
   })
 })

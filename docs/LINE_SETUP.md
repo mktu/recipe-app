@@ -145,11 +145,17 @@ LIFF を閉じると、リダイレクトしただけの**空白ページが下�
 
 ### テキストメッセージの振り分け順（#208）
 
-キーワード（完全一致）→ **接頭語 `[レシピ入力]` 付きのレシピ Markdown（ノート登録）→ 接頭語の無いレシピらしい文（接頭語を付けるよう案内）**
-→ URL（URL 登録）→ それ以外（検索）。判定は `resolveMessageRoute`（`src/lib/line/message-route.ts`）。
+キーワード（完全一致）→ **接頭語 `[レシピ入力]` 付きのレシピ Markdown（ノート登録）** → URL（URL 登録）
+→ **接頭語の無いレシピらしい文（接頭語を付けるよう案内）** → それ以外（検索）。
+判定は `resolveMessageRoute`（`src/lib/line/message-route.ts`）。
 
-**レシピ Markdown の判定は URL より前に置くこと。** AI は参考 URL を本文に含めがちで、後に回すと URL 登録に流れる。
+- **接頭語付きの判定は URL より前。** AI は参考 URL を本文に含めがちで、後に回すと URL 登録に流れる
+- **接頭語の無いレシピらしい文は URL より後。** `looksLikeRecipeMarkdown` は `【材料】` なども見出しとして拾うので、
+  前に置くとレシピサイトの共有文（本文＋URL）が URL 登録されなくなる
 登録してよいかはパーサの `registrable` だけで決め、Webhook 側で条件を書き直さない（`docs/NOTE_MARKDOWN_FORMAT.md`）。
+
+**登録後の返信が失敗したときだけ push で「登録はできた」と伝える。** 失敗した reply の replyToken は
+再利用できないので `replyErrorText` では届かず、無反応に見えて送り直され、ノートが重複する（`pushTextSafely`）。
 
 ローカルでは `npm run test:bot -- --file recipe.md` で、複数行の Markdown をファイルから流して確かめられる
 （返信はモック。登録は**ローカル DB に実際に書き込まれる**ので、確認後に消す）。

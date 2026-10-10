@@ -8,7 +8,7 @@
 import type { RecipeNoteFields } from '@/types/recipe'
 import type { Line } from './line-kind'
 import { findCookingTime, findServings } from './meta'
-import { extractBodyLines } from './prefix'
+import { RECIPE_INPUT_END_MARKER, extractBodyLines, hasRecipeInputEndMarker, hasRecipeInputPrefix } from './prefix'
 import { parseIngredientLines, parseMemoLines, parseStepLines } from './section-parsers'
 import { segment, type Section, type Segments } from './segment'
 import type { ParseRecipeMarkdownResult, ParseWarning } from './types'
@@ -36,6 +36,7 @@ export function parseRecipeMarkdown(text: string): ParseRecipeMarkdownResult {
   }
   warnUnknownSections(sections, warnings)
   if (steps.length === 0) warnings.push({ message: '手順がありません' })
+  if (looksTruncated(text)) warnings.unshift({ message: TRUNCATED_WARNING })
 
   const blockingReasons = [
     ...(title ? [] : ['タイトルがありません']),
@@ -55,6 +56,19 @@ export function looksLikeRecipeMarkdown(text: string): boolean {
   const { sections } = segment(extractBodyLines(text))
   const kinds = new Set(sections.map((s) => s.kind))
   return kinds.has('ingredients') && kinds.has('steps')
+}
+
+/**
+ * 接頭語があるのに終端マーカーが無い入力は、途中で切れた強い兆候（#208）
+ *
+ * AI 用プロンプト（#214）は両方を必ず出力させる。LINE で長い出力が分割されたり、コピーが途中で
+ * 切れたりすると、前半だけが手順の欠けたノートとして登録される。マーカーの無い入力も受け付ける
+ * 後方互換は保ちたいので、登録は止めずに警告だけにする（返信の上限に埋もれないよう先頭に置く）
+ */
+const TRUNCATED_WARNING = `最後の ${RECIPE_INPUT_END_MARKER} が見当たりません。途中で切れている可能性があります`
+
+function looksTruncated(text: string): boolean {
+  return hasRecipeInputPrefix(text) && !hasRecipeInputEndMarker(text)
 }
 
 /**

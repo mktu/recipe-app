@@ -136,6 +136,10 @@ async function main() {
   }
 
   // --file <path>: 複数行のメッセージ（レシピ Markdown など）をファイルから読む
+  if (args[0] === '--file' && !args[1]) {
+    console.error('使い方: npm run test:bot -- --file <Markdown のパス>')
+    process.exit(1)
+  }
   const text = args[0] === '--file' ? fs.readFileSync(args[1], 'utf-8') : args[0]
   console.log('🧪 LINE Bot Response Test')
   console.log('='.repeat(40))
