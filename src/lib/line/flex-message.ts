@@ -32,6 +32,17 @@ function toActionLabel(title: string): string {
   return title.length > ACTION_LABEL_MAX ? title.slice(0, ACTION_LABEL_MAX) : title
 }
 
+/**
+ * altText の上限。超えると reply 全体が 400 で落ちる。
+ * レシピタイトルは、`#` 見出しの無いノートでは本文の最初の行がそのまま入るので長くなりうる（#208）。
+ * 公式の上限より緩くならないよう、保守的に 400 文字で丸める
+ */
+const ALT_TEXT_MAX = 400
+
+function toAltText(text: string): string {
+  return text.length > ALT_TEXT_MAX ? `${text.slice(0, ALT_TEXT_MAX - 1)}…` : text
+}
+
 function createBodyContents(
   title: string,
   sourceName?: string | null,
@@ -73,7 +84,7 @@ function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
 export function createSingleRecipeMessage(recipe: RecipeCardData): FlexMessage {
   return {
     type: 'flex',
-    altText: `レシピ: ${recipe.title}`,
+    altText: toAltText(`レシピ: ${recipe.title}`),
     contents: createRecipeBubble(recipe),
   }
 }

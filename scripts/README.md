@@ -136,7 +136,12 @@ npm run test:bot "鶏肉 玉ねぎ"
 
 # ヘルプ
 npm run test:bot "使い方"
+
+# レシピ Markdown（複数行はファイルから。[レシピ入力] 付きならノートとして登録される）
+npm run test:bot -- --file recipe.md
 ```
+
+> レシピ Markdown の登録は**ローカル DB に実際に書き込まれる**（返信だけがモック）。確認後に消すこと。
 
 LINE Botのレスポンスをローカルで確認できる。ngrok不要。
 

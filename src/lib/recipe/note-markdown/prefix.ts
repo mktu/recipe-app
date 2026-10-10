@@ -37,6 +37,11 @@ export function hasRecipeInputPrefix(text: string): boolean {
   return toLines(text).some((line) => PREFIX_PATTERN.test(line))
 }
 
+/** 終端マーカーだけの行があるか */
+export function hasRecipeInputEndMarker(text: string): boolean {
+  return toLines(text).some((line) => END_MARKER_PATTERN.test(line))
+}
+
 /**
  * パース対象の本文を行の配列で返す
  *

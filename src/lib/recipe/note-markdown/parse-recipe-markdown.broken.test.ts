@@ -13,7 +13,7 @@ const RECIPE = `# 豚の生姜焼き
 
 describe('parseRecipeMarkdown: 前置き・締めの言葉', () => {
   it('コードフェンスで囲まれ、前後に AI の言葉がある', () => {
-    const md = `いいですね！以下がレシピです。\n\n\`\`\`markdown\n[レシピ入力]\n${RECIPE}\n\`\`\`\n\nいかがでしょうか？`
+    const md = `いいですね！以下がレシピです。\n\n\`\`\`markdown\n[レシピ入力]\n${RECIPE}\n[ここまで]\n\`\`\`\n\nいかがでしょうか？`
     const { fields, warnings } = parseRecipeMarkdown(md)
     expect(fields.title).toBe('豚の生姜焼き')
     expect(fields.steps).toEqual(['焼く'])
@@ -24,7 +24,9 @@ describe('parseRecipeMarkdown: 前置き・締めの言葉', () => {
     const md = `[レシピ入力]\n${RECIPE}\n2. 盛り付ける\n\nいかがでしょうか？\nぜひ作ってみてください！`
     const { fields, warnings } = parseRecipeMarkdown(md)
     expect(fields.steps).toEqual(['焼く', '盛り付ける'])
-    expect(warnings.map((w) => w.line)).toEqual(['いかがでしょうか？', 'ぜひ作ってみてください！'])
+    // 先頭は終端マーカーが無いことの警告。締めの言葉はその後に並ぶ
+    expect(warnings[0].message).toContain('[ここまで]')
+    expect(warnings.slice(1).map((w) => w.line)).toEqual(['いかがでしょうか？', 'ぜひ作ってみてください！'])
   })
 
   it('終端マーカーがあれば、最後のメモに締めの言葉が入らない', () => {

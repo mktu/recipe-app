@@ -4,12 +4,9 @@ import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import { createVerticalListMessage, RecipeCardData } from './flex-message'
 import { toRecipeCardUrl } from './track-redirect'
+import { replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
-
-async function replyText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
-  await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
-}
 
 /** テスト応答（Flex Messageでレシピカード表示） */
 export async function replyTest(client: MessagingApiClient, replyToken: string, lineUserId: string): Promise<void> {
