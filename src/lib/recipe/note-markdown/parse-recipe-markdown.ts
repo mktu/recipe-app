@@ -9,12 +9,20 @@ import type { RecipeNoteFields } from '@/types/recipe'
 import type { Line } from './line-kind'
 import { findCookingTime, findServings } from './meta'
 import { RECIPE_INPUT_END_MARKER, extractBodyLines, hasRecipeInputEndMarker, hasRecipeInputPrefix } from './prefix'
+import { RECIPE_PROMPT_EXAMPLE } from './prompt'
 import { parseIngredientLines, parseMemoLines, parseStepLines } from './section-parsers'
 import { segment, type Section, type Segments } from './segment'
 import type { ParseRecipeMarkdownResult, ParseWarning } from './types'
 
 /** 接頭語の有無どちらでも受け付ける（あれば外す）。Web の貼り付け（#178）にも接頭語付きで来るため */
 export function parseRecipeMarkdown(text: string): ParseRecipeMarkdownResult {
+  const { fields, warnings, blockingReasons } = readRecipe(text)
+  const reasons = isPromptExample(fields) ? [PROMPT_EXAMPLE_REASON] : blockingReasons
+  return { fields, warnings, registrable: reasons.length === 0, blockingReasons: reasons }
+}
+
+/** 見本の判定を除いた読み取り。見本そのものを読むときに判定を再帰させないため分けている */
+function readRecipe(text: string): Omit<ParseRecipeMarkdownResult, 'registrable'> {
   const warnings: ParseWarning[] = []
   const { preamble, sections } = segment(extractBodyLines(text))
 
@@ -43,7 +51,7 @@ export function parseRecipeMarkdown(text: string): ParseRecipeMarkdownResult {
     ...(ingredients.length > 0 ? [] : ['材料がありません']),
     ...(hasTable(preamble, sections) ? [TABLE_REASON] : []),
   ]
-  return { fields, warnings, registrable: blockingReasons.length === 0, blockingReasons }
+  return { fields, warnings, blockingReasons }
 }
 
 /**
@@ -79,6 +87,22 @@ const TABLE_REASON = '表が含まれています。表を使わない形式で�
 
 function hasTable(preamble: Line[], sections: Section[]): boolean {
   return [...preamble, ...sections.flatMap((s) => s.lines)].some((l) => l.type === 'table')
+}
+
+/**
+ * AI 用プロンプト（#214）の出力例そのものは登録しない。経路は2つ:
+ * 文面をそのまま送り返したとき（出力例は行頭に接頭語を持つ）と、会話が薄いまま渡されて AI が見本をなぞったとき。
+ * 材料は名前だけで比べ、AI が分量だけ変えてなぞった場合も拾う
+ */
+const PROMPT_EXAMPLE_REASON =
+  'AI 用プロンプトの見本のレシピです。プロンプトを AI に渡して、会話で決めたレシピを出力させてください'
+
+let exampleFields: RecipeNoteFields | undefined
+
+function isPromptExample(fields: RecipeNoteFields): boolean {
+  exampleFields ??= readRecipe(RECIPE_PROMPT_EXAMPLE).fields
+  const names = (f: RecipeNoteFields) => f.ingredients.map((i) => i.name).join('\n')
+  return fields.title === exampleFields.title && names(fields) === names(exampleFields)
 }
 
 /**
