@@ -24,7 +24,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
-    "generate:placeholders": "tsx scripts/generate-placeholder-images.ts"
+    "generate:placeholders": "tsx scripts/generate-placeholder-images.ts",
+    "try:note-prompt": "tsx scripts/try-note-prompt.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
