@@ -2,9 +2,15 @@ import type { messagingApi } from '@line/bot-sdk'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
-/** テキスト1通で返信する */
-export async function replyText(client: MessagingApiClient, replyToken: string, text: string): Promise<void> {
-  await client.replyMessage({ replyToken, messages: [{ type: 'text', text }] })
+/** テキスト1通で返信する。クイックリプライを付けるときは items を渡す */
+export async function replyText(
+  client: MessagingApiClient,
+  replyToken: string,
+  text: string,
+  quickReplyItems?: messagingApi.QuickReplyItem[]
+): Promise<void> {
+  const quickReply = quickReplyItems ? { items: quickReplyItems } : undefined
+  await client.replyMessage({ replyToken, messages: [{ type: 'text', text, quickReply }] })
 }
 
 /**

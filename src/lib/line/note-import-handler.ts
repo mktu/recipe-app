@@ -65,8 +65,5 @@ async function replyRegistered(
  * 次から書式を使ってもらう（#201）
  */
 export async function replyRecipePrefixHint(client: MessagingApiClient, replyToken: string): Promise<void> {
-  await client.replyMessage({
-    replyToken,
-    messages: [{ type: 'text', text: buildPrefixHintText(), quickReply: { items: [buildFormatQuickReplyItem()] } }],
-  })
+  await replyText(client, replyToken, buildPrefixHintText(), [buildFormatQuickReplyItem()])
 }

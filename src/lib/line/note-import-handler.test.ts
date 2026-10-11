@@ -1,5 +1,6 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import type { messagingApi } from '@line/bot-sdk'
+import { FORMAT_KEYWORD } from './guide-messages'
 import { handleRecipeNoteImport, replyRecipePrefixHint } from './note-import-handler'
 import { saveRecipeNote } from '@/lib/recipe/save-recipe-note'
 
@@ -78,6 +79,6 @@ describe('replyRecipePrefixHint', () => {
 
     const [[{ messages }]] = client.replyMessage.mock.calls
     expect(messages[0].quickReply.items.map((item: messagingApi.QuickReplyItem) => item.action))
-      .toEqual([{ type: 'message', label: '書式を見る', text: '書式を見る' }])
+      .toEqual([{ type: 'message', label: FORMAT_KEYWORD, text: FORMAT_KEYWORD }])
   })
 })

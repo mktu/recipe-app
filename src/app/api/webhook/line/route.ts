@@ -6,7 +6,7 @@ import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFew
 import { replyTest, processUrl } from '@/lib/line/url-handler'
 import { extractUrls, resolveMessageRoute, type MessageRoute } from '@/lib/line/message-route'
 import { handleRecipeNoteImport, replyRecipePrefixHint } from '@/lib/line/note-import-handler'
-import { buildFormatMessages, buildHelpMessages, buildRecipeAddGuideMessage, buildWelcomeMessages, isFormatKeyword, isRecipeAddKeyword } from '@/lib/line/guide-messages'
+import { buildFormatMessages, buildHelpMessages, buildRecipeAddGuideMessage, buildWelcomeMessages, isFormatKeyword, isHelpKeyword, isRecipeAddKeyword } from '@/lib/line/guide-messages'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -16,12 +16,6 @@ const config = {
 const client = new messagingApi.MessagingApiClient({
   channelAccessToken: config.channelAccessToken,
 })
-
-/** ヘルプキーワードかどうかを判定 */
-function isHelpKeyword(text: string): boolean {
-  const keywords = ['使い方', 'ヘルプ', 'help', '?', '？']
-  return keywords.some((k) => text.trim().toLowerCase() === k.toLowerCase())
-}
 
 /** 退会・データ削除キーワードかどうかを判定 */
 function isWithdrawalKeyword(text: string): boolean {
