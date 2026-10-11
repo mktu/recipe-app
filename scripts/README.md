@@ -125,6 +125,15 @@ npm run preview:flex -- --count=3  # 件数指定 (1〜5)
 - 画像なし（プレースホルダー表示の確認）
 - ソース名なし（レイアウト崩れの確認）
 
+## AI 用プロンプトの手確認
+
+```bash
+npm run -s try:note-prompt -- --prompt | pbcopy   # 文面をコピーして AI に渡す
+pbpaste | npm run -s try:note-prompt              # AI の出力をコピーしてパース結果を見る
+```
+
+AI 用プロンプト（`src/lib/recipe/note-markdown/prompt.ts`）を実際の AI に投げ、出力が LINE のワンパスで登録できるか（`registrable`）と警告を確かめる。仕様は `docs/NOTE_MARKDOWN_FORMAT.md`。
+
 ## LINE Botレスポンステスト
 
 ```bash
