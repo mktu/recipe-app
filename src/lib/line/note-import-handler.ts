@@ -2,6 +2,7 @@ import type { messagingApi } from '@line/bot-sdk'
 import { parseRecipeMarkdown } from '@/lib/recipe/note-markdown/parse-recipe-markdown'
 import { saveRecipeNote } from '@/lib/recipe/save-recipe-note'
 import { buildNotRegistrableText, buildPrefixHintText, buildRegisteredMessages } from './note-import-messages'
+import { buildFormatQuickReplyItem } from './guide-messages'
 import { pushTextSafely, replyErrorText, replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
@@ -57,7 +58,12 @@ async function replyRegistered(
   }
 }
 
-/** 接頭語の無いレシピらしい文に、接頭語を付けて送り直すよう案内する */
+/**
+ * 接頭語の無いレシピらしい文に、接頭語を付けて送り直すよう案内する
+ *
+ * AI の出力をそのまま貼る人が確実に通る場面なので、「書式を見る」のクイックリプライを付けて
+ * 次から書式を使ってもらう（#201）
+ */
 export async function replyRecipePrefixHint(client: MessagingApiClient, replyToken: string): Promise<void> {
-  await replyText(client, replyToken, buildPrefixHintText())
+  await replyText(client, replyToken, buildPrefixHintText(), [buildFormatQuickReplyItem()])
 }
