@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import type { messagingApi } from '@line/bot-sdk'
-import { handleRecipeNoteImport } from './note-import-handler'
+import { handleRecipeNoteImport, replyRecipePrefixHint } from './note-import-handler'
 import { saveRecipeNote } from '@/lib/recipe/save-recipe-note'
 
 vi.mock('@/lib/recipe/save-recipe-note', () => ({ saveRecipeNote: vi.fn() }))
@@ -68,5 +68,16 @@ describe('handleRecipeNoteImport', () => {
     expect(saveRecipeNote).not.toHaveBeenCalled()
     const [[{ messages }]] = client.replyMessage.mock.calls
     expect(messages[0].text).toContain('材料がありません')
+  })
+})
+
+describe('replyRecipePrefixHint', () => {
+  it('接頭語の案内に「書式を見る」のクイックリプライを付ける（#201）', async () => {
+    const client = createClient()
+    await replyRecipePrefixHint(client as unknown as messagingApi.MessagingApiClient, 'token')
+
+    const [[{ messages }]] = client.replyMessage.mock.calls
+    expect(messages[0].quickReply.items.map((item: messagingApi.QuickReplyItem) => item.action))
+      .toEqual([{ type: 'message', label: '書式を見る', text: '書式を見る' }])
   })
 })

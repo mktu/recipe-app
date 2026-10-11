@@ -6,6 +6,7 @@ import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFew
 import { replyTest, processUrl } from '@/lib/line/url-handler'
 import { extractUrls, resolveMessageRoute, type MessageRoute } from '@/lib/line/message-route'
 import { handleRecipeNoteImport, replyRecipePrefixHint } from '@/lib/line/note-import-handler'
+import { buildFormatMessages, buildHelpMessages, buildRecipeAddGuideMessage, buildWelcomeMessages, isFormatKeyword, isRecipeAddKeyword } from '@/lib/line/guide-messages'
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
@@ -68,29 +69,18 @@ async function replyWithdrawal(replyToken: string): Promise<void> {
   })
 }
 
-/** ヘルプメッセージの応答 */
-async function replyHelp(replyToken: string): Promise<void> {
-  const helpText = `📖 RecipeHub の使い方
-
-【レシピを保存する】
-レシピサイトのURLをこのトークに送るだけ！
-レシピ名と食材を自動で読み取って保存します。
-
-【レシピを探す】
-「探す」と送るとカテゴリから選べます。
-食材名やキーワードで直接検索もできます。
-
-【対応サイト】
-クックパッド、クラシル、デリッシュキッチンなど主要レシピサイトに対応しています。`
-
-  await client.replyMessage({ replyToken, messages: [{ type: 'text', text: helpText }] })
+/** 案内メッセージをそのまま返信する（#201） */
+async function replyMessages(replyToken: string, messages: messagingApi.Message[]): Promise<void> {
+  await client.replyMessage({ replyToken, messages })
 }
 
 type KeywordEntry = [(t: string) => boolean, () => Promise<void>]
 
 function buildKeywordHandlers(replyToken: string, userId: string): KeywordEntry[] {
   return [
-    [isHelpKeyword, () => replyHelp(replyToken)],
+    [isHelpKeyword, () => replyMessages(replyToken, buildHelpMessages())],
+    [isRecipeAddKeyword, () => replyMessages(replyToken, [buildRecipeAddGuideMessage()])],
+    [isFormatKeyword, () => replyMessages(replyToken, buildFormatMessages())],
     [isWithdrawalKeyword, () => replyWithdrawal(replyToken)],
     [isSearchKeyword, () => handleSearchCategoryPrompt(client, replyToken)],
     [isOkiniiriKeyword, () => handleFavorites(client, replyToken)],
@@ -120,19 +110,9 @@ async function handleFollowEvent(event: webhook.Event): Promise<void> {
 
   await ensureUser(userId)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   await client.pushMessage({
     to: userId,
-    messages: [
-      {
-        type: 'text',
-        text: 'RecipeHub へようこそ！🍳\n\nレシピサイトの URL をこのトークに送ると、自動でレシピを保存できます。\nクックパッド、クラシル、デリッシュキッチンなど主要サイトに対応しています。',
-      },
-      {
-        type: 'text',
-        text: `ご利用にあたっては、以下の利用規約・プライバシーポリシーをご確認ください。本サービスのご利用をもって、これらに同意いただいたものとみなします。\n\n📄 利用規約\n${appUrl}/terms\n\n🔒 プライバシーポリシー\n${appUrl}/privacy`,
-      },
-    ],
+    messages: buildWelcomeMessages(process.env.NEXT_PUBLIC_APP_URL || ''),
   })
 }
 
