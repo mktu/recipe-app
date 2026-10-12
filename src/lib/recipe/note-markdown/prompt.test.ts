@@ -39,10 +39,10 @@ describe('AI 用プロンプト: 見本そのものは登録しない', () => {
     const result = parseRecipeMarkdown(RECIPE_PROMPT_EXAMPLE)
     expect(result.warnings).toEqual([])
     expect(result.registrable).toBe(false)
-    expect(result.blockingReasons).toEqual([expect.stringContaining('見本')])
+    expect(result.blockingReasons).toEqual([expect.stringContaining('書式の例')])
   })
 
-  it('文面をそのまま送り返すと止める（文面のルールの行は本文に混ざらない）', () => {
+  it('文面をそのまま送り返すと止める（書式の行は本文に混ざらない）', () => {
     expect(parseRecipeMarkdown(RECIPE_NOTE_PROMPT)).toEqual(parseRecipeMarkdown(RECIPE_PROMPT_EXAMPLE))
   })
 
@@ -63,7 +63,7 @@ describe('AI 用プロンプト: 文面', () => {
     expect(lines.at(-1)).toBe(RECIPE_INPUT_END_MARKER)
   })
 
-  it('ルールで接頭語と終端マーカーを定数どおりの表記で指示している', () => {
+  it('書式で接頭語と終端マーカーを定数どおりの表記で示している', () => {
     expect(RECIPE_NOTE_PROMPT).toContain(`1行目は「${RECIPE_INPUT_PREFIX}」`)
     expect(RECIPE_NOTE_PROMPT).toContain(`最後の行は「${RECIPE_INPUT_END_MARKER}」`)
   })
