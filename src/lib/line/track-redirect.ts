@@ -31,7 +31,7 @@ export function toRecipeCardUrl(recipe: { id: string; url: string }): string {
  *
  * レシピノートの url は相対パス `/notes/<note_id>`（保護ページ）。LINE の内蔵ブラウザで
  * 普通の https URL を開いても LIFF のコンテキストにならず、認証が通らない。そのため
- * リッチメニューの「レシピ追加」と同じく LIFF URL（`https://liff.line.me/{LIFF_ID}/<path>`）に振り替える。
+ * LIFF URL（`https://liff.line.me/{LIFF_ID}/<path>`）に振り替える。
  *
  * LIFF_ID が空の dev では、リクエストのオリジンで解決する。NextResponse.redirect は
  * 絶対 URL しか受け付けない（内部の validateURL がベース無しの new URL() に通すため）。

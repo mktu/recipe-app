@@ -95,7 +95,7 @@ function hasTable(preamble: Line[], sections: Section[]): boolean {
  * 材料は名前だけで比べ、AI が分量だけ変えてなぞった場合も拾う
  */
 const PROMPT_EXAMPLE_REASON =
-  'AI 用プロンプトの見本のレシピです。プロンプトを AI に渡して、会話で決めたレシピを出力させてください'
+  '書式の例として載せているレシピです。例の形で、保存したいレシピの内容を書いて送ってください'
 
 let exampleFields: RecipeNoteFields | undefined
 
