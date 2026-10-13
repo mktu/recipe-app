@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Link2, NotebookPen, type LucideIcon } from 'lucide-react'
+import { ClipboardPaste, Link2, NotebookPen, type LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 interface AddRecipeSheetProps {
@@ -9,7 +9,7 @@ interface AddRecipeSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** レシピの追加方法を選ぶ。URL からのブックマークか、手で書くノートか（Issue #175） */
+/** レシピの追加方法を選ぶ。URL からのブックマークか、手で書くノートか（Issue #175）、AI が書いたレシピの貼り付けか（#178） */
 export function AddRecipeSheet({ open, onOpenChange }: AddRecipeSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -20,6 +20,7 @@ export function AddRecipeSheet({ open, onOpenChange }: AddRecipeSheetProps) {
         <nav className="space-y-2 px-4 pb-6">
           <AddOption href="/recipes/add" icon={Link2} label="URL から追加" description="レシピサイトや SNS のページを保存する" />
           <AddOption href="/notes/new" icon={NotebookPen} label="ノートを書く" description="自分のレシピを材料と手順から書く" />
+          <AddOption href="/notes/import" icon={ClipboardPaste} label="AI のレシピを貼り付ける" description="ChatGPT などと決めたレシピをマイレシピにする" />
         </nav>
       </SheetContent>
     </Sheet>

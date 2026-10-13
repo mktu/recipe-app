@@ -1,15 +1,13 @@
 'use client'
 
-import { useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CenteredMessage, LoadingState } from '@/components/features/recipe-detail'
 import { useAuth } from '@/lib/auth'
-import { useAuthedFetch } from '@/hooks/use-authed-fetch'
-import type { RecipeNoteFields } from '@/types/recipe'
 import { NoteEditor } from './note-editor'
+import { useCreateNote } from './use-create-note'
 import type { IngredientOption } from './use-note-form'
 
 interface NewRecipeNotePageProps {
@@ -19,26 +17,11 @@ interface NewRecipeNotePageProps {
 
 /**
  * レシピノートの新規作成画面（Issue #175）。保存すると図鑑にもレシピ行が作られる。
- *
- * 保存後は作ったノートへ置き換えで遷移する（戻るで空のフォームに戻って二重に作らないため）。
  */
 export function NewRecipeNotePage({ ingredients }: NewRecipeNotePageProps) {
   const router = useRouter()
-  const authedFetch = useAuthedFetch()
+  const createNote = useCreateNote()
   const { isLoading, isAuthenticated } = useAuth()
-
-  const createNote = useCallback(async (fields: RecipeNoteFields) => {
-    const res = await authedFetch('/api/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fields),
-    })
-    const body = await res.json().catch(() => null)
-    if (!res.ok) {
-      throw new Error(res.status === 400 && body?.error ? body.error : 'ノートの保存に失敗しました')
-    }
-    router.replace(`/notes/${body.noteId}`)
-  }, [authedFetch, router])
 
   if (isLoading) return <LoadingState />
   if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
