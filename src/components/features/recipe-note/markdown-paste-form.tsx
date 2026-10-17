@@ -15,7 +15,7 @@ interface MarkdownPasteFormProps {
 }
 
 /**
- * AI が書いたレシピの貼り付け欄（#178）。
+ * 書式に沿ったレシピの貼り付け欄（#178）。
  *
  * 登録できない内容（表を含む・材料が無いなど）は編集へ進ませず、理由をここに出す。
  */
@@ -26,20 +26,17 @@ export function MarkdownPasteForm({ value, onChange, onSubmit, blockingReasons }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2" aria-labelledby="paste-heading">
-      <h2 id="paste-heading" className="font-medium">2. AI の返事を貼り付ける</h2>
-      <p className="text-sm text-muted-foreground">
-        AI が書いたレシピをコピーして貼り付けてください。前後の文が混ざっていてもかまいません。
-      </p>
-      <Label htmlFor="note-markdown" className="sr-only">AI が書いたレシピ</Label>
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <Label htmlFor="note-markdown">貼り付けるレシピ</Label>
       <Textarea
         id="note-markdown"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={10}
         placeholder={'[レシピ入力]\n# 料理名\n...'}
-        aria-describedby={blockingReasons.length > 0 ? 'paste-blocking' : undefined}
+        aria-describedby={blockingReasons.length > 0 ? 'paste-hint paste-blocking' : 'paste-hint'}
       />
+      <p id="paste-hint" className="text-sm text-muted-foreground">前後に別の文が混ざっていても、書式の部分だけを読み取ります。</p>
       {blockingReasons.length > 0 && <BlockingReasons reasons={blockingReasons} />}
       <Button type="submit" className="w-full" disabled={!value.trim()}>読み取る</Button>
     </form>
@@ -54,7 +51,7 @@ function BlockingReasons({ reasons }: { reasons: string[] }) {
         {reasons.map((reason) => <li key={reason}>{reason}</li>)}
       </ul>
       <p className="text-muted-foreground">
-        AI に書き直してもらって貼り直すか、<Link href="/notes/new" className="underline">自分で書く</Link>こともできます。
+        書式に合わせて直してから貼り直すか、<Link href="/notes/new" className="underline">自分で書く</Link>こともできます。
       </p>
     </div>
   )
