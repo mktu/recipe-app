@@ -15,6 +15,8 @@ import { useNoteForm, type IngredientOption } from './use-note-form'
 
 interface NoteEditorProps {
   heading: string
+  /** 見出しの直後に出す案内（Markdown 取り込みの警告 #178 など） */
+  notice?: React.ReactNode
   /** 編集するノート。新規作成では渡さない */
   note?: RecipeNoteDetail
   ingredients: IngredientOption[]
@@ -26,7 +28,7 @@ interface NoteEditorProps {
  * ノートの入力フォーム。編集（PUT /api/notes/[id]）と新規作成（POST /api/notes）で共有する。
  * どちらも保存すると図鑑のレシピ行に反映される。
  */
-export function NoteEditor({ heading, note, ingredients, onSave, onCancel }: NoteEditorProps) {
+export function NoteEditor({ heading, notice, note, ingredients, onSave, onCancel }: NoteEditorProps) {
   const { values, setters, toFields } = useNoteForm(note)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -48,6 +50,7 @@ export function NoteEditor({ heading, note, ingredients, onSave, onCancel }: Not
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h1 className="text-lg font-bold">{heading}</h1>
+      {notice}
       <Field label="タイトル" htmlFor="note-title" required>
         <Input id="note-title" required value={values.title} onChange={(e) => setters.setTitle(e.target.value)} disabled={isSaving} />
       </Field>

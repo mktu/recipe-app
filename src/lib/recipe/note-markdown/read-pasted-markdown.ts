@@ -1,5 +1,5 @@
-import { parseRecipeMarkdown } from '@/lib/recipe/note-markdown/parse-recipe-markdown'
-import type { ParseWarning } from '@/lib/recipe/note-markdown/types'
+import { parseRecipeMarkdown } from './parse-recipe-markdown'
+import type { ParseWarning } from './types'
 import type { RecipeNoteDetail } from '@/types/recipe'
 
 /** 貼り付けた Markdown の読み取り結果。編集へ進めるか、止めて理由を見せるか */

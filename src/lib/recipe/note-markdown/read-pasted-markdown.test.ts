@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { RECIPE_NOTE_PROMPT } from '@/lib/recipe/note-markdown/prompt'
-import { readPastedMarkdown } from './paste-draft'
+import { RECIPE_NOTE_PROMPT } from './prompt'
+import { readPastedMarkdown } from './read-pasted-markdown'
 
 /** AI の返事をそのままコピーした形（前置き・コードフェンス・締めの言葉つき） */
 const AI_REPLY = `いいですね！レシピをまとめました。

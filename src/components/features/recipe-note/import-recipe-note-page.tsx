@@ -1,27 +1,22 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CenteredMessage, LoadingState } from '@/components/features/recipe-detail'
 import { useAuth } from '@/lib/auth'
-import type { ParseWarning } from '@/lib/recipe/note-markdown/types'
-import type { RecipeNoteDetail } from '@/types/recipe'
+import { FormatGuide } from './format-guide'
 import { MarkdownPasteForm } from './markdown-paste-form'
 import { NoteEditor } from './note-editor'
 import { ParseWarnings } from './parse-warnings'
-import { FormatGuide } from './format-guide'
-import { readPastedMarkdown } from './paste-draft'
 import { useCreateNote } from './use-create-note'
 import type { IngredientOption } from './use-note-form'
+import { usePasteReview } from './use-paste-review'
 
 interface ImportRecipeNotePageProps {
   /** 材料名のサジェスト元（食材マスタ） */
   ingredients: IngredientOption[]
 }
-
-interface Draft { note: RecipeNoteDetail; warnings: ParseWarning[] }
 
 /**
  * 書式に沿ったレシピを貼り付けて、マイレシピをまとめて入力する画面（#178）。
@@ -33,22 +28,7 @@ interface Draft { note: RecipeNoteDetail; warnings: ParseWarning[] }
 export function ImportRecipeNotePage({ ingredients }: ImportRecipeNotePageProps) {
   const createNote = useCreateNote()
   const { isLoading, isAuthenticated } = useAuth()
-  const [text, setText] = useState('')
-  const [blockingReasons, setBlockingReasons] = useState<string[]>([])
-  const [draft, setDraft] = useState<Draft | null>(null)
-
-  const read = () => {
-    const result = readPastedMarkdown(text)
-    if (result.kind === 'blocked') return setBlockingReasons(result.reasons)
-    setBlockingReasons([])
-    setDraft({ note: result.note, warnings: result.warnings })
-    window.scrollTo(0, 0)
-  }
-
-  const changeText = (value: string) => {
-    setText(value)
-    setBlockingReasons([])
-  }
+  const { text, changeText, blockingReasons, draft, read, cancelReview } = usePasteReview()
 
   if (isLoading) return <LoadingState />
   if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
@@ -62,11 +42,15 @@ export function ImportRecipeNotePage({ ingredients }: ImportRecipeNotePageProps)
         </Link>
       </Button>
       {draft ? (
-        <>
-          <ParseWarnings warnings={draft.warnings} />
-          {/* キャンセルは貼り付けに戻る。貼った文はそのまま残す */}
-          <NoteEditor heading="内容を確かめて保存" note={draft.note} ingredients={ingredients} onSave={createNote} onCancel={() => setDraft(null)} />
-        </>
+        // キャンセル（と端末の「戻る」）は貼り付けに戻る。貼った文はそのまま残す
+        <NoteEditor
+          heading="内容を確かめて保存"
+          notice={<ParseWarnings warnings={draft.warnings} />}
+          note={draft.note}
+          ingredients={ingredients}
+          onSave={createNote}
+          onCancel={cancelReview}
+        />
       ) : (
         <>
           <div className="space-y-1">
