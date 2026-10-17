@@ -157,6 +157,7 @@ graph TB
             Add["/recipes/add Add"]
             Confirm["/recipes/add/confirm Confirm"]
             NewNote["/notes/new New Note"]
+            ImportNote["/notes/import Import Note"]
             Note["/notes/id Note"]
         end
 
@@ -222,7 +223,8 @@ graph TB
 | `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
-| `/notes/new` | 必須 | レシピノートの新規作成。保存すると図鑑にレシピ行も作られ、`/notes/[id]` へ置き換えで遷移する。入口はホームの追加ボタン（「URL から追加」と「ノートを書く」を選ぶシート） |
+| `/notes/new` | 必須 | レシピノートの新規作成。保存すると図鑑にレシピ行も作られ、`/notes/[id]` へ置き換えで遷移する。入口はホームの追加ボタン（「URL から追加」「書式に沿って貼り付ける」「ノートを書く」を選ぶシート） |
+| `/notes/import` | 必須 | 書式に沿ったレシピの Markdown を貼り付けて作成する（#178。主ルートは LINE #208 で、こちらは副ルート）。書式（AI 用プロンプトと共通）の表示・コピー → 貼り付け → `parseRecipeMarkdown` で読んで `/notes/new` と同じ編集フォームに流し込み、確かめてから保存する。保存は `POST /api/notes` |
 | `/notes/[id]` | 必須 | レシピノートの閲覧・編集（材料・手順）。保存すると図鑑のレシピ行へ書き戻す |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |

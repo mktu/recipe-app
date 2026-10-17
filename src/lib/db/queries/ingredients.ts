@@ -73,3 +73,9 @@ export async function fetchIngredientsByCategory(): Promise<{
     return { data: [], error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
+
+/** ノートの材料名のサジェスト元（食材マスタの id と名前だけ）。/notes/new・/notes/[id]・/notes/import で共有する */
+export async function fetchIngredientOptions(): Promise<{ id: string; name: string }[]> {
+  const { data: categories } = await fetchIngredientsByCategory()
+  return categories.flatMap((c) => c.ingredients.map(({ id, name }) => ({ id, name })))
+}
