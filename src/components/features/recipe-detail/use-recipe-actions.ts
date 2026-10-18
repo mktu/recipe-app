@@ -25,13 +25,5 @@ export function useRecipeActions({ recipeId, initialMemo }: UseRecipeActionsOpti
     setMemo(newMemo)
   }, [recipeId, user, authedFetch])
 
-  const deleteRecipe = useCallback(async () => {
-    if (!user) throw new Error('認証が必要です')
-    const res = await authedFetch(`/api/recipes/${recipeId}`, {
-      method: 'DELETE',
-    })
-    if (!res.ok) throw new Error('削除に失敗しました')
-  }, [recipeId, user, authedFetch])
-
-  return { memo, updateMemo, deleteRecipe }
+  return { memo, updateMemo }
 }

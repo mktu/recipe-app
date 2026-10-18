@@ -220,12 +220,12 @@ graph TB
 | パス | 認証 | 説明 |
 |-----|------|------|
 | `/` | 必須 | レシピ一覧・食材フィルター・検索 |
-| `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除 |
+| `/recipes/[id]` | 必須 | レシピ詳細・メモ編集・削除（ブックマーク用。マイレシピで開くと `/notes/[id]` へ置き換えで転送する） |
 | `/recipes/add` | 必須 | レシピURL入力 |
 | `/recipes/add/confirm` | 必須 | 解析結果確認・食材選択・保存 |
 | `/notes/new` | 必須 | レシピノートの新規作成。保存すると図鑑にレシピ行も作られ、`/notes/[id]` へ置き換えで遷移する。入口はホームの追加ボタン（「URL から追加」「書式に沿って貼り付ける」「マイレシピを書く」を選ぶシート） |
 | `/notes/import` | 必須 | 書式に沿ったレシピの Markdown を貼り付けて作成する（#178。主ルートは LINE #208 で、こちらは副ルート）。書式（AI 用プロンプトと共通）の表示・コピー → 貼り付け → `parseRecipeMarkdown` で読んで `/notes/new` と同じ編集フォームに流し込み、確かめてから保存する。保存は `POST /api/notes` |
-| `/notes/[id]` | 必須 | レシピノートの閲覧・編集（材料・手順）。保存すると図鑑のレシピ行へ書き戻す |
+| `/notes/[id]` | 必須 | レシピノートの閲覧・編集（材料・手順）・削除。保存すると図鑑のレシピ行へ書き戻す。一覧のカードからも LINE のカードからも直接開き、戻り先は一覧に固定 |
 | `/lp` | 不要 | 機能紹介・CTA |
 | `/privacy` | 不要 | プライバシーポリシー |
 | `/terms` | 不要 | 利用規約 |
@@ -419,19 +419,21 @@ erDiagram
 |------|------|
 | LINE のカード | **対応済み（#176, #175）。** ノートのカードは track ルートを挟まず、LIFF URL `https://liff.line.me/{LIFF_ID}/notes/<id>?from=line` を直接載せる（`toRecipeCardUrl`）。LINE の内蔵ブラウザで普通の https URL を開いても LIFF のコンテキストにならないうえ、302 で LIFF に飛ばすと閉じた後に空白ページが残るため（`docs/LINE_SETUP.md`）。閲覧記録はノート画面が `from=line` を見て `POST /api/track/recipe/[id]` で行う。外部サイトのレシピは従来どおり track ルートの GET 経由。LIFF_ID が空の dev はノートも track ルートに回す |
 | `/api/track/recipe/[id]` の GET | 以前に送ったトーク履歴上のノートのカードのため、相対パスは LIFF URL に 302 で振り替える（`toTrackRedirectUrl`）。LIFF_ID が空の dev ではリクエストのオリジンで解決する（`NextResponse.redirect` は絶対 URL しか受け付けない）。外部サイトの絶対 URL は素通り |
-| 詳細画面の再取得ボタン | **対応済み（#176）。** ノートでは出さない（相対パスは `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になるため） |
-| 詳細画面の「レシピサイトに移動」 | **対応済み（#176）。** ノートでは「ノートを開く」を `next/link` で同一タブに遷移させる。`target="_blank"` だと LINE の内蔵ブラウザでは LIFF の外で開き、保護下の `/notes/<id>` で認証が通らない |
+| 一覧のカード | **対応済み（#226）。** `url` が相対パスならそのままリンク先にし、詳細画面を挟まずノートを開く（`recipe-card.tsx` の `toRecipeHref`）。get-recipes はノートを知らないので、判定は LINE のカードと同じく `url.startsWith('/')` |
+| 詳細画面（再取得ボタン・「レシピサイトに移動」） | **対応済み（#226）。** マイレシピで `/recipes/<id>` を開くと `noteId` を見てノートへ転送するので、詳細画面にノート用の出し分けは無い（再取得は相対パスが `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になり、外部リンクは `target="_blank"` だと LINE の内蔵ブラウザで LIFF の外に出て認証が通らない。どちらも転送で踏まなくなった） |
 | 画像（`recipes.image_url`） | **対応済み（#174）。** RPC がノートの `image_key` から相対パス `/placeholders/<key>.png` を書き込むので、一覧・詳細は素の `<img>` のまま動く。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う。
-  詳細画面は `fetchRecipeById` が `recipe_notes(id)` を埋め込んで返す `noteId` で出し分ける
+  詳細画面は `fetchRecipeById` が `recipe_notes(id)` を埋め込んで返す `noteId` でノートへ転送する
+  （一覧と LINE のカードは `noteId` を持たないので、例外的に `url` の相対パスで見分ける）
 - タイトルが変わったら `title_embedding` を NULL に落とし、`embedding_retry_count` を 0 に戻す
   （generate-embeddings は NULL の行しか拾わないため）。ノート経由は `update_recipe_note`、
   汎用の `PATCH /api/recipes/[id]` は `updateRecipe` が、それぞれ旧タイトルと比べて行う
 - 書き込みは `create_recipe_note` / `update_recipe_note` RPC に集約し、ノート行・レシピ行・
   `recipe_ingredients`・`unmatched_ingredients` を単一トランザクションで書く
   （PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では原子性を張れない）
-- 削除は専用 RPC を持たない。対のレシピ行を消せば FK の CASCADE でノートも消える
+- 削除は専用 RPC を持たない。対のレシピ行を消せば FK の CASCADE でノートも消える。
+  ノート画面の削除も詳細画面と同じ `DELETE /api/recipes/[id]` を `recipeId` で呼ぶ（`RecipeDeleteButton`）
 - ノート経由のレシピは `source_name` が `マイレシピ`、材料の `amount` を正しく保持する
   （スクレイピング経路は `SCRAPING_POLICY.md` の方針で分量を保存しない）
 

@@ -45,9 +45,18 @@ function RecipeThumbnail({ imageUrl, title }: { imageUrl: string | null; title: 
 }
 
 /**
+ * カードのリンク先。マイレシピの `url` は相対パス `/notes/<id>` なので、詳細画面を挟まずに
+ * そのままノートを開く（#226）。判定規則は LINE のカード（`toRecipeCardUrl`）と同じ。
+ * 一覧（get-recipes）はノートを知らないので、`noteId` ではなく `url` で見分ける。
+ */
+function toRecipeHref(recipe: { id: string; url: string }): string {
+  return recipe.url.startsWith('/') ? recipe.url : `/recipes/${recipe.id}`
+}
+
+/**
  * レシピ1件のカード。
  *
- * カード全体が詳細ページへの `<Link>`。以前は `onClick` 付きの `div` だったため
+ * カード全体が詳細ページ（マイレシピはノート画面）への `<Link>`。以前は `onClick` 付きの `div` だったため
  * キーボードから到達できず、`getByRole` でも取れなかった（#38）。
  * やることが「詳細ページへ移動する」である以上、`role` や `tabIndex` を手で足すより
  * アンカーにするほうが、キーボード操作・新規タブ・URL コピーがまとめて効く。
@@ -59,7 +68,7 @@ export function RecipeCard({ recipe, onOpen }: RecipeCardProps) {
 
   return (
     <Link
-      href={`/recipes/${recipe.id}`}
+      href={toRecipeHref(recipe)}
       onClick={onOpen}
       // 一覧は件数が伸びるので、ビューポート内の全カードを先読みさせない
       prefetch={false}
