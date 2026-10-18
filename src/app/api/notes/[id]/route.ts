@@ -9,7 +9,7 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
-const NOT_FOUND = { error: 'ノートが見つかりません' }
+const NOT_FOUND = { error: 'マイレシピが見つかりません' }
 
 /**
  * GET /api/notes/[id]

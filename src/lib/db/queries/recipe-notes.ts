@@ -99,7 +99,7 @@ export async function createRecipeNote(
 
     const row = (data as CreateRecipeNoteRow[] | null)?.[0]
     if (!row?.note_id || !row?.recipe_id) {
-      return { data: null, error: { message: 'レシピノートの作成に失敗しました' } }
+      return { data: null, error: { message: 'マイレシピの作成に失敗しました' } }
     }
 
     return { data: { noteId: row.note_id, recipeId: row.recipe_id }, error: null }

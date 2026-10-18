@@ -23,7 +23,7 @@ export function AddRecipeSheet({ open, onOpenChange }: AddRecipeSheetProps) {
         <nav className="space-y-2 px-4 pb-6">
           <AddOption href="/recipes/add" icon={Link2} label="URL から追加" description="レシピサイトや SNS のページを保存する" />
           <AddOption href="/notes/import" icon={ClipboardPaste} label="書式に沿って貼り付ける" description="書式に沿ったレシピを貼って、まとめて入力する" />
-          <AddOption href="/notes/new" icon={NotebookPen} label="ノートを書く" description="自分のレシピを材料と手順から書く" />
+          <AddOption href="/notes/new" icon={NotebookPen} label="マイレシピを書く" description="自分のレシピを材料と手順から書く" />
         </nav>
       </SheetContent>
     </Sheet>

@@ -22,7 +22,7 @@ export function useCreateNote() {
     })
     const body = await res.json().catch(() => null)
     if (!res.ok) {
-      throw new Error(res.status === 400 && body?.error ? body.error : 'ノートの保存に失敗しました')
+      throw new Error(res.status === 400 && body?.error ? body.error : 'マイレシピの保存に失敗しました')
     }
     router.replace(`/notes/${body.noteId}`)
   }, [authedFetch, router])
