@@ -35,7 +35,7 @@ export function NewRecipeNotePage({ ingredients }: NewRecipeNotePageProps) {
         </Link>
       </Button>
       <NoteEditor
-        heading="ノートを書く"
+        heading="マイレシピを書く"
         ingredients={ingredients}
         onSave={createNote}
         onCancel={() => router.push('/')}

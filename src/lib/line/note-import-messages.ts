@@ -23,7 +23,7 @@ function formatWarnings(warnings: ParseWarning[]): string {
   const shown = warnings.slice(0, MAX_WARNINGS_IN_REPLY).map((w) => w.message)
   const rest = warnings.length - shown.length
   const more = rest > 0 ? `\n…ほか${rest}件` : ''
-  return `⚠️ 読み取れなかったところがあります。ノートを開いて確認してください。\n${toBullets(shown)}${more}`
+  return `⚠️ 読み取れなかったところがあります。マイレシピを開いて確認してください。\n${toBullets(shown)}${more}`
 }
 
 /**
@@ -36,7 +36,7 @@ export function buildRegisteredMessages(
   warnings: ParseWarning[],
   saved: RecipeNoteResult
 ): Message[] {
-  const header = `✅ レシピノートを登録しました！\n\n📖 ${fields.title}`
+  const header = `✅ マイレシピに保存しました！\n\n📖 ${fields.title}`
   const text = warnings.length > 0 ? `${header}\n\n${formatWarnings(warnings)}` : header
   const card = createSingleRecipeMessage({
     title: fields.title,

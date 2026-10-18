@@ -42,7 +42,7 @@ export function NoteEditor({ heading, notice, note, ingredients, onSave, onCance
     try {
       await onSave(result.fields)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ノートの保存に失敗しました')
+      setError(err instanceof Error ? err.message : 'マイレシピの保存に失敗しました')
       setIsSaving(false)
     }
   }
