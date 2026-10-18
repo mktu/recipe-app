@@ -13,8 +13,6 @@ import { RescrapeDialog } from './rescrape-dialog'
 import { useRecipeActions } from './use-recipe-actions'
 import { useRescrape } from './use-rescrape'
 
-const NOTE_EMPTY_INGREDIENTS = '材料が登録されていません。ノートを開いて追加できます。'
-
 interface RecipeDetailPageProps {
   recipe: RecipeDetail
   onRecipeUpdated: () => void
@@ -22,7 +20,7 @@ interface RecipeDetailPageProps {
 
 export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPageProps) {
   const router = useRouter()
-  const { memo, updateMemo, deleteRecipe } = useRecipeActions({
+  const { memo, updateMemo } = useRecipeActions({
     recipeId: recipe.id,
     initialMemo: recipe.memo,
   })
@@ -51,15 +49,14 @@ export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPagePr
           imageUrl={recipe.image_url}
           mainIngredients={recipe.mainIngredients}
         />
-        <RecipeIngredients ingredients={recipe.ingredientsRaw} emptyMessage={recipe.noteId ? NOTE_EMPTY_INGREDIENTS : undefined} />
+        <RecipeIngredients ingredients={recipe.ingredientsRaw} />
         <RecipeMemo memo={memo} onUpdate={updateMemo} />
         <p className="text-center text-sm text-muted-foreground">登録日: {createdAt}</p>
         <RecipeActions
+          recipeId={recipe.id}
           url={recipe.url}
-          noteId={recipe.noteId}
           isRescraping={isRescraping}
           onRescrape={handleRescrape}
-          onDelete={deleteRecipe}
         />
       </div>
 

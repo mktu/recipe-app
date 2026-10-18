@@ -24,7 +24,7 @@ interface HomeClientProps {
 
 function useRecipeHandlers() {
   const authedFetch = useAuthedFetch()
-  // 詳細への遷移は RecipeCard の `<Link>` が行うので、ここは閲覧記録だけ
+  // 詳細・ノートへの遷移は RecipeCard の `<Link>` が行うので、ここは閲覧記録だけ
   const trackRecipeView = useCallback((id: string) => {
     authedFetch(`/api/track/recipe/${id}`, { method: 'POST' }).catch(() => {})
   }, [authedFetch])

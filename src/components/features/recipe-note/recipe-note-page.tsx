@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CenteredMessage, LoadingState } from '@/components/features/recipe-detail'
+import { CenteredMessage, LoadingState, RecipeDeleteButton } from '@/components/features/recipe-detail'
 import { NoteEditor } from './note-editor'
 import { NoteView } from './note-view'
 import { useRecipeNote } from './use-recipe-note'
@@ -22,8 +22,9 @@ interface RecipeNotePageProps {
 /**
  * レシピノートの閲覧・編集画面（Issue #176）。
  *
- * LINE のカードからは閲覧記録のリダイレクト経由でここに直接着地するので、
- * 戻り先は履歴ではなく図鑑の詳細画面に固定する。
+ * 一覧のカードからも LINE のカードからも直接ここに着地するので（#226）、
+ * 戻り先は履歴ではなく一覧に固定する。
+ * 削除もここで行う。マイレシピは詳細画面を経由しないため、ここに無いと消す手段が無くなる。
  */
 export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePageProps) {
   const { note, isLoading, isAuthenticated, error, saveNote } = useRecipeNote(noteId)
@@ -35,14 +36,12 @@ export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePage
   if (error) return <CenteredMessage>{error}</CenteredMessage>
   if (!note) return <CenteredMessage>マイレシピが見つかりません</CenteredMessage>
 
-  const backHref = note.recipeId ? `/recipes/${note.recipeId}` : '/'
-
   return (
     <div className="mx-auto max-w-lg p-4">
       <Button variant="ghost" size="sm" className="mb-4" asChild>
-        <Link href={backHref}>
+        <Link href="/">
           <ArrowLeft className="mr-1 h-4 w-4" />
-          {note.recipeId ? 'レシピ詳細に戻る' : 'レシピ一覧に戻る'}
+          レシピ一覧に戻る
         </Link>
       </Button>
       {isEditing ? (
@@ -54,7 +53,11 @@ export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePage
           onCancel={() => setIsEditing(false)}
         />
       ) : (
-        <NoteView note={note} onEdit={() => setIsEditing(true)} />
+        <div className="space-y-3">
+          <NoteView note={note} onEdit={() => setIsEditing(true)} />
+          {/* 図鑑に出ていないノート（将来のアレンジ用。Epic #172）は消す対象のレシピ行が無い */}
+          {note.recipeId && <RecipeDeleteButton recipeId={note.recipeId} label="マイレシピ" />}
+        </div>
       )}
     </div>
   )
