@@ -41,7 +41,7 @@ describe('handleRecipeNoteImport', () => {
     expect(client.replyMessage).toHaveBeenCalledTimes(1)
     expect(client.pushMessage).toHaveBeenCalledWith({
       to: USER,
-      messages: [{ type: 'text', text: expect.stringContaining('登録しました') }],
+      messages: [{ type: 'text', text: expect.stringContaining('保存しました') }],
     })
   })
 
@@ -58,7 +58,7 @@ describe('handleRecipeNoteImport', () => {
     await run(client)
 
     const [[{ messages }]] = client.replyMessage.mock.calls
-    expect(messages[0].text).toContain('登録に失敗しました')
+    expect(messages[0].text).toContain('保存に失敗しました')
     expect(client.pushMessage).not.toHaveBeenCalled()
   })
 

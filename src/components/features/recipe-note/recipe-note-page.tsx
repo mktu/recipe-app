@@ -33,7 +33,7 @@ export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePage
   if (isLoading) return <LoadingState />
   if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
   if (error) return <CenteredMessage>{error}</CenteredMessage>
-  if (!note) return <CenteredMessage>ノートが見つかりません</CenteredMessage>
+  if (!note) return <CenteredMessage>マイレシピが見つかりません</CenteredMessage>
 
   const backHref = note.recipeId ? `/recipes/${note.recipeId}` : '/'
 
@@ -47,7 +47,7 @@ export function RecipeNotePage({ noteId, ingredients, fromLine }: RecipeNotePage
       </Button>
       {isEditing ? (
         <NoteEditor
-          heading="ノートを編集"
+          heading="マイレシピを編集"
           note={note}
           ingredients={ingredients}
           onSave={async (fields) => { await saveNote(fields); setIsEditing(false) }}

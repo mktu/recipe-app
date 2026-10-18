@@ -29,12 +29,12 @@ export async function handleRecipeNoteImport(
 
     await ensureUser(lineUserId)
     const { data, error } = await saveRecipeNote(lineUserId, parsed.fields)
-    if (error || !data) throw new Error(error?.message ?? 'レシピノートの作成に失敗しました')
+    if (error || !data) throw new Error(error?.message ?? 'マイレシピの作成に失敗しました')
 
     await replyRegistered(client, replyToken, lineUserId, buildRegisteredMessages(parsed.fields, parsed.warnings, data))
   } catch (err) {
     console.error('[LINE Webhook] Note import error:', err)
-    await replyErrorText(client, replyToken, '⚠️ レシピノートの登録に失敗しました。時間をおいてもう一度送ってください。')
+    await replyErrorText(client, replyToken, '⚠️ マイレシピの保存に失敗しました。時間をおいてもう一度送ってください。')
   }
 }
 
@@ -54,7 +54,7 @@ async function replyRegistered(
     await client.replyMessage({ replyToken, messages })
   } catch (err) {
     console.error('[LINE Webhook] Note import reply error:', err)
-    await pushTextSafely(client, lineUserId, '✅ レシピノートは登録しました。結果の表示に失敗したので、レシピ一覧から確認してください。')
+    await pushTextSafely(client, lineUserId, '✅ マイレシピには保存しました。結果の表示に失敗したので、レシピ一覧から確認してください。')
   }
 }
 

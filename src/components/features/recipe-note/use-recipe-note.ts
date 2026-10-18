@@ -35,12 +35,12 @@ export function useRecipeNote(noteId: string) {
     try {
       const res = await authedFetch(`/api/notes/${noteId}`)
       if (!res.ok) {
-        setError(res.status === 404 ? 'ノートが見つかりません' : 'ノートの取得に失敗しました')
+        setError(res.status === 404 ? 'マイレシピが見つかりません' : 'マイレシピの取得に失敗しました')
         return
       }
       setNote(await res.json())
     } catch {
-      setError('ノートの取得に失敗しました')
+      setError('マイレシピの取得に失敗しました')
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +59,7 @@ export function useRecipeNote(noteId: string) {
     })
     if (!res.ok) {
       const body = await res.json().catch(() => null)
-      throw new Error(res.status === 400 && body?.error ? body.error : 'ノートの保存に失敗しました')
+      throw new Error(res.status === 400 && body?.error ? body.error : 'マイレシピの保存に失敗しました')
     }
     // 取得中の表示に切り替えると編集フォームが一瞬消えるので、読み込み状態は触らずに取り直す。
     // 保存は済んでいるので、取り直しに失敗しても失敗扱いにはせず、送った内容で表示を更新する
