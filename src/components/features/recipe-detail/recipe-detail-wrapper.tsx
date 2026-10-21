@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { RecipeDetail } from '@/types/recipe'
@@ -11,7 +12,14 @@ interface RecipeDetailWrapperProps {
   recipeId: string
 }
 
+/**
+ * レシピ詳細の取得と表示。
+ *
+ * マイレシピはノート画面で見る・直すので、履歴や古いリンクからここに来たらノートへ転送する（#226）。
+ * 判定は `url` ではなく `noteId`（`recipe_notes.recipe_id` の FK）で行う。
+ */
 export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
+  const router = useRouter()
   const { user, isLoading: authLoading, isAuthenticated } = useAuth()
   const authedFetch = useAuthedFetch()
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null)
@@ -41,7 +49,13 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
     fetchRecipe()
   }, [authLoading, user, fetchRecipe])
 
-  if (authLoading || isLoading) return <LoadingState />
+  const noteId = recipe?.noteId
+  useEffect(() => {
+    if (noteId) router.replace(`/notes/${noteId}`)
+  }, [noteId, router])
+
+  // 転送中は詳細画面を一瞬でも出さない
+  if (authLoading || isLoading || noteId) return <LoadingState />
   if (!isAuthenticated) return <CenteredMessage>ログインが必要です</CenteredMessage>
   if (error) return <CenteredMessage>{error}</CenteredMessage>
   if (!recipe) return <CenteredMessage>レシピが見つかりません</CenteredMessage>
