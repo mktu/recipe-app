@@ -28,10 +28,9 @@ export function useRecipeNote(noteId: string) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // noteId が変わったときの状態リセットはページ側の key で再マウントして行う
   const fetchNote = useCallback(async () => {
     if (!user) return
-    setIsLoading(true)
-    setError(null)
     try {
       const res = await authedFetch(`/api/notes/${noteId}`)
       if (!res.ok) {
@@ -48,6 +47,8 @@ export function useRecipeNote(noteId: string) {
 
   useEffect(() => {
     if (authLoading || !user) return
+    // fetchNote の setState は await の後だけだが、ルールは非同期の境界を見ずに検出する
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNote()
   }, [authLoading, user, fetchNote])
 

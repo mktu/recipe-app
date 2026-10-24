@@ -26,10 +26,9 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // recipeId が変わったときの状態リセットはページ側の key で再マウントして行う
   const fetchRecipe = useCallback(async () => {
     if (!user) return
-    setIsLoading(true)
-    setError(null)
     try {
       const res = await authedFetch(`/api/recipes/${recipeId}`)
       if (!res.ok) {
@@ -44,8 +43,17 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
     }
   }, [recipeId, user, authedFetch])
 
+  // 編集後の取り直し。effect から呼ぶ fetchRecipe と分けて、同期の setState を effect に持ち込まない
+  const refetchRecipe = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    await fetchRecipe()
+  }, [fetchRecipe])
+
   useEffect(() => {
     if (authLoading || !user) return
+    // fetchRecipe の setState は await の後だけだが、ルールは非同期の境界を見ずに検出する
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRecipe()
   }, [authLoading, user, fetchRecipe])
 
@@ -60,5 +68,5 @@ export function RecipeDetailWrapper({ recipeId }: RecipeDetailWrapperProps) {
   if (error) return <CenteredMessage>{error}</CenteredMessage>
   if (!recipe) return <CenteredMessage>レシピが見つかりません</CenteredMessage>
 
-  return <RecipeDetailPage recipe={recipe} onRecipeUpdated={fetchRecipe} />
+  return <RecipeDetailPage recipe={recipe} onRecipeUpdated={refetchRecipe} />
 }
