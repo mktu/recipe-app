@@ -15,5 +15,5 @@ export default async function NotePage({ params, searchParams }: NotePageProps) 
   // 材料名のサジェスト用。ノート本体は認証が要るのでクライアントで取る（ホーム・詳細と同じ）
   const ingredients = await fetchIngredientOptions()
 
-  return <RecipeNotePage noteId={id} ingredients={ingredients} fromLine={fromLine} />
+  return <RecipeNotePage key={id} noteId={id} ingredients={ingredients} fromLine={fromLine} />
 }
