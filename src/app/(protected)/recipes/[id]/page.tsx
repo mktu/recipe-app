@@ -7,5 +7,5 @@ interface RecipeDetailPageProps {
 export default async function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const { id } = await params
 
-  return <RecipeDetailWrapper recipeId={id} />
+  return <RecipeDetailWrapper key={id} recipeId={id} />
 }

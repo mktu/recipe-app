@@ -17,6 +17,13 @@
 - **Scraper:** JSON-LD 抽出（優先）→ `__NEXT_DATA__` 抽出 → OGP（最終フォールバック）
 - **Platform:** LINE LIFF
 
+### Next.js 公式のエージェント向け指示
+
+`AGENTS.md` は `next dev` が書き込む Next.js 公式の指示（インストール済みバージョンの同梱ドキュメントを読むよう案内する）。
+中身は next 任せにしてコミットし、next 更新時に差分をレビューする（`update-packages` スキル）。
+
+@AGENTS.md
+
 ## ディレクトリ構造
 
 詳細は `docs/ARCHITECTURE.md` を参照。主要なパス：
