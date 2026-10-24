@@ -57,15 +57,19 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 
 > 教訓: 「基盤だけ先に入れてテストは後で」は、基盤が腐る速度に対して CI が無力になる。
 
-### CI の Node と、ローカル / 本番の Node がずれている
+### Node のバージョンは `.nvmrc` が正本。上げる前に Vercel の対応を確認する
 
-`.nvmrc` は `24`、Vercel も 24.x だが、**ワークフローは元々 `node-version: '20'` 固定**だった。
-`e2e.yml` は `node-version-file: '.nvmrc'` に直した（#37）。Node 20 には native WebSocket が無く、
-`@supabase/supabase-js` の `createClient()` が `RealtimeClient` の初期化で落ちるため。
-`ci.yml` も #211 で `.nvmrc` に揃えた（本番と同じ Node で build・単体テストを通すため）。
+全ワークフローが `node-version-file: '.nvmrc'` を読む。**`node-version: '20'` のような直書きを足さない。**
+元々は全部 20 固定で、Node 20 に native WebSocket が無いため `@supabase/supabase-js` の
+`createClient()` が `RealtimeClient` の初期化で落ちる、といったズレを踏んだ（#37, #211）。
 
-残り（`test-migrations.yml` / `supabase-functions.yml`）は 20 のまま。
-**ローカルで通ったコードが CI だけ落ちる**余地が残っているので、揃えるかは要判断。
+`.nvmrc` はメジャーのみ（`24`）なので、CI はその系列の最新パッチを自動で使う。
+ローカルは `fnm install 24` で追従する。
+
+**メジャーを上げるときは、Vercel の Functions / ビルドが対応しているかを先に確認する**
+（[Node.js versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)）。
+2026-10 時点で Node 26 は Vercel Sandbox のみ対応で、Functions は 24.x までのため 24 に留めた。
+`.nvmrc` だけ先に上げると、ローカル・CI と本番がずれる。
 
 ### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
 
