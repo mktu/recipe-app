@@ -71,6 +71,14 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 2026-10 時点で Node 26 は Vercel Sandbox のみ対応で、Functions は 24.x までのため 24 に留めた。
 `.nvmrc` だけ先に上げると、ローカル・CI と本番がずれる。
 
+### `next build` が `next/font/google` の数百件の Module not found で落ちたら再実行する
+
+`Can't resolve '@vercel/turbopack-next/internal/font/google/font'` が
+`noto_sans_jp_*.module.css` に数百件並ぶのは、ビルド時に fonts.gstatic.com から
+フォントを取れなかっただけ（一時的なネットワーク失敗）。コードの不具合に見えるが、
+**同じコミットの再実行（`gh run rerun <id> --failed`）で通る**（#232 で発生）。
+同じ PR の Vercel ビルドが通っていれば、まずこれを疑う。
+
 ### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
 
 `playwright.config.ts` の `webServer.reuseExistingServer` はローカルで有効。
