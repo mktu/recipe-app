@@ -12,6 +12,9 @@ brew install supabase/tap/supabase
 docker info
 ```
 
+> **CLI は v2.108.0 以降が必要。** `config.toml` のメールサーバ設定が `[local_smtp]`（旧 `[inbucket]`）で、
+> それより古い CLI はこの名前を読めない。CI は v2.122.1 に固定している（`docs/OPERATIONS.md`）。
+
 ## 起動・停止
 
 ```bash
