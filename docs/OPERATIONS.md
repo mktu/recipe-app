@@ -21,13 +21,21 @@ PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用な�
 
 ## CI
 
-### `supabase/setup-cli` が `version: latest`
+### Supabase CLI は CI でバージョン固定（自動では上がらない）
 
-コードを変えなくても CLI 更新で CI が壊れ得る。特に `test-migrations.yml` は
-`supabase/migrations/**` の変更時のみ走るため、**壊れてから気付くまで数ヶ月空くことがある**。
+4 つのワークフロー（`e2e.yml` / `test-migrations.yml` / `supabase-migrate.yml` /
+`supabase-functions.yml`）の `supabase/setup-cli` は `version: 2.122.1`（v2 最終）に固定している。
+上げるときは**全ワークフローを同時に、リリースノートを読んでから**上げる。
+`supabase-migrate.yml` / `supabase-functions.yml` は develop / main へのマージ時にしか走らないため、
+CLI の破壊的変更は**本番デプロイの時点で初めて表面化する**。
 
-> 実例: 2026-08 に `supabase start` が Edge Function の生成物を読めず失敗。
-> `npm run functions:build` を前段に追加して解消（詳細は `docs/EDGE_FUNCTIONS.md`）。
+> 経緯: 以前は `version: latest` で、v3.0.0（2026-11）のリリースで E2E が全 PR で落ちた（#244）。
+> v3 は `db push` の既定対象がローカルになる・ホスト変更に `--yes` 必須など、デプロイコマンドにも
+> 破壊的変更がある。v3 へ上げる前にこれらへの対応が必要（#245）。
+
+> 注意: `config.toml` は `[local_smtp]`。Supabase の **GitHub 連携（プレビューブランチ）** は
+> 2026-11 時点でこのキーを読めず失敗する（supabase/supabase#47616）。今は使っていないが、
+> 有効化するならこの問題が解消されているか先に確認する。
 
 ### `E2E Tests` は develop / main への PR で走る
 

@@ -31,7 +31,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.1
 
       - name: Deploy Edge Functions to staging
         run: supabase functions deploy --project-ref ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
@@ -59,7 +59,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.1
 
       - name: Deploy Edge Functions to production
         run: supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
