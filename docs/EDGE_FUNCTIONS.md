@@ -200,7 +200,7 @@ npx tsx scripts/setup-cron.ts --env=production
 
 | ジョブ名 | schedule | 対象 |
 |---------|----------|------|
-| `generate-embeddings` | `*/5 * * * *` | `generate-embeddings` |
+| `generate-embeddings` | `*/5 * * * *` | `generate-embeddings`（未生成レシピがあるときだけ呼ぶ） |
 | `auto-alias-daily` | `0 18 * * *`（JST 03:00） | `auto-alias` |
 | `audit-auto-generated-weekly` | `0 0 * * 1`（JST 月曜 09:00） | `audit-auto-generated` |
 | `cleanup-cron-logs` | `0 0 * * *` | SQL 直実行（古い実行ログ削除） |
@@ -212,6 +212,11 @@ npx tsx scripts/setup-cron.ts --env=production
 - pg_cron のタイムアウトは最大5秒
 - 長時間処理は非同期パターン（202 Accepted を即座に返す）で対応。auto-alias は採用済み
 - cron を待たずに確認したいときは、出力 SQL の `net.http_post(...)` 部分だけを単発で実行する
+- **高頻度ジョブは空振りで Edge Function を呼ばない（`onlyIf`）。** 処理対象が無くても `net.http_post` は
+  pg_net のキュー・`net._http_response` に行を書き、5分毎のチェックポイントが毎回書き出しと fsync を行う。
+  アプリの負荷がほぼゼロでも Supabase から「Disk IO Budget を消費している」警告が来た原因がこれ
+  （`pg_stat_io` で checkpointer の writes / fsyncs が大半を占めていた）。
+  `onlyIf` の条件は Edge Function 側の抽出条件（例: `MAX_RETRY_COUNT`）と揃えること
 
 ## 自動追加食材の監査通知の運用（#150）
 

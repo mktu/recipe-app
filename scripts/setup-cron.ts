@@ -29,6 +29,12 @@ interface EdgeFunctionJob {
   schedule: string
   /** 呼び出す Edge Function 名 */
   functionName: string
+  /**
+   * 指定すると、この条件が真のときだけ Edge Function を呼ぶ（SQL の WHERE 句）。
+   * 空振りの呼び出しでも pg_net のキュー・レスポンス行が書かれ、チェックポイントの
+   * 書き出しと fsync が5分毎に発生して Disk IO Budget を削るため、処理対象が無いときは呼ばない。
+   */
+  onlyIf?: string
   description: string
 }
 
@@ -52,7 +58,10 @@ const JOBS: Job[] = [
     name: 'generate-embeddings',
     schedule: '*/5 * * * *',
     functionName: 'generate-embeddings',
-    description: '埋め込みベクトル生成（5分毎）',
+    // 3 は generate-embeddings の MAX_RETRY_COUNT と揃える
+    onlyIf:
+      'EXISTS (SELECT 1 FROM public.recipes WHERE title_embedding IS NULL AND embedding_retry_count < 3)',
+    description: '埋め込みベクトル生成（5分毎。未生成レシピがあるときだけ呼ぶ）',
   },
   {
     name: 'auto-alias-daily',
@@ -121,7 +130,8 @@ function loadEnv(): { supabaseUrl: string; supabaseKey: string; envName: string 
 // ===========================================
 
 /** Edge Function を叩く net.http_post 呼び出し */
-function httpPostSql(functionUrl: string, supabaseKey: string): string {
+function httpPostSql(functionUrl: string, supabaseKey: string, onlyIf?: string): string {
+  const where = onlyIf ? `\n  WHERE ${onlyIf}` : ''
   return `  SELECT net.http_post(
     url := '${functionUrl}',
     headers := jsonb_build_object(
@@ -129,12 +139,12 @@ function httpPostSql(functionUrl: string, supabaseKey: string): string {
       'Authorization', 'Bearer ${supabaseKey}'
     ),
     body := '{}'::jsonb
-  ) AS request_id;`
+  ) AS request_id${where};`
 }
 
 function jobSql(job: Job, supabaseUrl: string, supabaseKey: string): string {
   const command = isEdgeFunctionJob(job)
-    ? `\n${httpPostSql(`${supabaseUrl}/functions/v1/${job.functionName}`, supabaseKey)}\n  `
+    ? `\n${httpPostSql(`${supabaseUrl}/functions/v1/${job.functionName}`, supabaseKey, job.onlyIf)}\n  `
     : job.sql
 
   return [
