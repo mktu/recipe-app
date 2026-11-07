@@ -58,29 +58,11 @@ SELECT * FROM pg_extension WHERE extname = 'pg_net';
 
 ### 6. Cron ジョブの作成
 
-Supabase ダッシュボード → Database → Cron Jobs → Create a new cron job
+**ダッシュボードの Cron Jobs 画面から手で作らない。** ジョブ定義の正本は `scripts/setup-cron.ts` で、
+その出力 SQL を SQL Editor で流す（手順と注意点は `docs/EDGE_FUNCTIONS.md` の「pg_cron との連携」）。
 
-**埋め込み生成ジョブ:**
-
-| 項目 | 値 |
-|------|-----|
-| Name | `generate-embeddings` |
-| Schedule | `*/5 * * * *` (5分毎) |
-| Type | Supabase Edge Function |
-| Edge Function | `generate-embeddings` |
-| HTTP Method | POST |
-| HTTP Headers | (空) |
-| HTTP Body | (空) |
-| Timeout | `5000` |
-
-**ログクリーンアップジョブ（任意）:**
-
-| 項目 | 値 |
-|------|-----|
-| Name | `cleanup-old-cron-logs` |
-| Schedule | `0 3 * * *` (毎日午前3時) |
-| Type | SQL Snippet |
-| SQL | `DELETE FROM cron.job_run_details WHERE end_time < NOW() - INTERVAL '7 days';` |
+> 以前はこの doc で `generate-embeddings` / `cleanup-old-cron-logs` を手作りしていた。
+> 別名で作ったジョブはスクリプトの `unschedule` で外れず二重に動くので、残っていれば `cron.unschedule('<jobname>')` で外す。
 
 ## 動作確認
 
