@@ -186,6 +186,11 @@ function main(): void {
   console.log('-- 登録結果の確認')
   console.log('SELECT jobname, schedule, active FROM cron.job ORDER BY jobname;')
   console.log('')
+  // unschedule は同名ジョブしか外さない。旧手順でダッシュボードから作った別名ジョブが残ると二重に動く
+  const names = JOBS.map((job) => `'${job.name}'`).join(', ')
+  console.log('-- 定義に無いジョブ（0行であること。残っていれば cron.unschedule(jobname) で外す）')
+  console.log(`SELECT jobid, jobname, schedule FROM cron.job WHERE jobname NOT IN (${names});`)
+  console.log('')
   console.log('-- 直近の実行結果')
   console.log(
     'SELECT j.jobname, d.status, d.start_time FROM cron.job_run_details d JOIN cron.job j USING (jobid) ORDER BY d.start_time DESC LIMIT 20;'

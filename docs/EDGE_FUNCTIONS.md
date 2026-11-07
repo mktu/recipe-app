@@ -210,6 +210,9 @@ npx tsx scripts/setup-cron.ts --env=production
 - 出力 SQL には secret key が平文で入り、`cron.job` テーブルにも残る。
   キーをローテーションしたらスクリプトを流し直して貼り替える
 - pg_cron のタイムアウトは最大5秒
+- **`unschedule` は同名ジョブしか外さない。** 旧手順（`docs/EMBEDDING_BATCH_SETUP.md`）でダッシュボードから
+  作った別名ジョブ（`auto-alias` / `cleanup-old-cron-logs`）が staging に残り、新ジョブと二重に動いていた。
+  出力末尾の「定義に無いジョブ」クエリが0行であることを確認する
 - 長時間処理は非同期パターン（202 Accepted を即座に返す）で対応。auto-alias は採用済み
 - cron を待たずに確認したいときは、出力 SQL の `net.http_post(...)` 部分だけを単発で実行する
 - **高頻度ジョブは空振りで Edge Function を呼ばない（`onlyIf`）。** 処理対象が無くても `net.http_post` は
