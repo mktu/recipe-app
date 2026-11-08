@@ -17,6 +17,13 @@ description: セッション開始時に open Issue を読んで現在地を把�
 gh issue list --state open
 ```
 
+GitHub Projects の Status で、人の番の Issue と計画待ちの Issue も確認する（`/work-issue` の運用）。
+`project` スコープが無くて失敗したら、この確認は飛ばしてよい（`docs/OPERATIONS.md`）。
+
+```bash
+.claude/skills/work-issue/scripts/project-status.sh list "Needs input" "In review" "Plan"
+```
+
 着手内容が決まった時点で、CLAUDE.md の「ドキュメント > 作業前に読む」表に従って
 該当 doc も読む（Edge Function なら `docs/EDGE_FUNCTIONS.md`、migration なら
 `docs/DATABASE_DESIGN.md` など）。
@@ -65,6 +72,9 @@ npm run functions:serve
 
 **open な Issue:**
 - [#番号 タイトル を数件]
+
+**人の番 / 計画待ち（Status）:**
+- [Needs input・In review・Plan の Issue。なければ「なし」]
 
 **残っている worktree:**
 - [パス（ブランチ / PR 状態）。なければ「なし」]
