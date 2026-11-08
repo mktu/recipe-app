@@ -19,6 +19,25 @@ GitHub が Issue を自動クローズするのは**デフォルトブランチ�
 本プロジェクトは全 PR が develop 向けなので、**Issue は main マージ後に手動で閉じる**必要がある。
 PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用なので続けてよい。
 
+### 単純なタスクは `/work-issue` で計画 → Draft PR まで進める
+
+Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/users/mktu/projects/5) の **Status 列**で管理する
+（`Todo` → `Plan` → `Needs input` / `Ready` → `In Progress` → `In review` → `Done`。ラベルは使わない）。
+人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
+**`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
+人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
+経緯と設計は #252 / #254。
+
+- **gh に `project` スコープが要る**（PC ごと）。無いと Status を読めない。
+  `gh auth refresh -h github.com -s project` は対話の認証なので、Claude Code 経由ではなく普段のターミナルで実行する
+  （`--hostname` を付けないと非対話環境では失敗する）
+- **AI のコメントも人のコメントも投稿者は自分になる**（gh が自分のトークンで動くため）。
+  「人が返信したか」を投稿者では判定できないので、AI のコメントには `<!-- work-issue:... -->` の目印を入れ、
+  最後のコメントに目印が無ければ人の返信とみなしている
+- **Status の選択肢は画面から追加・変更する。** API（`updateProjectV2Field`）で選択肢を更新すると、
+  既存の選択肢を正しく引き継がない限り、既存アイテムの Status が外れるおそれがある
+- GitHub Actions（claude-code-action）で回す案は、CI 用の認証手段が無いため保留している（#252 の「保留」節）
+
 ## CI
 
 ### Supabase CLI は CI でバージョン固定（自動では上がらない）
