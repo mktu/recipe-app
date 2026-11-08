@@ -545,7 +545,9 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-    Start["URL Input"] --> Fetch["Fetch HTML"]
+    Start["URL Input"] --> Own{"アプリ自身の URL?\n(isOwnAppUrl)"}
+    Own -->|Yes| Reject["登録せずに案内を返す"]
+    Own -->|No| Fetch["Fetch HTML"]
 
     Fetch --> Strategy1{"JSON-LD extract"}
     Strategy1 -->|Success| Result["Parse Result"]
@@ -566,9 +568,11 @@ graph TB
 
 > 取得対象・アクセス様態・robots.txt / 対象サイト利用規約に対する方針は `docs/SCRAPING_POLICY.md` を参照。
 >
-> レシピノートはこのフローを通らない（作成・編集時に RPC で直接書く）。自ドメインのノート URL を
-> LINE 等から登録すると、このフローに入って HTTP で取得しに行く（#179 は対応しないことにして閉じた）。
-> 保護ページなので中身は取れず、既存のデータは壊さない（`docs/SCRAPING_POLICY.md`）。
+> レシピノートはこのフローを通らない（作成・編集時に RPC で直接書く）。
+> **アプリ自身の URL（マイレシピ・ホームなど）は、LINE（`processUrl`）と Web（`url-input-form.tsx`）の
+> 登録の入口で断る**（`src/lib/recipe/own-app-url.ts`、#230）。保護ページは認証をクライアント側でしか
+> 行っていないため、取得するとアプリ全体の OGP が返り、中身の無いレシピが登録されてしまうから。
+> 判定はホスト（`NEXT_PUBLIC_APP_URL` と `liff.line.me`）で行うので、Vercel の別名ホストはすり抜ける。
 
 ---
 

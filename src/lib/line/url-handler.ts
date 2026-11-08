@@ -1,5 +1,6 @@
 import { messagingApi } from '@line/bot-sdk'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
+import { isOwnAppUrl } from '@/lib/recipe/own-app-url'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import { createVerticalListMessage, RecipeCardData } from './flex-message'
@@ -71,6 +72,13 @@ export async function processUrl(
   ensureUser: (lineUserId: string) => Promise<void>
 ): Promise<void> {
   try {
+    // アプリ自身のページは取得しても中身の無いレシピになるので登録しない（#230）。
+    // 返信の失敗を webhook まで投げないよう try の中に置く（#170）
+    if (isOwnAppUrl(url)) {
+      await replyText(client, replyToken, 'RecipeHub のページは登録できません。レシピサイトの URL を送ってください。')
+      return
+    }
+
     await ensureUser(lineUserId)
     const result = await saveRecipe(lineUserId, url)
     if (result.isDuplicate) {

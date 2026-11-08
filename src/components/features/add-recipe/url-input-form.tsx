@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Link2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { isOwnAppUrl } from '@/lib/recipe/own-app-url'
 
 function isValidUrl(value: string): boolean {
   try {
@@ -33,6 +34,12 @@ export function UrlInputForm() {
 
       if (!isValidUrl(trimmedUrl)) {
         setError('有効なURLを入力してください')
+        return
+      }
+
+      // アプリ自身のページは取得しても中身が取れない（#230）
+      if (isOwnAppUrl(trimmedUrl)) {
+        setError('RecipeHub のページは登録できません')
         return
       }
 
