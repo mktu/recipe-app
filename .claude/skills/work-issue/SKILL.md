@@ -95,7 +95,7 @@ Issue は雑に書かれている前提で読む。それを AI が理解する�
 ### Status の移し方
 
 - **`Ready` に移すのは、人が方針に合意したときだけ。** AI が「論点を書き終えた」「質問がなくなったと思う」という理由で移さない。
-  移したら「着手するときは `In Progress` にするか、もう一度 `/work-issue <番号>` を実行してください」と伝えて終わる
+  移したら「着手するときは、ボードで `In Progress` に移すか、もう一度 `/work-issue <番号>` を実行してください（実行した場合は、着手してよいかを確認します）」と伝えて終わる
 - 人が不在のとき（まとめ処理モード、バックグラウンド）は、調べた結果と論点を `question` コメントに書いて `Needs input` に移す。
   議論の続きは、人が返信してから次に呼ばれたときに行う
 - 対話の途中で終わるときも、そこまでの議論で分かったことと残っている論点を `question` コメントに残し、`Needs input` にする
@@ -115,6 +115,12 @@ Issue は雑に書かれている前提で読む。それを AI が理解する�
   git worktree add .claude/worktrees/<name> -b feature/<add|fix|refactor|docs>-<内容>-<Issue番号> origin/develop
   ```
   `blocked` からの再開なら、目印にあるブランチの worktree を使う
+- **worktree には `node_modules` も `.env.local` も無い。** 入ったら、確認（3-3）の前に揃える。
+  `.env.local` が無いと `npm run build` が Supabase の URL 未設定で落ちる（`docs/SUPABASE_LOCAL.md`）
+  ```bash
+  npm ci
+  cp "$(git worktree list --porcelain | sed -n '1s/^worktree //p')/.env.local" .env.local  # メインのチェックアウトから
+  ```
 
 ### 3-2. 実装する
 進め方は臨機応変でよい。守るのは次の 1 点だけ。
