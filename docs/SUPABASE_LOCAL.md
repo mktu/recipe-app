@@ -131,9 +131,10 @@ docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.So
 npm run functions:build && npm run functions:serve
 ```
 
-> 予防・検出は `/start-session` `/end-session`（worktree の棚卸し時）と
+> 予防は `/end-session`（worktree を消す前の確認）、検出は
 > `e2e/global-setup.ts`（E2E 実行前の probe）に入れてある。ここは、
 > **どちらも通らずに症状だけ踏んだとき**の受け皿。
+> （セッション開始時の確認は `/start-session` にあったが、実際には起動されていなかったため廃止した。#254）
 
 ### ローカルではアカウント削除ができない
 
