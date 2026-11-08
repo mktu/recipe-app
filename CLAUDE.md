@@ -86,6 +86,18 @@
 - `feature/refactor-xxx` - リファクタリング
 - `feature/docs-xxx` - ドキュメント更新
 
+**worktree:** PR を出す作業は worktree で行う（調査や 1 ファイルの typo 修正などは不要）。
+ブランチは**必ず `origin/develop` 起点**にする。
+
+```bash
+git fetch origin
+git worktree add .claude/worktrees/<name> -b feature/<xxx> origin/develop
+```
+
+`EnterWorktree` ツールで新規作成すると既定で `origin/main` から切られ、PR に無関係なコミットが並ぶ。
+上のコマンドで作ってから `EnterWorktree` の `path` で入るか、作成後に `git reset --hard origin/develop` で揃える。
+片付けは `/end-session`。
+
 **CI チェック（PR 時に自動実行）:**
 - `npm run lint`
 - `npm test`（vitest。単体テスト）
@@ -228,7 +240,8 @@ LINE_CHANNEL_ACCESS_TOKEN=
 
 ### 新セッション開始時
 
-`/start-session` を実行する（open Issue の確認と worktree 利用判断を行う）。
+何をやるか決まっていなければ、`/work-issue`（引数なし）で作業待ちの Issue を見る。
+（旧 `/start-session` は、実際には起動されていなかったため廃止した。#254）
 
 ### 実装タスク着手時
 

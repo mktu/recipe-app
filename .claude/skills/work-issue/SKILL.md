@@ -1,6 +1,6 @@
 ---
 name: work-issue
-description: Issue を GitHub Projects の Status に沿って進める（Plan → 人と対話して方針を詰め、合意したら Ready／In Progress → 実装して Draft PR）。引数に Issue 番号、無しなら作業待ちの一覧から選ぶ
+description: Issue を GitHub Projects の Status に沿って 1 段階進める（Plan → 人と対話して方針を詰め、合意したら Ready／In Progress → 実装して Draft PR）。Issue 番号を挙げて「#123 をやろう」「この Issue を進めて」「方針を相談したい」と言われたとき、「Plan の Issue をまとめて見て」と言われたとき、次に取りかかる Issue を選びたいときに使う。引数に Issue 番号、無しなら作業待ちの一覧から選ぶ
 ---
 
 # Issue を進める（イシュー駆動開発）
@@ -108,8 +108,12 @@ Issue は雑に書かれている前提で読む。それを AI が理解する�
 
 ### 3-1. 準備
 - Issue 本文と全コメントを読み、合意した方針を把握する（`decision` コメントが案内する場所を読む）。関係する doc も読む
-- worktree を `origin/develop` 起点で作る（手順は `/start-session` の 4 と同じ）。
-  ブランチ名は `feature/<add|fix|refactor|docs>-<内容>-<Issue番号>`。
+- worktree を**必ず `origin/develop` 起点**で作り、`EnterWorktree` の `path` で入る
+  （`EnterWorktree` で新規作成すると `origin/main` から切られる。CLAUDE.md「ブランチ戦略」）。
+  ```bash
+  git fetch origin
+  git worktree add .claude/worktrees/<name> -b feature/<add|fix|refactor|docs>-<内容>-<Issue番号> origin/develop
+  ```
   `blocked` からの再開なら、目印にあるブランチの worktree を使う
 
 ### 3-2. 実装する
