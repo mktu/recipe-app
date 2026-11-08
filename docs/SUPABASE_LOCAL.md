@@ -103,9 +103,16 @@ CI ではクリーンな `supabase start` が Edge Runtime ごと立ち上げる
 
 ### worktree には `.env.local` が無い
 
-`.env.local` は追跡対象外なので、worktree を作った先には存在しない。
+`.env.local` は追跡対象外なので、worktree を作った先には存在しない（`node_modules` も無い）。
 `playwright.config.ts` はここから Supabase キーを読むため、worktree で E2E を回すなら
 メインのチェックアウトからコピーしておくこと。
+**`npm run build` も、無いとページデータの収集で Supabase の URL 未設定により落ちる**（#230 で踏んだ）。
+lint と test は無くても通るので、build で初めて気付く。
+
+```bash
+npm ci
+cp "$(git worktree list --porcelain | sed -n '1s/^worktree //p')/.env.local" .env.local
+```
 
 ### worktree から `functions:serve` すると、worktree を消した後も壊れたまま残る
 
