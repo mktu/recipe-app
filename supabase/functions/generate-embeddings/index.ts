@@ -18,6 +18,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const BATCH_SIZE = 100
 const EMBEDDING_MODEL = 'gemini-embedding-001'
+/** scripts/setup-cron.ts の generate-embeddings ジョブの onlyIf 条件と揃える */
 const MAX_RETRY_COUNT = 3
 
 interface Recipe {
