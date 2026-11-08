@@ -23,7 +23,8 @@ PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用な�
 
 Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/users/mktu/projects/5) の **Status 列**で管理する
 （`Todo` → `Plan` → `Needs input` / `Ready` → `In Progress` → `In review` → `Done`。ラベルは使わない）。
-人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が計画を Issue にコメントして `Ready` で止まる。
+人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
+**`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
 人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
 経緯と設計は #252 / #254。
 
