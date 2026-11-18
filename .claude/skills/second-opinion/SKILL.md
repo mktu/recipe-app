@@ -44,14 +44,26 @@ Skill ツールで `code-review` を呼ぶ。**強度とブランチ名を必ず
 
 「そもそも何をしたいんだっけ」の目線で見直す、読み取り専用の subagent（`.claude/agents/purpose-guardian.md`）。
 
-- **渡すのは Issue 番号だけ。** 番人は Issue・`decision` コメント・差分を自分で取りに行く。
-  実装中の判断の理由や PR 本文の下書きは渡さない（説得してしまい、独立した目にならない）
+- **番人は Bash を持たない**（Read / Grep / Glob だけ）。材料は呼び出し側が**コマンドで**ファイルに書き出して渡す。
+  手で要約して書かない（実装中の判断の理由や PR 本文の下書きが混ざると、説得してしまい独立した目にならない）
+  ```bash
+  N=<Issue 番号>
+  D=$(mktemp -d)
+  gh issue view $N --json title,body --jq '"# " + .title + "\n\n" + .body' > $D/issue.md
+  gh issue view $N --json comments --jq '.comments[] | select(.body | startswith("<!-- work-issue:decision -->")) | .body' > $D/decisions.md
+  git fetch origin develop -q
+  git diff origin/develop...HEAD --stat > $D/diff-stat.txt
+  git diff origin/develop...HEAD > $D/diff.patch
   ```
-  Agent(subagent_type: "purpose-guardian", prompt: "Issue #<番号> の変更を見直してください。")
+- **渡すのは材料ディレクトリと作業ディレクトリの場所だけ。**
+  ```
+  Agent(subagent_type: "purpose-guardian",
+        prompt: "材料ディレクトリ: <$D>\n作業ディレクトリ: <リポジトリのルート>\nこの変更を見直してください。")
   ```
 - **`purpose-guardian` が見つからないとき**（agent の定義はセッション開始時に読まれるので、定義を足した・変えたセッションでは呼べない）:
-  定義ファイルの frontmatter より下の本文を一時ファイルに書き出す。そのうえで `general-purpose` に
-  「作業ディレクトリ・その一時ファイルを読んで従うこと・Issue 番号・ファイルを変更しないこと」だけを渡して回す
+  定義ファイルの frontmatter より下の本文を材料ディレクトリに書き出す。そのうえで `general-purpose` に
+  「その本文を読んで従うこと・材料ディレクトリ・作業ディレクトリ・Bash を使わずファイルを変更しないこと」だけを渡して回す
+  （`general-purpose` は Bash を持つので、ここは指示頼みになる）
 - **省いてよいとき:** 目的が変更そのものと同じで、見失いようがない変更（ライブラリの更新、typo、原因が明らかな小さな不具合の修正）。
   省いたら、PR コメントにその理由を 1 行残す
 
