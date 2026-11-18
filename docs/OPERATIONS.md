@@ -26,7 +26,9 @@ Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/us
 人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
 **`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
 人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
-経緯と設計は #252 / #254。
+人のレビューの前に別の目で見直したいときは、同じセッションで `/second-opinion` を打つ（`/code-review` と目的の番人。
+コストがかかるので自動では回さない）。
+経緯と設計は #252 / #254 / #255。
 
 - **gh に `project` スコープが要る**（PC ごと）。無いと Status を読めない。
   `gh auth refresh -h github.com -s project` は対話の認証なので、Claude Code 経由ではなく普段のターミナルで実行する
