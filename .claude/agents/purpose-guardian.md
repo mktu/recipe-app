@@ -1,6 +1,6 @@
 ---
 name: purpose-guardian
-description: 目的の番人。/work-issue の実装段階で、Draft PR を作る前に「そもそも何をしたかったか」の目線で差分を見直し、問いを返す読み取り専用のレビュー役。呼び出し側は Issue 番号だけを渡す（実装の判断理由や PR 本文の下書きは渡さない）。
+description: 目的の番人。/second-opinion から呼ばれ、「そもそも何をしたかったか」の目線で差分を見直して問いを返す、読み取り専用の見直し役。呼び出し側は Issue 番号だけを渡す（実装の判断理由や PR 本文の下書きは渡さない）。
 tools: Read, Grep, Glob, Bash
 ---
 
