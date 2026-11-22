@@ -35,7 +35,6 @@ GitHub の PR 画面で、差分を上から読みながら判断している。
 
 - `gh pr create` の既定の base は main。この repo の PR は develop 向けで、過去に main へ誤マージしたことがある（PR #95）
 - `Closes #NNN` は develop 向けの PR では発火しないが、Issue との紐付けにはなる
-- `/second-opinion` は、本文の `セカンドオピニオン:` で始まる行を書き換えて結果を残す。行が無いと書き換え先が無い
 - E2E の CI が緑でも、実質ほとんど何も検証していない（`docs/OPERATIONS.md`）
 - タイトルはこれまで `feat:` / `fix:` / `docs:` などで始め、Issue があれば末尾に `（Issue #XX）` を付けてきた
 - 差分の行へのコメントは、レビュー（`event: COMMENT`）として付けられる。自分の PR でも付けられる
