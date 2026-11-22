@@ -32,7 +32,7 @@ function toLine(ing: IngredientRaw): string {
 export function buildIngredientsText(recipe: RecipeIngredientsForBot): string {
   const lines = recipe.ingredients.filter((ing) => ing.name?.trim()).map(toLine)
   const body = lines.length > 0 ? lines.join('\n') : NO_INGREDIENTS_TEXT
-  const text = `🥕 ${recipe.title} の材料\n${body}`
+  const text = `${recipe.title} の材料\n${body}`
   return truncateByCodePoint(text, TEXT_MAX)
 }
 
