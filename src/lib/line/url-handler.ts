@@ -3,7 +3,8 @@ import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { isOwnAppUrl } from '@/lib/recipe/own-app-url'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
-import { createVerticalListMessage, RecipeCardData } from './flex-message'
+import type { RecipeCardData } from './flex-message'
+import { createVerticalListMessage } from './vertical-list-message'
 import { toRecipeCardUrl } from './track-redirect'
 import { replyText } from './reply'
 
@@ -31,6 +32,7 @@ export async function replyTest(client: MessagingApiClient, replyToken: string, 
 
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID || ''
   const recipeCards: RecipeCardData[] = recipes.map((r) => ({
+    recipeId: r.id,
     title: r.title,
     url: toRecipeCardUrl(r),
     imageUrl: r.image_url,

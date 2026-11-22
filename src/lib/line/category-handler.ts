@@ -1,5 +1,5 @@
 import { messagingApi } from '@line/bot-sdk'
-import { createVerticalListMessage } from './flex-message'
+import { createVerticalListMessage } from './vertical-list-message'
 import { fetchMostViewedForBot, fetchFewIngredientsForBot, fetchShortCookingTimeForBot, fetchRecentlyAddedForBot } from './recipe-lists'
 import { toCard } from './recipe-card-mapper'
 import { replyErrorText, replyText } from './reply'
