@@ -58,6 +58,13 @@ CLI の破壊的変更は**本番デプロイの時点で初めて表面化す�
 > 2026-11 時点でこのキーを読めず失敗する（supabase/supabase#47616）。今は使っていないが、
 > 有効化するならこの問題が解消されているか先に確認する。
 
+### E2E のランナーは `ubuntu-24.04` に固定（`ubuntu-latest` にしない）
+
+`e2e.yml` だけ `runs-on: ubuntu-24.04` に固定している。2026-11 に `ubuntu-latest` が `ubuntu-26.04` に切り替わり、
+`npx playwright install --with-deps chromium` が `Playwright does not support chromium on ubuntu26.04-x64` で
+失敗して、E2E が全 PR で落ちた（#255 の PR #265 で発覚）。
+**外す条件:** `@playwright/test` を 26.04 対応版に上げたとき（`update-packages` スキルで changelog を確認する）。
+
 ### `E2E Tests` は develop / main への PR で走る
 
 Issue #37 でレシピ追加フローのテストを入れ、トリガーを `pull_request: [develop, main]` に、
