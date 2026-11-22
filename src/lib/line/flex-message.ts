@@ -1,7 +1,10 @@
 import type { messagingApi } from '@line/bot-sdk'
-import { createHeroImage, createThumbnail } from './flex-image'
+import { COLORS } from './flex-colors'
+import { createHeroImage } from './flex-image'
 
 export interface RecipeCardData {
+  /** あれば縦リストの行に [材料] ボタン（postback）を出す（#213） */
+  recipeId?: string
   title: string
   url: string
   imageUrl?: string | null
@@ -11,27 +14,6 @@ export interface RecipeCardData {
 }
 
 type FlexMessage = messagingApi.FlexMessage
-
-// RecipeHub Design Tokens
-const COLORS = {
-  primary: '#f59e0b',      // Amber/Gold - ボタン
-  textDark: '#3d3d3d',     // 濃いテキスト
-  textMuted: '#888888',    // 薄いテキスト（ソース名など）
-}
-
-/**
- * アクションの label の上限（LINE 仕様）
- *
- * 超えると reply 全体が 400 で落ちる（`label must not be longer than 40 characters`）。
- * ボックスの action ラベルは画面に出ずアクセシビリティ用途なので、切り詰めて構わない。
- */
-const ACTION_LABEL_MAX = 40
-
-/** レシピタイトルをアクションの label に使える長さへ丸める */
-function toActionLabel(title: string): string {
-  return title.length > ACTION_LABEL_MAX ? title.slice(0, ACTION_LABEL_MAX) : title
-}
-
 /**
  * altText の上限。超えると reply 全体が 400 で落ちる。
  * レシピタイトルは、`#` 見出しの無いノートでは本文の最初の行がそのまま入るので長くなりうる（#208）。
@@ -146,82 +128,4 @@ export function createRecipeMessage(recipes: RecipeCardData[]): FlexMessage {
     return createSingleRecipeMessage(recipes[0])
   }
   return createRecipeCarouselMessage(recipes)
-}
-
-function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
-  const textContents: messagingApi.FlexComponent[] = [
-    { type: 'text', text: recipe.title, weight: 'bold', size: 'sm', wrap: true, maxLines: 2 },
-  ]
-  if (recipe.sourceName) {
-    textContents.push({ type: 'text', text: recipe.sourceName, size: 'xs', color: COLORS.textMuted, margin: 'sm' })
-  }
-  const timeText = recipe.cookingTimeMinutes != null ? `${recipe.cookingTimeMinutes}分` : '-'
-  const countText = recipe.ingredientCount != null ? `${recipe.ingredientCount}品` : '-'
-  textContents.push({
-    type: 'box', layout: 'horizontal', margin: 'sm',
-    contents: [
-      { type: 'text', text: `⏱ ${timeText}`, size: 'xs', color: COLORS.primary, flex: 0 },
-      { type: 'text', text: `🍴 ${countText}`, size: 'xs', color: COLORS.primary, flex: 0, margin: 'md' },
-    ],
-  })
-  return {
-    type: 'box',
-    layout: 'horizontal',
-    spacing: 'md',
-    paddingTop: 'lg',
-    paddingBottom: 'lg',
-    paddingStart: 'md',
-    paddingEnd: 'md',
-    action: { type: 'uri', label: toActionLabel(recipe.title), uri: recipe.url },
-    contents: [
-      ...createThumbnail(recipe.imageUrl),
-      { type: 'box', layout: 'vertical', justifyContent: 'center', contents: textContents },
-    ],
-  }
-}
-
-function buildListItems(recipes: RecipeCardData[]): messagingApi.FlexComponent[] {
-  const items: messagingApi.FlexComponent[] = []
-  recipes.forEach((recipe, index) => {
-    if (index > 0) items.push({ type: 'separator' })
-    items.push(createListItemBox(recipe))
-  })
-  return items
-}
-
-/** 縦リスト型 Flex Message（1バブルに複数レシピを縦並び） */
-export function createVerticalListMessage(
-  recipes: RecipeCardData[],
-  listUrl: string,
-  totalCount: number,
-  headerText?: string,
-  showFooter?: boolean
-): FlexMessage {
-  const header = headerText ?? `🔍 ${totalCount}件見つかりました`
-  const altText = headerText ?? `${totalCount}件のレシピが見つかりました`
-  const hasMore = showFooter !== undefined ? showFooter : recipes.length < totalCount
-  return {
-    type: 'flex',
-    altText,
-    contents: {
-      type: 'bubble',
-      size: 'giga',
-      header: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [{ type: 'text', text: header, weight: 'bold', size: 'md' }],
-      },
-      body: { type: 'box', layout: 'vertical', spacing: 'none', paddingAll: 'none', contents: buildListItems(recipes) },
-      ...(hasMore && {
-        footer: {
-          type: 'box',
-          layout: 'vertical',
-          paddingAll: 'lg',
-          contents: [
-            { type: 'text', text: 'さらに見る →', size: 'sm', color: COLORS.primary, align: 'end', action: { type: 'uri', label: 'さらに見る', uri: listUrl } },
-          ],
-        },
-      }),
-    },
-  }
 }

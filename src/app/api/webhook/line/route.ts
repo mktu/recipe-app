@@ -6,6 +6,8 @@ import { isSearchKeyword, isYokuTsukuruKeyword, isShortCookingTimeKeyword, isFew
 import { replyTest, processUrl } from '@/lib/line/url-handler'
 import { extractUrls, resolveMessageRoute, type MessageRoute } from '@/lib/line/message-route'
 import { handleRecipeNoteImport, replyRecipePrefixHint } from '@/lib/line/note-import-handler'
+import { handleIngredientsPostback } from '@/lib/line/ingredients-handler'
+import { parseIngredientsPostback } from '@/lib/line/ingredients-postback'
 import { buildFormatMessages, buildHelpMessages, buildRecipeAddGuideMessage, buildWelcomeMessages, isFormatKeyword, isHelpKeyword, isRecipeAddKeyword } from '@/lib/line/guide-messages'
 
 const config = {
@@ -134,6 +136,16 @@ async function handleMessageEvent(event: webhook.Event): Promise<void> {
   await handleByRoute(text, replyToken, userId)
 }
 
+/** postback イベントを処理（縦リストの [材料] ボタン #213） */
+async function handlePostbackEvent(event: webhook.Event): Promise<void> {
+  if (event.type !== 'postback' || !event.replyToken || !event.source?.userId) return
+
+  const recipeId = parseIngredientsPostback(event.postback.data)
+  if (!recipeId) return
+
+  await handleIngredientsPostback(client, event.replyToken, event.source.userId, recipeId)
+}
+
 /**
  * POST /api/webhook/line
  * LINE Messaging API の Webhook エンドポイント
@@ -151,6 +163,7 @@ export async function POST(request: NextRequest) {
   await Promise.all(body.events.map((event) => Promise.all([
     handleFollowEvent(event),
     handleMessageEvent(event),
+    handlePostbackEvent(event),
   ])))
 
   return NextResponse.json({ status: 'ok' })
