@@ -192,7 +192,7 @@ Issue 化するか判断が必要な、コードだけからは分からない�
 - `src/lib/auth/verify-line-token.ts` / `src/lib/api/auth-guard.ts` - ID トークン検証・API 認証ガード
 - `supabase/migrations/20260702000000_clarify_rls_policies.sql` - RLS（service_role ベース・設計意図をコメント記載）
 - `scripts/setup-cron.ts` - cron ジョブ定義の正本
-- `.claude/skills/legal-check/skill.md` - 法的リスクチェック（Issue 一元化・線引き基準）
+- `.claude/skills/legal-check/SKILL.md` - 法的リスクチェック（Issue 一元化・線引き基準）
 
 ## GitHub リポジトリ
 

@@ -17,7 +17,7 @@ description: ライブラリアップデートをグループ単位で安全に�
 | G4: UI / スタイリング | `@radix-ui/*`, `radix-ui`, `lucide-react`, `tailwindcss`, `@tailwindcss/postcss`, `tailwind-merge`, `tw-animate-css`, `class-variance-authority`, `clsx`, `vaul`, `cmdk` |
 | G5: LINE SDK | `@line/bot-sdk`, `@line/liff` |
 | G6: 開発ツール | `typescript`, `eslint`, `husky`, `lint-staged`, `tsx`, `vitest`, `@playwright/test`, `dotenv` |
-| G7: その他 | `swr`, `zod`, `schema-dts` |
+| G7: その他 | `swr`, `zod`, `schema-dts`、および上のどのグループにも入らないもの（例: `@vercel/analytics`, `sharp`） |
 
 ---
 
