@@ -10,6 +10,7 @@ export default defineConfig({
   },
   test: {
     // e2e/ は Playwright の担当。vitest が拾うと @playwright/test の import で落ちる
-    exclude: ['**/node_modules/**', '**/dist/**', '.next/**', 'e2e/**'],
+    // .claude/ は Claude Code の mod（独自ランタイム。`claude plugin test` で回す）と worktree のコピー
+    exclude: ['**/node_modules/**', '**/dist/**', '.next/**', 'e2e/**', '.claude/**'],
   },
 })
