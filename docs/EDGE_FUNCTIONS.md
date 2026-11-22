@@ -42,6 +42,15 @@ supabase/functions/get-recipes/
 - **ビルド時変換**: `@supabase/supabase-js` → `npm:@supabase/supabase-js@2` などDeno向けに変換
 - **CI検証**: PR時にビルドが通るか検証、マージ時にデプロイ
 
+### 埋め込みは共有されておらず、2 経路で作っている
+
+タイトルの埋め込みは、アプリ（`src/lib/embedding/`、AI SDK 経由。登録時と検索語）と
+`generate-embeddings`（AI SDK を使わず、Gemini の REST を直接 `fetch`）が別々に作る。
+同じベクトル空間に入る前提なので、**モデル名と次元数（未指定＝既定の 3072、列は `vector(3072)`）を両方で揃える**。
+ずれても型チェックや build では気付けず、検索が黙って外れる。
+
+AI SDK を上げるときは、新旧で同じテキストを埋め込んでコサイン類似度がほぼ 1 になることを確かめる（#275）。
+
 ## ローカル開発
 
 ### 1. 共有ロジックをビルド
