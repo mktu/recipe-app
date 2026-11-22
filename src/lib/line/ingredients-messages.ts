@@ -1,6 +1,7 @@
 import type { messagingApi } from '@line/bot-sdk'
 import type { IngredientRaw } from '@/types/recipe'
 import { COLORS } from './flex-colors'
+import { truncateByCodePoint } from './truncate'
 
 export interface RecipeIngredientsForBot {
   title: string
@@ -32,7 +33,7 @@ export function buildIngredientsText(recipe: RecipeIngredientsForBot): string {
   const lines = recipe.ingredients.filter((ing) => ing.name?.trim()).map(toLine)
   const body = lines.length > 0 ? lines.join('\n') : NO_INGREDIENTS_TEXT
   const text = `🥕 ${recipe.title} の材料\n${body}`
-  return text.length > TEXT_MAX ? `${text.slice(0, TEXT_MAX - 1)}…` : text
+  return truncateByCodePoint(text, TEXT_MAX)
 }
 
 /** 作り方はサイト（ノート）で見てもらうので、レシピを開くボタンを添える */
@@ -53,9 +54,13 @@ function buildOpenRecipeMessage(url: string): messagingApi.FlexMessage {
   }
 }
 
+/**
+ * 材料のテキストと、レシピを開くボタンの 2 通。
+ * `NEXT_PUBLIC_APP_URL` が未設定だとカードの URL が相対パスになり、Flex の uri に載せると
+ * reply 全体が 400 で落ちて材料まで届かない。そのときはボタンを省く
+ */
 export function buildIngredientsMessages(recipe: RecipeIngredientsForBot): messagingApi.Message[] {
-  return [
-    { type: 'text', text: buildIngredientsText(recipe) },
-    buildOpenRecipeMessage(recipe.url),
-  ]
+  const text: messagingApi.Message = { type: 'text', text: buildIngredientsText(recipe) }
+  if (!recipe.url.startsWith('https://')) return [text]
+  return [text, buildOpenRecipeMessage(recipe.url)]
 }

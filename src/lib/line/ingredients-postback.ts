@@ -5,6 +5,8 @@
  * **data はクライアントから届くので改ざんされうる。** ここで取り出した recipeId は、
  * 取得時に必ず user_id と組み合わせて絞ること（`fetchRecipeIngredientsForBot`）。
  */
+import { truncateByCodePoint } from './truncate'
+
 const ACTION_KEY = 'action'
 const RECIPE_ID_KEY = 'recipeId'
 const INGREDIENTS_ACTION = 'ingredients'
@@ -29,7 +31,5 @@ const DISPLAY_TEXT_SUFFIX = 'の材料'
  * ノートのタイトルは本文の最初の行になりうるので長さを丸める（#208）
  */
 export function toIngredientsDisplayText(title: string): string {
-  const max = DISPLAY_TEXT_MAX - DISPLAY_TEXT_SUFFIX.length
-  const head = title.length > max ? `${title.slice(0, max - 1)}…` : title
-  return `${head}${DISPLAY_TEXT_SUFFIX}`
+  return `${truncateByCodePoint(title, DISPLAY_TEXT_MAX - DISPLAY_TEXT_SUFFIX.length)}${DISPLAY_TEXT_SUFFIX}`
 }

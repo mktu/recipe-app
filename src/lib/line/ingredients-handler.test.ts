@@ -10,12 +10,12 @@ const LINE_USER = 'U-line-user'
 const USER_ID = 'user-1'
 
 /** users → recipes の順に引かれる Supabase クライアントのモック。recipes への eq を記録する */
-function mockSupabase(recipe: unknown) {
+function mockSupabase(recipe: unknown, error: { code: string } | null = null) {
   const recipeEq = vi.fn()
   const recipesQuery = {
     select: () => recipesQuery,
     eq: (col: string, val: string) => { recipeEq(col, val); return recipesQuery },
-    maybeSingle: async () => ({ data: recipe, error: null }),
+    maybeSingle: async () => ({ data: recipe, error }),
   }
   const usersQuery = {
     select: () => usersQuery,
@@ -57,5 +57,27 @@ describe('handleIngredientsPostback', () => {
     const client = createClient()
     await run(client)
     expect(client.replyMessage.mock.calls[0][0].messages[0].text).toBe(RECIPE_NOT_FOUND_TEXT)
+  })
+
+  it('ingredients_raw の形式が崩れていても落ちない（文字列は名前として出し、null は捨てる）', async () => {
+    mockSupabase({ id: 'r1', title: '親子丼', url: 'https://example.com/r', ingredients_raw: ['鶏もも肉 300g', null, { name: '卵' }] })
+    const client = createClient()
+    await run(client)
+    expect(client.replyMessage.mock.calls[0][0].messages[0].text).toBe('🥕 親子丼 の材料\n・鶏もも肉 300g\n・卵')
+  })
+
+  it('UUID でない recipeId（改ざんされた data）は「見つからない」として返す', async () => {
+    mockSupabase(null, { code: '22P02' })
+    const client = createClient()
+    await run(client)
+    expect(client.replyMessage.mock.calls[0][0].messages[0].text).toBe(RECIPE_NOT_FOUND_TEXT)
+  })
+
+  it('それ以外の DB エラーは「削除された」と案内せず、エラーとして返す', async () => {
+    mockSupabase(null, { code: '57014' })
+    const client = createClient()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await run(client)
+    expect(client.replyMessage.mock.calls[0][0].messages[0].text).not.toBe(RECIPE_NOT_FOUND_TEXT)
   })
 })

@@ -37,4 +37,10 @@ describe('buildIngredientsMessages', () => {
     expect(messages[0].type).toBe('text')
     expect(JSON.stringify(messages[1])).toContain('https://recipe.example.com/api/track/recipe/r1')
   })
+
+  it('URL が https でない（NEXT_PUBLIC_APP_URL 未設定）ときはボタンを省き、材料だけは届ける', () => {
+    const messages = buildIngredientsMessages({ ...recipe([{ name: '卵', amount: '' }]), url: '/api/track/recipe/r1' })
+    expect(messages).toHaveLength(1)
+    expect(messages[0].type).toBe('text')
+  })
 })

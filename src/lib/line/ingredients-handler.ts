@@ -8,11 +8,29 @@ import { replyErrorText, replyText } from './reply'
 
 type MessagingApiClient = messagingApi.MessagingApiClient
 
+/** UUID として解釈できない値を uuid 列に渡したときのエラー。改ざんされた data で起きる */
+const INVALID_TEXT_REPRESENTATION = '22P02'
+
+/**
+ * ingredients_raw を材料の配列にそろえる。形式は保証されていないので（`filter-recipes.ts`）、
+ * 文字列の要素は name として扱い、null やオブジェクトでないものは捨てる
+ */
+function toIngredients(raw: unknown): IngredientRaw[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((item): IngredientRaw[] => {
+    if (typeof item === 'string') return [{ name: item, amount: '' }]
+    if (!item || typeof item !== 'object') return []
+    const { name, amount } = item as { name?: unknown; amount?: unknown }
+    return [{ name: String(name ?? ''), amount: amount == null ? '' : String(amount) }]
+  })
+}
+
 /**
  * 材料を返すレシピを取得する。
  *
  * recipeId は postback の data 由来で改ざんされうるので、**必ず user_id でも絞る**。
  * 他人のレシピ ID・存在しない ID・UUID でない文字列は、どれも null（見つからない）にする。
+ * それ以外の DB エラーは投げる（「削除された」と案内して障害を隠さないため）。
  */
 export async function fetchRecipeIngredientsForBot(
   lineUserId: string,
@@ -28,12 +46,14 @@ export async function fetchRecipeIngredientsForBot(
     .eq('id', recipeId)
     .eq('user_id', userId)
     .maybeSingle()
-  if (error || !data) return null
+  if (error?.code === INVALID_TEXT_REPRESENTATION) return null
+  if (error) throw error
+  if (!data) return null
 
   return {
     title: data.title,
     url: toRecipeCardUrl(data),
-    ingredients: Array.isArray(data.ingredients_raw) ? (data.ingredients_raw as unknown as IngredientRaw[]) : [],
+    ingredients: toIngredients(data.ingredients_raw),
   }
 }
 
