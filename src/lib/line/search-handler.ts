@@ -1,5 +1,5 @@
 import { messagingApi } from '@line/bot-sdk'
-import { createVerticalListMessage } from './flex-message'
+import { createVerticalListMessage } from './vertical-list-message'
 import { parseSearchQuery, isEmptyQuery } from './parse-search-query'
 import { searchRecipesForBot, SearchRecipeResult } from './search-recipes'
 import { fetchRecentlyViewedForBot, fetchMostViewedForBot } from './recipe-lists'
