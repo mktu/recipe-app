@@ -249,7 +249,7 @@ GitHub Issues のタスクに着手する場合は、プランニング（EnterP
 **「ドキュメント > 作業前に読む」表に従って該当 doc を読む**こと。
 最低でも `docs/ARCHITECTURE.md` は読んでアーキテクチャを把握する。
 
-単純なタスクは `/work-issue <番号>` で、方針の相談 → 実装 → Draft PR まで進められる。
+単純なタスクは `/work-issue <番号>` で、方針の相談 → 実装 → Draft PR、main へのマージ後の片付け（Done・worktree 削除）まで進められる。
 状態は GitHub Projects の Status 列で管理する（`docs/OPERATIONS.md` の「`/work-issue`」節）。
 
 ### セッション終了時

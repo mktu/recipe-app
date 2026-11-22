@@ -1,6 +1,6 @@
 ---
 name: work-issue
-description: Issue を GitHub Projects の Status に沿って 1 段階進める（Plan → 人と対話して方針を詰め、合意したら Ready／In Progress → 実装して Draft PR）。Issue 番号を挙げて「#123 をやろう」「この Issue を進めて」「方針を相談したい」と言われたとき、「Plan の Issue をまとめて見て」と言われたとき、次に取りかかる Issue を選びたいときに使う。引数に Issue 番号、無しなら作業待ちの一覧から選ぶ
+description: Issue を GitHub Projects の Status に沿って 1 段階進める（Plan → 人と対話して方針を詰め、合意したら Ready／In Progress → 実装して Draft PR／In review → main に入ったらやり残しを確かめて Done にし、worktree を片付ける）。Issue 番号を挙げて「#123 をやろう」「この Issue を進めて」「方針を相談したい」と言われたとき、「Plan の Issue をまとめて見て」と言われたとき、次に取りかかる Issue を選びたいとき、main にマージしたあと Issue を閉じたいときに使う。引数に Issue 番号、無しなら作業待ちの一覧から選ぶ
 ---
 
 # Issue を進める（イシュー駆動開発）
@@ -15,8 +15,8 @@ Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/us
 | `Needs input` | 人の番（論点への回答・判断） | AI |
 | `Ready` | 方針について人と合意済み。着手待ち | AI（**人が合意したときだけ**） |
 | `In Progress` | 実装してよい | 人 |
-| `In review` | Draft PR が出ていて、人のレビュー待ち | AI |
-| `Done` | 完了 | 人 |
+| `In review` | Draft PR が出ていて、人のレビュー・マージ・staging 確認の途中 | AI |
+| `Done` | 完了（main に入り、やり残しが無い） | AI（**main に入ったのを確かめてから**） |
 
 **AI は `Ready` で止まる。`In Progress` に移すのは人。**
 
@@ -45,6 +45,7 @@ AI のコメントは、1 行目に次のどれかの目印を必ず入れて区
 | `<!-- work-issue:decision -->` | 合意した結論の記録（または、結論をどこに残したかへの案内） |
 | `<!-- work-issue:blocked branch=<ブランチ名> -->` | 実装中に止まった |
 | `<!-- work-issue:pr -->` | Draft PR を作った |
+| `<!-- work-issue:done -->` | main に入ったのを確かめて閉じた（close 時のコメント） |
 
 **最後のコメントに目印が無ければ、人が返信済み**と判定する。
 
@@ -55,7 +56,9 @@ gh issue view <番号> --json comments --jq '.comments[-1].body // ""' | head -1
 ## 1. 対象を決める
 
 - **番号の指定あり**: `$S get <番号>` で Status を見て、下の分岐へ
-- **番号の指定なし**: `$S list "Plan" "Needs input" "In Progress"` を表示して選んでもらう。
+- **番号の指定なし・このセッションで扱っている Issue がある**: 今いるブランチ名の末尾の番号や、会話の中で進めてきた Issue を対象にする。
+  `In review` まで進めたセッションで、そのまま develop・main へのマージと staging 確認まで済ませてから打つ、がいちばん多い使い方
+- **番号の指定なし・扱っている Issue が無い**: `$S list "Plan" "Needs input" "In Progress"` を表示して選んでもらう。
   `Needs input` は人が返信済みのものだけ示す（`In Progress` には手作業の Issue も入るので、勝手には拾わない）
 - **「Plan の Issue をまとめて見て」**: `Plan` の Issue を順に 2 で処理する（**まとめ処理モード**）。
   まとめて処理するのは方針の検討だけ。実装はまとめて処理しない
@@ -67,7 +70,8 @@ gh issue view <番号> --json comments --jq '.comments[-1].body // ""' | head -1
 | `Needs input` | 最新の目印が `blocked` なら 3（実装の再開）、それ以外は 2 の続き |
 | `Ready` | ユーザーがこのスキルで指定した ＝ 着手の指示とみなし、確認せずに `In Progress` に移して 3 へ（`Todo` と同じ考え方）。ただし、状況を聞かれただけで着手を頼まれていないとき（スキルが会話から自動で選ばれた場合など）は、合意した方針を要約して返すだけにする |
 | `In Progress` | 3（実装）。合意した方針が見当たらなければ「先に方針を詰めますか？」と聞く |
-| `In review` / `Done` | 何もしない。PR へのレビュー指摘に対応する場合は、指摘内容を伝えてもらって通常の作業として対応する |
+| `In review` | 4（片付け）。main にまだ入っていなければ、どこまで進んでいるかを返すだけにする。PR へのレビュー指摘に対応する場合は、指摘内容を伝えてもらって通常の作業として対応する |
+| `Done` | 何もしない |
 
 ## 2. 方針を詰める（Plan / Needs input）
 
@@ -150,3 +154,57 @@ PR を作ったあとに人が同じセッションで `/second-opinion` を打�
 実装中に方針から変えたことや、方針が触れていなかった細部で気になったことは、読み手がまだ知らないことなので、PR で伝わるようにする。
 
 最後に `pr` コメント（PR の URL）を Issue に付け、`In review` に移す。
+
+## 4. 片付け（In review → Done）
+
+**目的は、本番に出た Issue を閉じてよいかを判断し、作業の跡を片付けること。**
+たいていは実装したセッションのまま、レビュー → develop へのマージ → staging 確認 → develop→main のマージまで済ませてから呼ばれる。
+人の手に残るのはマージだけにする。
+
+### 4-1. main に入ったかを確かめる
+
+Issue に紐づく PR は `pr` コメントにある（GitHub の「紐づく PR」は develop 向けの PR では空になるので使えない）。
+あとから追加の PR が出ていることもあるので、Issue のコメントや PR 一覧も見て、どれが入れば完了かは判断する。
+
+```bash
+gh pr view <PR> --json state,mergeCommit --jq '[.state, .mergeCommit.oid] | @tsv'
+git fetch origin
+git merge-base --is-ancestor <マージコミット> origin/main && echo main に取り込み済み
+```
+
+まだ入っていなければ、どこまで進んでいるか（develop 未マージ／develop→main の PR 待ち など）を返して終わる。Status は変えない。
+
+### 4-2. やり残しが無いかを判断する
+
+確認項目は決めない。Issue・合意した方針・PR・ここまでの会話から、このセッションが判断する。
+たいていは何も残っていないが、本番の設定変更や、マージ後にしかできない作業のように、タスク次第で残るものがある。
+
+- 判断がつかないものは、閉じる前に人に聞く
+- 残っていれば人と相談する。今やるならそれを済ませてから、別の Issue にするなら起票してから閉じる
+
+### 4-3. 閉じる
+
+`done` コメントを付けて Issue を close する。コメントには、やり残しをどう判断したかを 1〜2 行で書く（別 Issue にしたならその番号）。
+
+```bash
+gh issue close <番号> --comment "<!-- work-issue:done -->
+..."
+$S get <番号>   # close で Done にならないことがあるので、なっていなければ $S set <番号> "Done"
+```
+
+### 4-4. その Issue の worktree を片付ける
+
+片付けるのは、その Issue のブランチ（末尾が Issue 番号）の worktree とローカルブランチだけ。ほかの worktree には触らない。
+未コミット・未 push が残っていたら消さずに報告する。**削除はユーザーに確認してから行う。**
+
+- **Edge Runtime が掴んでいないか先に見る。** 掴んだまま消すと、ホーム一覧が黙って空になる（`docs/SUPABASE_LOCAL.md`）。
+  出力に消す worktree のパスがあれば、メインのチェックアウトで `npm run functions:build && npm run functions:serve` し直してから消す
+  ```bash
+  docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
+  ```
+- **このセッションが消す worktree の中にいる**ときは、`ExitWorktree`（`action: "keep"`）で抜けてから消す。
+  `path` で入った worktree は `ExitWorktree` では消えない
+  ```bash
+  git worktree remove .claude/worktrees/<name>
+  git branch -d <ブランチ名>
+  ```
