@@ -209,3 +209,5 @@ $S get <番号>   # close で Done にならないことがあるので、なっ
   git worktree remove .claude/worktrees/<name>
   git branch -d <ブランチ名>
   ```
+- **最後にメインのチェックアウトを最新にする。** develop にいれば `git pull --ff-only` する。
+  そうしないと、今マージしたものが手元の develop に入っていないままになる。別のブランチにいる、または追跡中のファイルに未コミットの変更があるときは、pull せずにそのことを伝える
