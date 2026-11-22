@@ -16,16 +16,17 @@ LINE 固有は `docs/LINE_SETUP.md`、Edge Function / cron は `docs/EDGE_FUNCTI
 ### `Closes #NNN` は develop への PR では発火しない
 
 GitHub が Issue を自動クローズするのは**デフォルトブランチ（main）へマージされたとき**だけ。
-本プロジェクトは全 PR が develop 向けなので、**Issue は main マージ後に手動で閉じる**必要がある。
+本プロジェクトは全 PR が develop 向けなので、**Issue は main マージ後に手動で閉じる**必要がある（`/work-issue` の片付けで閉じる）。
 PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用なので続けてよい。
 
-### 単純なタスクは `/work-issue` で計画 → Draft PR まで進める
+### 単純なタスクは `/work-issue` で計画 → Draft PR → Done まで進める
 
 Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/users/mktu/projects/5) の **Status 列**で管理する
 （`Todo` → `Plan` → `Needs input` / `Ready` → `In Progress` → `In review` → `Done`。ラベルは使わない）。
 人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
 **`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
 人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
+main までマージしたら、同じセッションでもう一度 `/work-issue` を打つと、やり残しを確かめて close・`Done` にし、worktree を片付ける。
 人のレビューの前に別の目で見直したいときは、同じセッションで `/second-opinion` を打つ（`/code-review` と目的の番人。
 コストがかかるので自動では回さない）。
 経緯と設計は #252 / #254 / #255。
