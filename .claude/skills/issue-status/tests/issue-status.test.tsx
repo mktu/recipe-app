@@ -68,7 +68,7 @@ test('作業中の Issue の要約と、片付け忘れの worktree を帯に出
       '#267 対応中の Issue の状況を一目で分かるようにする │ Needs input · あなたの番 │ ☑ 2/3 │ PR #268 Draft',
     )
     const leftover = await ui.find({ type: 'Text', text: /片付け忘れ/ })
-    expect(leftover?.text).toBe('🧹 片付け忘れの worktree 2 件（#249, feature/docs-merged）→ /end-session')
+    expect(leftover?.text).toBe('🧹 片付け忘れの worktree 2 件（#249, feature/docs-merged）→ /cleanup-worktrees')
     await ui.unmount()
   }
 })
