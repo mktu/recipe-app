@@ -179,8 +179,7 @@ eval "$(fnm env --use-on-cd --shell zsh)"
 
 Issue 化するか判断が必要な、コードだけからは分からない事項。
 
-- **Vercel Dashboard で Node.js を 24.x に設定**
-  （Settings → Build & Development Settings → Node.js Version）
+（現在なし）
 
 ## 主要な参照ポインタ（非自明なものだけ）
 
