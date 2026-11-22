@@ -69,7 +69,7 @@ describe('handleIngredientsPostback', () => {
     mockSupabase({ id: 'r1', title: '親子丼', url: 'https://example.com/r', ingredients_raw: ['鶏もも肉 300g', null, { name: '卵' }] })
     const client = createClient()
     await run(client)
-    expect(client.replyMessage.mock.calls[0][0].messages[0].text).toBe('🥕 親子丼 の材料\n・鶏もも肉 300g\n・卵')
+    expect(client.replyMessage.mock.calls[0][0].messages[0].text).toBe('親子丼 の材料\n・鶏もも肉 300g\n・卵')
   })
 
   it('UUID でない recipeId（改ざんされた data）は「見つからない」として返す', async () => {

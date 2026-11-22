@@ -13,11 +13,11 @@ describe('buildIngredientsText', () => {
       { name: '鶏もも肉', amount: '' },
       { name: 'にんじん', amount: '1本' },
     ]))
-    expect(text).toBe('🥕 親子丼 の材料\n・鶏もも肉\n・にんじん 1本')
+    expect(text).toBe('親子丼 の材料\n・鶏もも肉\n・にんじん 1本')
   })
 
   it('材料が空なら「材料情報がありません」', () => {
-    expect(buildIngredientsText(recipe([]))).toBe(`🥕 親子丼 の材料\n${NO_INGREDIENTS_TEXT}`)
+    expect(buildIngredientsText(recipe([]))).toBe(`親子丼 の材料\n${NO_INGREDIENTS_TEXT}`)
   })
 
   it('名前が空の材料は出さない', () => {
