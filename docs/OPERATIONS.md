@@ -26,7 +26,9 @@ Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/us
 人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
 **`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
 人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
-経緯と設計は #252 / #254。
+人のレビューの前に別の目で見直したいときは、同じセッションで `/second-opinion` を打つ（`/code-review` と目的の番人。
+コストがかかるので自動では回さない）。
+経緯と設計は #252 / #254 / #255。
 
 - **gh に `project` スコープが要る**（PC ごと）。無いと Status を読めない。
   `gh auth refresh -h github.com -s project` は対話の認証なので、Claude Code 経由ではなく普段のターミナルで実行する
@@ -55,6 +57,13 @@ CLI の破壊的変更は**本番デプロイの時点で初めて表面化す�
 > 注意: `config.toml` は `[local_smtp]`。Supabase の **GitHub 連携（プレビューブランチ）** は
 > 2026-11 時点でこのキーを読めず失敗する（supabase/supabase#47616）。今は使っていないが、
 > 有効化するならこの問題が解消されているか先に確認する。
+
+### E2E のランナーは `ubuntu-24.04` に固定（`ubuntu-latest` にしない）
+
+`e2e.yml` だけ `runs-on: ubuntu-24.04` に固定している。2026-11 に `ubuntu-latest` が `ubuntu-26.04` に切り替わり、
+`npx playwright install --with-deps chromium` が `Playwright does not support chromium on ubuntu26.04-x64` で
+失敗して、E2E が全 PR で落ちた（#255 の PR #265 で発覚）。
+**外す条件:** `@playwright/test` を 26.04 対応版に上げたとき（`update-packages` スキルで changelog を確認する）。
 
 ### `E2E Tests` は develop / main への PR で走る
 
