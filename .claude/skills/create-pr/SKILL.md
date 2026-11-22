@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: feature ブランチから develop への PR を作る。「PR を作って」「PR にして」と言われたとき、/work-issue の実装の最後、/end-session で PR が無いときに使う
+description: feature ブランチから develop への PR を作る。「PR を作って」「PR にして」と言われたときに使う
 ---
 
 # PR を作る
