@@ -117,19 +117,6 @@ label に使うため `toActionLabel` で丸めている。
 
 > 実例: 材料少なめの最長がちょうど40文字で通っていた一方、最近追加の42文字が落ちた。
 
-### 縦リストの [材料] ボタンは postback（#213）
-
-縦リスト（`createVerticalListMessage`、`src/lib/line/vertical-list-message.ts`）の各行には [材料] ボタンがあり、
-タップすると**ページ遷移せずに**材料がテキストで返る（行のそれ以外の場所は従来どおりレシピを開く）。
-Webhook が `follow` / `message` 以外に処理する唯一のイベントが、この `postback`。
-
-- **postback の data は改ざんされうる。** data の `recipeId` だけで引かず、必ず `user_id` でも絞る
-  （`fetchRecipeIngredientsForBot`）。他人のレシピ ID は「見つからない」として扱う
-- ボタンが出るのは縦リストだけ。カード / カルーセル（`createRecipeBubble`）には付けていない
-- 返信は「材料のテキスト」と「レシピを見る」ボタンの 2 通。Flex にまとめないのは、テキストなら長押しでコピーして買い物メモに貼れるため
-- **外部サイト由来のレシピは食材名だけ**が出る（分量は `amount` に保存していない。`docs/SCRAPING_POLICY.md`）。
-  分量らしきものが出るのは、`name` の後ろに残っている場合か、レシピノートか、`seed:dev` の手書きデータ。欠陥ではない
-- タップするとトークに「<タイトル>の材料」がユーザー発言として出る（`displayText`。300 文字上限なので丸めている）
 
 ### reply が失敗すると `replyToken` は再利用できない
 
