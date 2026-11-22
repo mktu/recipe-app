@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "supabase/functions/**",
     // Playwright テストレポート（自動生成）
     "playwright-report/**",
+    // Claude Code の mod（独自の JSX ランタイム。`claude plugin validate` で検証）と worktree のコピー
+    ".claude/**",
   ]),
   // ファイルサイズ・複雑度のルール（肥大化防止）
   {

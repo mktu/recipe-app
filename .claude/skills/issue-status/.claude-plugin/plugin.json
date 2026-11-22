@@ -1,0 +1,6 @@
+{
+  "name": "issue-status",
+  "version": "0.1.0",
+  "description": "対応中の Issue（Status・チェックボックス・PR）と片付け忘れの worktree を、プロンプト上の帯に出す",
+  "types": "./types/index.d.ts"
+}

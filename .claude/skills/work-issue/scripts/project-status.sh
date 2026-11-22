@@ -7,6 +7,7 @@
 #
 # 前提: gh のトークンに project スコープ（gh auth refresh -h github.com -s project）
 # ID は実行時に引く。Status の選択肢を画面で変えてもスクリプトの修正は要らない。
+# get / list の出力形式は mod issue-status（.claude/skills/issue-status/hooks/parse.ts）も読んでいる。変えるなら合わせる。
 set -euo pipefail
 
 OWNER=mktu

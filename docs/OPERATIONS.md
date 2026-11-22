@@ -40,6 +40,22 @@ Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/us
   既存の選択肢を正しく引き継がない限り、既存アイテムの Status が外れるおそれがある
 - GitHub Actions（claude-code-action）で回す案は、CI 用の認証手段が無いため保留している（#252 の「保留」節）
 
+### 対応中の Issue はプロンプト上の帯に出る（mod `issue-status`）
+
+`.claude/skills/issue-status/` は Claude Code の mod（Skill ではない）。プロジェクトの `.claude/skills/<名前>/` に
+`.claude-plugin/plugin.json` があると、**設定なしで自動で読み込まれる**（clone した人にもそのまま効く）。
+今いるブランチ名の末尾の番号から Issue を特定して、Status・次は誰の番か・チェックボックスの完了数・PR を 1 行で出す。
+片付け忘れの worktree（PR マージ済み or Issue close 済みなのに `.claude/worktrees/` に残っているもの）があれば 2 行目に出る。
+`/issue` で詳細ペインを開く。経緯は #267。
+
+- **`/work-issue` の決まり事に依存している。** ブランチ名の末尾が Issue 番号であること、コメントの
+  `<!-- work-issue:... -->` 目印、`project-status.sh` の出力（`get` は Status 1 行、`list` は TSV）。
+  変えたら `hooks/parse.ts` も合わせる。合わなくても落ちず、帯が欠けるだけなので気付きにくい
+- **検証は `claude plugin validate` / `claude plugin test`**（`.claude/skills/issue-status` を渡す）。
+  独自の JSX ランタイムなので、ESLint と vitest からは `.claude/**` ごと除外している
+- `git worktree add` → `EnterWorktree` の `path` で入った worktree は、セッション終了時に「残す／消す」を聞かれない。
+  帯の 🧹 はその消し忘れを拾うためのもの
+
 ## CI
 
 ### Supabase CLI は CI でバージョン固定（自動では上がらない）
