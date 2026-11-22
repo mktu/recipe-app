@@ -257,4 +257,3 @@ GitHub Issues のタスクに着手する場合は、プランニング（EnterP
 
 `/create-pr` が、doc の追従漏れと、判明した gotcha の書き戻しを確かめてから PR を作る。
 書き戻し先は「ドキュメント > 知見を書く場所」を参照。PR の後に分かった gotcha は、`/work-issue` の片付け（やり残しの判断）で拾う。
-（旧 `/end-session` は、マージ後に打たれがちで漏れが別 PR になっていたため、doc チェックを PR 前に移し、worktree の片付けだけを `/cleanup-worktrees` に残した。#280）
