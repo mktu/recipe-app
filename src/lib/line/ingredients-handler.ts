@@ -1,5 +1,6 @@
 import type { messagingApi } from '@line/bot-sdk'
 import { createServerClient } from '@/lib/db/client'
+import { recordRecipeView } from '@/lib/db/queries/recipes'
 import type { IngredientRaw } from '@/types/recipe'
 import { findUserId } from './search-recipes'
 import { toRecipeCardUrl } from './track-redirect'
@@ -57,6 +58,19 @@ export async function fetchRecipeIngredientsForBot(
   }
 }
 
+/**
+ * [材料] で中身を確かめたことも閲覧として数える（#213）。
+ * サイトを開かずに済ませるほど「よく見る」「最近見た」から漏れていくのを防ぐ。
+ * 記録の失敗で返信を巻き込まないよう、返信のあとに行い、失敗は握ってログに残す
+ */
+async function recordViewSafely(recipeId: string): Promise<void> {
+  try {
+    await recordRecipeView(recipeId)
+  } catch (error) {
+    console.error('[handleIngredientsPostback] 閲覧の記録に失敗:', error)
+  }
+}
+
 /** 縦リストの [材料] ボタン（postback）に、材料をテキストで返す（#213） */
 export async function handleIngredientsPostback(
   client: MessagingApiClient,
@@ -71,6 +85,7 @@ export async function handleIngredientsPostback(
       return
     }
     await client.replyMessage({ replyToken, messages: buildIngredientsMessages(recipe) })
+    await recordViewSafely(recipeId)
   } catch (error) {
     console.error('[handleIngredientsPostback] Error:', error)
     await replyErrorText(client, replyToken, '材料の取得中にエラーが発生しました。')
