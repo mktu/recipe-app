@@ -40,7 +40,7 @@ export const summaryOf = (snap: Snapshot): string | null => {
 export const leftoverLine = (leftovers: Leftover[]): string | null => {
   if (leftovers.length === 0) return null
   const names = leftovers.map(l => (l.issue === null ? l.branch : `#${l.issue}`)).join(', ')
-  return `🧹 片付け忘れの worktree ${leftovers.length} 件（${names}）→ /end-session`
+  return `🧹 片付け忘れの worktree ${leftovers.length} 件（${names}）→ /cleanup-worktrees`
 }
 
 /** 帯に出すものが無い（Issue 番号も作業待ちの件数も片付け忘れも無い） */

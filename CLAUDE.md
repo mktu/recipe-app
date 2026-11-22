@@ -39,13 +39,14 @@
 ### 作業前に読む
 
 **以下に着手する前に、対応する doc を読むこと。** 該当 doc を読まずに着手しない。
+PR を出す前には、同じ表で doc の追従漏れを確かめる（`/create-pr`）。
 
 | これをする前に | これを読む |
 |---|---|
-| Edge Function・cron・バッチの変更 | `docs/EDGE_FUNCTIONS.md` |
-| migration・RPC・スキーマの変更 | `docs/DATABASE_DESIGN.md` |
-| LINE Bot・Webhook・Flex の変更 | `docs/LINE_SETUP.md` |
-| CI / PR / デプロイ設定の変更、CI 結果の判断 | `docs/OPERATIONS.md` |
+| Edge Function・cron・バッチの変更（`supabase/functions/`, `src/lib/batch/`, `scripts/setup-cron.ts`） | `docs/EDGE_FUNCTIONS.md` |
+| migration・RPC・スキーマの変更（`supabase/migrations/`） | `docs/DATABASE_DESIGN.md` |
+| LINE Bot・Webhook・Flex の変更（`src/lib/line/`） | `docs/LINE_SETUP.md` |
+| CI / PR / デプロイ設定の変更（`.github/workflows/`）、CI 結果の判断 | `docs/OPERATIONS.md` |
 | ローカル環境のセットアップ・不調の調査 | `docs/SUPABASE_LOCAL.md` |
 | 機能の実装全般（プランニングの前） | `docs/ARCHITECTURE.md` |
 | スクレイピング対象サイトの追加・変更 | `docs/SCRAPING_POLICY.md` |
@@ -96,7 +97,7 @@ git worktree add .claude/worktrees/<name> -b feature/<xxx> origin/develop
 
 `EnterWorktree` ツールで新規作成すると既定で `origin/main` から切られ、PR に無関係なコミットが並ぶ。
 上のコマンドで作ってから `EnterWorktree` の `path` で入るか、作成後に `git reset --hard origin/develop` で揃える。
-片付けは `/end-session`。
+Issue のブランチの worktree は `/work-issue` の片付けで消す。それ以外（🧹 の帯に出たもの）は `/cleanup-worktrees`。
 
 **CI チェック（PR 時に自動実行）:**
 - `npm run lint`
@@ -252,7 +253,8 @@ GitHub Issues のタスクに着手する場合は、プランニング（EnterP
 単純なタスクは `/work-issue <番号>` で、方針の相談 → 実装 → Draft PR、main へのマージ後の片付け（Done・worktree 削除）まで進められる。
 状態は GitHub Projects の Status 列で管理する（`docs/OPERATIONS.md` の「`/work-issue`」節）。
 
-### セッション終了時
+### PR を出す前
 
-`/end-session` を実行する（doc 追従チェックと worktree の後片付けを行う）。
-セッション中に判明した gotcha の書き戻し先は「ドキュメント > 知見を書く場所」を参照。
+`/create-pr` が、doc の追従漏れと、判明した gotcha の書き戻しを確かめてから PR を作る。
+書き戻し先は「ドキュメント > 知見を書く場所」を参照。PR の後に分かった gotcha は、`/work-issue` の片付け（やり残しの判断）で拾う。
+（旧 `/end-session` は、マージ後に打たれがちで漏れが別 PR になっていたため、doc チェックを PR 前に移し、worktree の片付けだけを `/cleanup-worktrees` に残した。#280）

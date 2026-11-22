@@ -195,19 +195,9 @@ $S get <番号>   # close で Done にならないことがあるので、なっ
 ### 4-4. その Issue の worktree を片付ける
 
 片付けるのは、その Issue のブランチ（末尾が Issue 番号）の worktree とローカルブランチだけ。ほかの worktree には触らない。
-未コミット・未 push が残っていたら消さずに報告する。**削除はユーザーに確認してから行う。**
+消してよいかの判断・消す前の確認・消し方は `/cleanup-worktrees`（`.claude/skills/cleanup-worktrees/`）に従う。
+特に、**消す前に Edge Runtime が worktree を掴んでいないかを見る**（掴んだまま消すと、ホーム一覧が黙って空になる）。
+**削除はユーザーに確認してから行う。**
 
-- **Edge Runtime が掴んでいないか先に見る。** `functions:serve` した worktree を掴んだまま消すと、ホーム一覧が黙って空になる（`docs/SUPABASE_LOCAL.md`）。
-  次のコマンドで、Edge Runtime コンテナがマウントしているホストのパスを出す。
-  ```bash
-  docker inspect supabase_edge_runtime_recipe-app --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'
-  ```
-  消す worktree のパスが含まれていたら、メインのチェックアウトで `npm run functions:build && npm run functions:serve` し直してから消す
-- **このセッションが消す worktree の中にいる**ときは、`ExitWorktree`（`action: "keep"`）で抜けてから消す。
-  `path` で入った worktree は `ExitWorktree` では消えない
-  ```bash
-  git worktree remove .claude/worktrees/<name>
-  git branch -d <ブランチ名>
-  ```
 - **最後にメインのチェックアウトを最新にする。** develop にいれば `git pull --ff-only` する。
   そうしないと、今マージしたものが手元の develop に入っていないままになる。別のブランチにいる、または追跡中のファイルに未コミットの変更があるときは、pull せずにそのことを伝える
