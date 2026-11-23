@@ -1,6 +1,7 @@
 import { messagingApi } from '@line/bot-sdk'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { isOwnAppUrl } from '@/lib/recipe/own-app-url'
+import { UNFETCHABLE_MESSAGE } from '@/lib/recipe/unfetchable-url'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import type { RecipeCardData } from './flex-message'
@@ -74,7 +75,7 @@ function saveReplyText(result: SaveResult): string {
   switch (result.status) {
     case 'saved': return `✅ レシピを保存しました！\n\n📖 ${result.title}`
     case 'duplicate': return 'このレシピは既に登録済みです 📝'
-    case 'unfetchable': return 'レシピを取得できませんでした。URL を確認してください。'
+    case 'unfetchable': return UNFETCHABLE_MESSAGE
   }
 }
 

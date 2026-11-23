@@ -54,7 +54,8 @@ export function UrlInputPage({ initialUrl, initialError }: UrlInputPageProps) {
               クックパッドやデリッシュキッチンなど、レシピサイトのURLを入力してください
             </p>
           </div>
-          <UrlInputForm initialUrl={initialUrl} initialError={initialError} />
+          {/* 確認画面から戻されたとき、残っている state ではなく戻された URL・エラーで作り直す */}
+          <UrlInputForm key={`${initialUrl}|${initialError}`} initialUrl={initialUrl} initialError={initialError} />
         </div>
       </main>
     </div>

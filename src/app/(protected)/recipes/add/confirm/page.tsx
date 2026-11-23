@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { fetchIngredientsByCategory } from '@/lib/db/queries/ingredients'
 import { RecipeConfirmForm } from '@/components/features/add-recipe/recipe-confirm-form'
-import { UNFETCHABLE_ERROR } from '@/components/features/add-recipe/url-input-errors'
+import { UNFETCHABLE_ERROR } from '@/lib/recipe/unfetchable-url'
 
 interface ConfirmRecipePageProps {
   searchParams: Promise<{ url?: string }>

@@ -53,6 +53,11 @@ describe('parseRecipe', () => {
     expect(result?.ingredientsRaw).toEqual([])
   })
 
+  it('JSON-LD の name が空白だけなら JSON-LD は使わず、タイトルが他に無ければ null', async () => {
+    vi.mocked(fetchHtml).mockResolvedValue(html(jsonLd({ name: ' ', recipeIngredient: ['じゃがいも 2個'] })))
+    expect(await parseRecipe(URL_)).toBeNull()
+  })
+
   it('JSON-LD の name があればそれを使う', async () => {
     vi.mocked(fetchHtml).mockResolvedValue(html(`<title>サイト名</title>${jsonLd({ name: '肉じゃが', recipeIngredient: ['じゃがいも 2個'] })}`))
     expect((await parseRecipe(URL_))?.title).toBe('肉じゃが')

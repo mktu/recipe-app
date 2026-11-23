@@ -16,6 +16,15 @@ function isValidUrl(value: string): boolean {
   }
 }
 
+/** 確認画面へ進む前の入力チェック。問題が無ければ null */
+function validateUrl(url: string): string | null {
+  if (!url) return 'URLを入力してください'
+  if (!isValidUrl(url)) return '有効なURLを入力してください'
+  // アプリ自身のページは取得しても中身が取れない（#230）
+  if (isOwnAppUrl(url)) return 'RecipeHub のページは登録できません'
+  return null
+}
+
 interface UrlInputFormProps {
   initialUrl?: string
   /** 確認画面で取得できず戻されたときのエラー（#242） */
@@ -30,26 +39,13 @@ export function UrlInputForm({ initialUrl = '', initialError = null }: UrlInputF
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
-      setError(null)
-
+      // エラーは送信時でなく入力時に消す。同じ URL で戻されたとき state が残り、消すとエラーが出ない（#242）
       const trimmedUrl = url.trim()
-      if (!trimmedUrl) {
-        setError('URLを入力してください')
+      const validationError = validateUrl(trimmedUrl)
+      if (validationError) {
+        setError(validationError)
         return
       }
-
-      if (!isValidUrl(trimmedUrl)) {
-        setError('有効なURLを入力してください')
-        return
-      }
-
-      // アプリ自身のページは取得しても中身が取れない（#230）
-      if (isOwnAppUrl(trimmedUrl)) {
-        setError('RecipeHub のページは登録できません')
-        return
-      }
-
-      // 確認画面へ遷移
       router.push(`/recipes/add/confirm?url=${encodeURIComponent(trimmedUrl)}`)
     },
     [url, router]
@@ -66,7 +62,10 @@ export function UrlInputForm({ initialUrl = '', initialError = null }: UrlInputF
             type="url"
             aria-label="レシピのURL"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value)
+              setError(null)
+            }}
             placeholder="https://cookpad.com/recipe/..."
             className="pl-9"
           />

@@ -1,4 +1,5 @@
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
+import { UNFETCHABLE_MESSAGE } from '@/lib/recipe/unfetchable-url'
 import { createServerClient } from '@/lib/db/client'
 import { requireLineUser } from '@/lib/api/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   const result = await parseRecipe(url)
   if (!result) {
-    return NextResponse.json({ error: 'レシピを取得できませんでした。URL を確認してください' }, { status: 422 })
+    return NextResponse.json({ error: UNFETCHABLE_MESSAGE }, { status: 422 })
   }
   return NextResponse.json(result)
 }

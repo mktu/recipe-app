@@ -27,12 +27,12 @@ async function buildParsedRecipe(
 
 /**
  * HTMLからレシピを解析（JSON-LD → __NEXT_DATA__ → OGP）
- * どの抽出もタイトルが無ければ null を返すので、結果があればタイトルは必ずある
  * @returns 解析結果。タイトルが取れなければ null
  */
 async function parseHtml(html: string, url: string): Promise<ParsedRecipe | null> {
+  // 構造化データの抽出は空文字のタイトルは弾くが、空白だけのものは通すのでここで弾く
   const structured = extractRecipeFromJsonLd(html, url) ?? extractRecipeFromNextData(html)
-  if (structured) return buildParsedRecipe(structured)
+  if (structured?.title.trim()) return buildParsedRecipe(structured)
 
   // 構造化データが無いサイトの最終フォールバック。食材はユーザーが手動入力する
   const ogp = extractOgp(html, url)

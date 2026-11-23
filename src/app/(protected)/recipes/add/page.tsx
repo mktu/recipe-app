@@ -1,5 +1,5 @@
 import { UrlInputPage } from '@/components/features/add-recipe/url-input-page'
-import { urlInputErrorMessage } from '@/components/features/add-recipe/url-input-errors'
+import { urlInputErrorMessage } from '@/lib/recipe/unfetchable-url'
 
 interface AddRecipePageProps {
   searchParams: Promise<{ url?: string; error?: string }>
