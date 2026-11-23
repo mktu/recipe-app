@@ -166,28 +166,32 @@ npx playwright install webkit   # 初回のみ
 staging の LINE Webhook を通すため意図的に無効化している。有効化すると
 LINE からの POST が認証で弾かれて staging のボットが無反応になる。
 
-### Gemini は前払いで、残高が尽きると全環境で止まる。通知は来ない
+### Gemini のクレジットが足りなくなったとき
 
-Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で、**残高がそのまま上限**になっている（#132）。
-キー（`GOOGLE_GENERATIVE_AI_API_KEY`）はローカル・staging・本番で共通なので、残高が尽きると全環境の呼び出しが
-402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない**ので、AI Studio の Billing で見る。
+Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で、**残高がそのまま上限**（#132）。
+キー（`GOOGLE_GENERATIVE_AI_API_KEY`）はローカル・staging・本番で共通なので、尽きると全環境の呼び出しが
+402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない。**
 
-検索（ベクトル検索を諦めて文字の一致で返す）と `auto-alias`（翌日拾い直す）は、買い足せば元に戻る。
-**埋め込みだけは戻らない。** 残高切れの間に登録したレシピは、`generate-embeddings` のバッチで 3 回失敗して
-リトライ上限に達し、以後作られない（キーワード検索に黙って引っかからなくなる）。
-402 でも回数を増やすのは、増やさないと放置中に cron が 5 分ごとに呼び続け、Disk IO Budget を消費するため
-（`docs/EDGE_FUNCTIONS.md` の `onlyIf`）。
+**気付き方:** AI Studio の Billing で残高を見る。尽きていても登録や画面は普通に動くので、使っていて気付くのは難しい
+（LINE の検索で言い換え〔ベクトル検索〕が効かなくなる程度）。Edge Function のログ（`generate-embeddings`）に 402 が出る。
 
-**買い足したら、staging と本番の両方の SQL Editor で確かめ、0 件でなければリセットする。**
+**手順:**
 
-```sql
-SELECT count(*) FROM recipes WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
-UPDATE recipes SET embedding_retry_count = 0 WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
-```
+1. AI Studio の Billing でクレジットを買い足す（自動チャージは入れない。入れるなら「1 か月の費用の上限」も一緒に付ける。
+   残高が歯止めにならなくなるため）
+2. staging と本番の**両方**の SQL Editor で、埋め込みを諦めたレシピを数え、0 件でなければリセットする
 
-残高切れと関係なく失敗していたレシピも戻るが、もう 3 回試されるだけで害は無い。
+   ```sql
+   SELECT count(*) FROM recipes WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+   UPDATE recipes SET embedding_retry_count = 0 WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+   ```
 
-AI Studio の「1 か月の費用の上限」は付けていない。自動チャージを入れるときは、残高が歯止めにならなくなるので一緒に付ける。
+   5 分以内に `generate-embeddings` の cron が拾って埋める
+3. ほかは何もしなくてよい。検索は次の呼び出しから、`auto-alias` は翌日の実行で元に戻る
+
+**2 が要る理由:** 埋め込みのバッチは 402 でもリトライ回数を増やし、3 回（15 分）で諦める。
+増やさないと、放置中に cron が 5 分ごとに呼び続けて Disk IO Budget を消費するため（`docs/EDGE_FUNCTIONS.md` の `onlyIf`）。
+リセットで残高切れと関係なく失敗していたレシピも戻るが、もう 3 回試されるだけで害は無い。
 
 ## ローカル環境
 

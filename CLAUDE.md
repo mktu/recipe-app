@@ -48,6 +48,7 @@ PR を出す前には、同じ表で doc の追従漏れを確かめる（`/crea
 | LINE Bot・Webhook・Flex の変更（`src/lib/line/`） | `docs/LINE_SETUP.md` |
 | CI / PR / デプロイ設定の変更（`.github/workflows/`）、CI 結果の判断 | `docs/OPERATIONS.md` |
 | ローカル環境のセットアップ・不調の調査 | `docs/SUPABASE_LOCAL.md` |
+| Gemini のクレジットの買い足し、Gemini の 402 エラーの調査 | `docs/OPERATIONS.md`（「Gemini のクレジットが足りなくなったとき」） |
 | 機能の実装全般（プランニングの前） | `docs/ARCHITECTURE.md` |
 | スクレイピング対象サイトの追加・変更 | `docs/SCRAPING_POLICY.md` |
 | レシピノートの Markdown フォーマット・パーサ・AI 用プロンプトの変更 | `docs/NOTE_MARKDOWN_FORMAT.md` |
