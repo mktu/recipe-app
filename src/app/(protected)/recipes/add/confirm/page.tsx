@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { fetchIngredientsByCategory } from '@/lib/db/queries/ingredients'
 import { RecipeConfirmForm } from '@/components/features/add-recipe/recipe-confirm-form'
+import { UNFETCHABLE_ERROR } from '@/lib/recipe/unfetchable-url'
 
 interface ConfirmRecipePageProps {
   searchParams: Promise<{ url?: string }>
@@ -19,6 +20,10 @@ export default async function ConfirmRecipePage({ searchParams }: ConfirmRecipeP
     parseRecipe(url),
     fetchIngredientsByCategory(),
   ])
+
+  if (!parsedData) {
+    redirect(`/recipes/add?${new URLSearchParams({ url, error: UNFETCHABLE_ERROR })}`)
+  }
 
   return <RecipeConfirmForm url={url} initialValues={parsedData} ingredientCategories={ingredientCategories} />
 }

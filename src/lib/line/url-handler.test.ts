@@ -61,4 +61,14 @@ describe('processUrl', () => {
     expect(createRecipe).toHaveBeenCalledWith(expect.objectContaining({ url: 'https://cookpad.com/recipe/123', title: '肉じゃが' }))
     expect(repliedText(client)).toContain('レシピを保存しました')
   })
+
+  // #242: 取得できない URL が「タイトル未取得」で保存されていた
+  it('取得できない URL は登録せず、URL の確認を促す', async () => {
+    vi.mocked(parseRecipe).mockResolvedValue(null)
+    const client = createClient()
+    await run(client, 'https://kikkoman.co.jp/homecook/search/recipe/00054405')
+
+    expect(createRecipe).not.toHaveBeenCalled()
+    expect(repliedText(client)).toBe('レシピを取得できませんでした。URL を確認してください。')
+  })
 })

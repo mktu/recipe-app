@@ -57,8 +57,7 @@ export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPagePr
           url={recipe.url}
           isRescraping={isRescraping}
           onRescrape={handleRescrape}
-        />
-      </div>
+        />      </div>
 
       {rescrapeResult && (
         <RescrapeDialog

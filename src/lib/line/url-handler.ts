@@ -1,6 +1,7 @@
 import { messagingApi } from '@line/bot-sdk'
 import { parseRecipe } from '@/lib/recipe/parse-recipe'
 import { isOwnAppUrl } from '@/lib/recipe/own-app-url'
+import { UNFETCHABLE_MESSAGE } from '@/lib/recipe/unfetchable-url'
 import { createRecipe } from '@/lib/db/queries/recipes'
 import { createServerClient } from '@/lib/db/client'
 import type { RecipeCardData } from './flex-message'
@@ -44,12 +45,16 @@ export async function replyTest(client: MessagingApiClient, replyToken: string, 
   })
 }
 
+type SaveResult = { status: 'saved'; title: string } | { status: 'duplicate' } | { status: 'unfetchable' }
+
 /** レシピを解析して保存 */
-async function saveRecipe(lineUserId: string, url: string): Promise<{ success: boolean; title?: string; isDuplicate?: boolean }> {
+async function saveRecipe(lineUserId: string, url: string): Promise<SaveResult> {
   const parsed = await parseRecipe(url)
+  if (!parsed) return { status: 'unfetchable' }
+
   const { error } = await createRecipe({
     lineUserId, url,
-    title: parsed.title || 'タイトル未取得',
+    title: parsed.title,
     sourceName: parsed.sourceName,
     imageUrl: parsed.imageUrl,
     ingredientIds: parsed.ingredientIds,
@@ -59,10 +64,18 @@ async function saveRecipe(lineUserId: string, url: string): Promise<{ success: b
   })
 
   if (error) {
-    if ('code' in error && error.code === '23505') return { success: false, isDuplicate: true }
+    if ('code' in error && error.code === '23505') return { status: 'duplicate' }
     throw error
   }
-  return { success: true, title: parsed.title || 'タイトル未取得' }
+  return { status: 'saved', title: parsed.title }
+}
+
+function saveReplyText(result: SaveResult): string {
+  switch (result.status) {
+    case 'saved': return `✅ レシピを保存しました！\n\n📖 ${result.title}`
+    case 'duplicate': return 'このレシピは既に登録済みです 📝'
+    case 'unfetchable': return UNFETCHABLE_MESSAGE
+  }
 }
 
 /** URL を処理してレシピ保存 */
@@ -83,11 +96,7 @@ export async function processUrl(
 
     await ensureUser(lineUserId)
     const result = await saveRecipe(lineUserId, url)
-    if (result.isDuplicate) {
-      await replyText(client, replyToken, 'このレシピは既に登録済みです 📝')
-    } else if (result.success && result.title) {
-      await replyText(client, replyToken, `✅ レシピを保存しました！\n\n📖 ${result.title}`)
-    }
+    await replyText(client, replyToken, saveReplyText(result))
   } catch (err) {
     console.error('[LINE Webhook] Error processing URL:', err)
     await replyText(client, replyToken, '⚠️ レシピの取得に失敗しました。URLを確認してください。')
