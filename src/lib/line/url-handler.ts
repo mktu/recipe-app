@@ -50,7 +50,6 @@ type SaveResult = { status: 'saved'; title: string } | { status: 'duplicate' } |
 /** レシピを解析して保存 */
 async function saveRecipe(lineUserId: string, url: string): Promise<SaveResult> {
   const parsed = await parseRecipe(url)
-  // 取得できない URL は登録しない（#242）
   if (!parsed) return { status: 'unfetchable' }
 
   const { error } = await createRecipe({

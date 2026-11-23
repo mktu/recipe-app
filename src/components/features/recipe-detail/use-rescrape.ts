@@ -33,7 +33,6 @@ export function useRescrape() {
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Unknown error')
       setError(e)
-      // ボタンは画面の下の方にあるので、その場に出すと気付けない（#242）
       toast.error(e.message)
     } finally {
       setIsLoading(false)

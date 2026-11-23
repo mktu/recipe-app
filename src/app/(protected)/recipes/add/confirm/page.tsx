@@ -21,7 +21,6 @@ export default async function ConfirmRecipePage({ searchParams }: ConfirmRecipeP
     fetchIngredientsByCategory(),
   ])
 
-  // 取得できない URL は登録させず、入力画面に戻す（#242）
   if (!parsedData) {
     redirect(`/recipes/add?${new URLSearchParams({ url, error: UNFETCHABLE_ERROR })}`)
   }
