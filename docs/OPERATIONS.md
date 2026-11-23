@@ -166,6 +166,21 @@ npx playwright install webkit   # 初回のみ
 staging の LINE Webhook を通すため意図的に無効化している。有効化すると
 LINE からの POST が認証で弾かれて staging のボットが無反応になる。
 
+### Gemini は前払いで、残高が尽きると全環境で止まる。通知は来ない
+
+Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で、**残高がそのまま上限**になっている（#132）。
+キー（`GOOGLE_GENERATIVE_AI_API_KEY`）はローカル・staging・本番で共通なので、残高が尽きると全環境の呼び出しが
+402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない**ので、AI Studio の Billing で見る。
+
+止まっても壊れないようにしてあるので、買い足せば元に戻る。
+
+- 登録時の埋め込みは失敗を握りつぶし、`generate-embeddings` のバッチが後で埋める。
+  バッチは 402 / 429 ではリトライ回数を増やさない（増やすと 3 回で以後作られなくなる）
+- 検索はベクトル検索を諦め、文字の一致だけで返す
+- `auto-alias` は未マッチ食材を消さずに残し、翌日の実行で拾い直す
+
+AI Studio の「1 か月の費用の上限」は付けていない。自動チャージを入れるときは、残高が歯止めにならなくなるので一緒に付ける。
+
 ## ローカル環境
 
 ### fnm の PATH
