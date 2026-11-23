@@ -36,5 +36,8 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await parseRecipe(url)
+  if (!result) {
+    return NextResponse.json({ error: 'レシピを取得できませんでした。URL を確認してください' }, { status: 422 })
+  }
   return NextResponse.json(result)
 }

@@ -16,10 +16,16 @@ function isValidUrl(value: string): boolean {
   }
 }
 
-export function UrlInputForm() {
+interface UrlInputFormProps {
+  initialUrl?: string
+  /** 確認画面で取得できず戻されたときのエラー（#242） */
+  initialError?: string | null
+}
+
+export function UrlInputForm({ initialUrl = '', initialError = null }: UrlInputFormProps) {
   const router = useRouter()
-  const [url, setUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [url, setUrl] = useState(initialUrl)
+  const [error, setError] = useState<string | null>(initialError)
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {

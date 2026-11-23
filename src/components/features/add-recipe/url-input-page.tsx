@@ -7,7 +7,12 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
 import { UrlInputForm } from './url-input-form'
 
-export function UrlInputPage() {
+interface UrlInputPageProps {
+  initialUrl: string
+  initialError: string | null
+}
+
+export function UrlInputPage({ initialUrl, initialError }: UrlInputPageProps) {
   const router = useRouter()
   const { isLoading, isAuthenticated } = useAuth()
 
@@ -49,7 +54,7 @@ export function UrlInputPage() {
               クックパッドやデリッシュキッチンなど、レシピサイトのURLを入力してください
             </p>
           </div>
-          <UrlInputForm />
+          <UrlInputForm initialUrl={initialUrl} initialError={initialError} />
         </div>
       </main>
     </div>
