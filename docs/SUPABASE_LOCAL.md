@@ -12,6 +12,9 @@ brew install supabase/tap/supabase
 docker info
 ```
 
+Node は fnm で `.nvmrc` に合わせる。シェルの起動時に `eval "$(fnm env --use-on-cd --shell zsh)"` が要る
+（`~/.zshrc` に書く）。無いと `.nvmrc` と違う Node で動く。
+
 > **CLI は v2.108.0 以降が必要。** `config.toml` のメールサーバ設定が `[local_smtp]`（旧 `[inbucket]`）で、
 > それより古い CLI はこの名前を読めない。CI は v2.122.1 に固定している（`docs/OPERATIONS.md`）。
 

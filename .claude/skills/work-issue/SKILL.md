@@ -32,7 +32,11 @@ $S list "Plan" "Needs input"  # その Status の open な Issue 一覧
 ```
 
 `project` スコープが無いと失敗する。そのときはユーザーに、普段のターミナルで
-`gh auth refresh -h github.com -s project` を実行してもらう（Claude Code 経由では対話の認証ができない）。
+`gh auth refresh -h github.com -s project` を実行してもらう（Claude Code 経由では対話の認証ができない。
+`-h` を省くと非対話環境では失敗する）。
+
+Status の選択肢を足す・変えるときは、Projects の画面から行う。API（`updateProjectV2Field`）で選択肢を更新すると、
+既存の選択肢を正しく引き継がない限り、既存アイテムの Status が外れるおそれがある。
 
 ### コメントの目印
 
@@ -48,6 +52,9 @@ AI のコメントは、1 行目に次のどれかの目印を必ず入れて区
 | `<!-- work-issue:done -->` | main に入ったのを確かめて閉じた（close 時のコメント） |
 
 **最後のコメントに目印が無ければ、人が返信済み**と判定する。
+
+目印とブランチ名（末尾が Issue 番号）は、mod `issue-status` の `hooks/parse.ts` も読んでいる。変えたら合わせる
+（合わなくても落ちず、帯が欠けるだけなので気付きにくい）。
 
 ```bash
 gh issue view <番号> --json comments --jq '.comments[-1].body // ""' | head -1

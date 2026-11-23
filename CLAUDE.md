@@ -54,7 +54,7 @@ PR を出す前には、同じ表で doc の追従漏れを確かめる（`/crea
 | レシピノートの Markdown フォーマット・パーサ・AI 用プロンプトの変更 | `docs/NOTE_MARKDOWN_FORMAT.md` |
 
 > 特に `docs/OPERATIONS.md` には**判断を誤らせる類**の注意点が入っている
-> （例: `E2E Tests` は実質何も検証していないので、緑を品質の根拠にしてはいけない）。
+> （例: `E2E Tests` は LINE Bot と設定画面を検証していないので、そこを触った PR では緑を品質の根拠にしてはいけない）。
 
 ### 知見を書く場所
 
@@ -252,7 +252,7 @@ GitHub Issues のタスクに着手する場合は、プランニング（EnterP
 最低でも `docs/ARCHITECTURE.md` は読んでアーキテクチャを把握する。
 
 単純なタスクは `/work-issue <番号>` で、方針の相談 → 実装 → Draft PR、main へのマージ後の片付け（Done・worktree 削除）まで進められる。
-状態は GitHub Projects の Status 列で管理する（`docs/OPERATIONS.md` の「`/work-issue`」節）。
+状態は GitHub Projects の Status 列で管理する（`.claude/skills/work-issue/SKILL.md`）。
 
 ### PR を出す前
 
