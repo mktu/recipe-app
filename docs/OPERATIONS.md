@@ -172,12 +172,20 @@ Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で
 キー（`GOOGLE_GENERATIVE_AI_API_KEY`）はローカル・staging・本番で共通なので、残高が尽きると全環境の呼び出しが
 402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない**ので、AI Studio の Billing で見る。
 
-止まっても壊れないようにしてあるので、買い足せば元に戻る。
+検索（ベクトル検索を諦めて文字の一致で返す）と `auto-alias`（翌日拾い直す）は、買い足せば元に戻る。
+**埋め込みだけは戻らない。** 残高切れの間に登録したレシピは、`generate-embeddings` のバッチで 3 回失敗して
+リトライ上限に達し、以後作られない（キーワード検索に黙って引っかからなくなる）。
+402 でも回数を増やすのは、増やさないと放置中に cron が 5 分ごとに呼び続け、Disk IO Budget を消費するため
+（`docs/EDGE_FUNCTIONS.md` の `onlyIf`）。
 
-- 登録時の埋め込みは失敗を握りつぶし、`generate-embeddings` のバッチが後で埋める。
-  バッチは 402 / 429 ではリトライ回数を増やさない（増やすと 3 回で以後作られなくなる）
-- 検索はベクトル検索を諦め、文字の一致だけで返す
-- `auto-alias` は未マッチ食材を消さずに残し、翌日の実行で拾い直す
+**買い足したら、staging と本番の両方の SQL Editor で確かめ、0 件でなければリセットする。**
+
+```sql
+SELECT count(*) FROM recipes WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+UPDATE recipes SET embedding_retry_count = 0 WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+```
+
+残高切れと関係なく失敗していたレシピも戻るが、もう 3 回試されるだけで害は無い。
 
 AI Studio の「1 か月の費用の上限」は付けていない。自動チャージを入れるときは、残高が歯止めにならなくなるので一緒に付ける。
 

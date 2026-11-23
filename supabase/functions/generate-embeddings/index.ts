@@ -7,8 +7,6 @@
  * リトライ制限:
  *   - embedding_retry_count が MAX_RETRY_COUNT 未満のレシピのみ処理
  *   - 失敗時はリトライ回数をインクリメント
- *   - ただし前払いクレジットの残高切れ（402）・回数制限（429）では増やさない。
- *     レシピのせいではない失敗で上限を使い切ると、買い足したあとも二度と埋め込みが作られない（#132）
  *
  * 環境変数:
  *   - SUPABASE_URL: 自動設定
@@ -38,19 +36,6 @@ interface EmbedResponse {
   embeddings: { values: number[] }[]
 }
 
-/** 402: 前払いクレジットの残高切れ / 429: 回数制限 */
-const QUOTA_STATUSES = new Set([402, 429])
-
-class EmbeddingApiError extends Error {
-  constructor(readonly status: number, body: string) {
-    super(`Embedding API error: ${status} - ${body}`)
-  }
-}
-
-function isQuotaError(error: unknown): boolean {
-  return error instanceof EmbeddingApiError && QUOTA_STATUSES.has(error.status)
-}
-
 /**
  * Google Gemini Embedding API を直接呼び出して埋め込みを生成
  */
@@ -75,7 +60,8 @@ async function generateEmbeddings(
   )
 
   if (!response.ok) {
-    throw new EmbeddingApiError(response.status, await response.text())
+    const error = await response.text()
+    throw new Error(`Embedding API error: ${response.status} - ${error}`)
   }
 
   const data = (await response.json()) as EmbedResponse
@@ -153,8 +139,8 @@ Deno.serve(async () => {
         geminiApiKey
       )
     } catch (apiError) {
+      // API 全体が失敗した場合、全レシピのリトライ回数をインクリメント
       console.error('Embedding API failed:', apiError)
-      if (isQuotaError(apiError)) throw apiError
       for (const recipe of typedRecipes) {
         await incrementRetryCount(supabase, recipe.id, recipe.embedding_retry_count)
       }
