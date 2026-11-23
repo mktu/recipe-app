@@ -1,4 +1,8 @@
 // 対応中の Issue の状況を、プロンプト上の帯と /issue のペインに出す（Issue #267）
+// Skill ではなく mod。`.claude-plugin/plugin.json` があるので設定なしで自動で読み込まれる。
+// 独自の JSX ランタイムのため ESLint・vitest からは `.claude/**` ごと除外している。
+// 検証は `claude plugin validate` / `claude plugin test` にこのディレクトリを渡す（npm の CI は見ていない）。
+// /work-issue の決まり事（ブランチ名・コメントの目印・project-status.sh の出力）に依存する。合わなくても落ちず、帯が欠けるだけ。
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 

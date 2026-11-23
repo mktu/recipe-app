@@ -13,6 +13,8 @@ import { cleanUserData, seedRecipes, setupUser, type SeedRecipeInput } from './f
  * 食材に解決すると食材ID一致でも引っかかるため、**テキスト検索の検証に食材マスタへ
  * 載っている語を使ってはいけない**。「パスタ」はマスタにあるので使えず、
  * ここでは「ハンバーグ」を使っている。
+ * どちらに解決されるかはマスタを見ても分からない（カテゴリ・部分一致・エイリアスを通る）。
+ * 迷ったら `resolveTerm()`（`src/lib/search/resolve-term.ts`）に食わせて確かめる。
  *
  * ## 食材 ID は直書きしない
  *

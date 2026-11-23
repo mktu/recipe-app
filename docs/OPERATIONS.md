@@ -6,58 +6,18 @@ LINE 固有は `docs/LINE_SETUP.md`、Edge Function / cron は `docs/EDGE_FUNCTI
 
 ## 開発フロー
 
-### PR は必ず `--base develop`
-
-`gh pr create` のデフォルトベースは `main` なので、明示しないと本番ブランチへ PR が飛ぶ。
-`/create-pr` スキルを使うと `--base develop` が強制される。
-
-> 過去に main へ誤マージした実績あり（PR #95）。
-
 ### `Closes #NNN` は develop への PR では発火しない
 
 GitHub が Issue を自動クローズするのは**デフォルトブランチ（main）へマージされたとき**だけ。
 本プロジェクトは全 PR が develop 向けなので、**Issue は main マージ後に手動で閉じる**必要がある（`/work-issue` の片付けで閉じる）。
 PR 本文に `Closes #NNN` を書くこと自体は紐付けとして有用なので続けてよい。
 
-### 単純なタスクは `/work-issue` で計画 → Draft PR → Done まで進める
-
-Issue の状態は [recipe-app プロジェクト（#5）](https://github.com/users/mktu/projects/5) の **Status 列**で管理する
-（`Todo` → `Plan` → `Needs input` / `Ready` → `In Progress` → `In review` → `Done`。ラベルは使わない）。
-人が `Plan` に移して `/work-issue <番号>` を実行すると、AI が調べたうえで問題点と選択肢を持ち出し、人と対話して方針を詰める。
-**`Plan` の価値は計画書ではなく、この議論にある**（書式は決めない）。合意したら `Ready` で止まり、
-人が `In Progress` に移すと実装し、Draft PR を作って `In review` にする。手順の正本はスキル（`.claude/skills/work-issue/`）。
-main までマージしたら、同じセッションでもう一度 `/work-issue` を打つと、やり残しを確かめて close・`Done` にし、worktree を片付ける。
-人のレビューの前に別の目で見直したいときは、同じセッションで `/second-opinion` を打つ（`/code-review` と目的の番人。
-コストがかかるので自動では回さない）。
-経緯と設計は #252 / #254 / #255。
-
-- **gh に `project` スコープが要る**（PC ごと）。無いと Status を読めない。
-  `gh auth refresh -h github.com -s project` は対話の認証なので、Claude Code 経由ではなく普段のターミナルで実行する
-  （`--hostname` を付けないと非対話環境では失敗する）
-- **AI のコメントも人のコメントも投稿者は自分になる**（gh が自分のトークンで動くため）。
-  「人が返信したか」を投稿者では判定できないので、AI のコメントには `<!-- work-issue:... -->` の目印を入れ、
-  最後のコメントに目印が無ければ人の返信とみなしている
-- **Status の選択肢は画面から追加・変更する。** API（`updateProjectV2Field`）で選択肢を更新すると、
-  既存の選択肢を正しく引き継がない限り、既存アイテムの Status が外れるおそれがある
-- GitHub Actions（claude-code-action）で回す案は、CI 用の認証手段が無いため保留している（#252 の「保留」節）
-
-### 対応中の Issue はプロンプト上の帯に出る（mod `issue-status`）
-
-`.claude/skills/issue-status/` は Claude Code の mod（Skill ではない）。プロジェクトの `.claude/skills/<名前>/` に
-`.claude-plugin/plugin.json` があると、**設定なしで自動で読み込まれる**（clone した人にもそのまま効く）。
-今いるブランチ名の末尾の番号から Issue を特定して、Status・次は誰の番か・チェックボックスの完了数・PR を 1 行で出す。
-片付け忘れの worktree（PR マージ済み or Issue close 済みなのに `.claude/worktrees/` に残っているもの）があれば 2 行目に出る。
-`/issue` で詳細ペインを開く。経緯は #267。
-
-- **`/work-issue` の決まり事に依存している。** ブランチ名の末尾が Issue 番号であること、コメントの
-  `<!-- work-issue:... -->` 目印、`project-status.sh` の出力（`get` は Status 1 行、`list` は TSV）。
-  変えたら `hooks/parse.ts` も合わせる。合わなくても落ちず、帯が欠けるだけなので気付きにくい
-- **検証は `claude plugin validate` / `claude plugin test`**（`.claude/skills/issue-status` を渡す）。
-  独自の JSX ランタイムなので、ESLint と vitest からは `.claude/**` ごと除外している
-- `git worktree add` → `EnterWorktree` の `path` で入った worktree は、セッション終了時に「残す／消す」を聞かれない。
-  帯の 🧹 はその消し忘れを拾うためのもの
-
 ## CI
+
+### `E2E Tests` の緑は、LINE Bot と設定画面については何も言っていない
+
+E2E が見ているのは LIFF の画面だけ（範囲は `e2e/*.spec.ts`）。**LINE Bot（Webhook・Flex）と設定画面には E2E が無い**ので、
+そこを触った PR では緑を品質の根拠にしない。自分で動かして確かめる。
 
 ### Supabase CLI は CI でバージョン固定（自動では上がらない）
 
@@ -82,34 +42,6 @@ CLI の破壊的変更は**本番デプロイの時点で初めて表面化す�
 失敗して、E2E が全 PR で落ちた（#255 の PR #265 で発覚）。
 **外す条件:** `@playwright/test` を 26.04 対応版に上げたとき（`update-packages` スキルで changelog を確認する）。
 
-### `E2E Tests` は develop / main への PR で走る
-
-Issue #37 でレシピ追加フローのテストを入れ、トリガーを `pull_request: [develop, main]` に、
-実行を `npm run test:e2e`（`--pass-with-no-tests` なし）に変えた。
-カバーしているのは**追加フロー（#37）・詳細画面（#39）・ホーム（#38: 一覧・検索・食材
-フィルター・クリア・ソート）**。LINE Bot 側と設定画面はまだ無いので、このジョブの緑は
-「LIFF 側でレシピを登録し、探して開いて編集・削除できる」ことまでの根拠にとどまる。
-
-### 検索まわりの E2E は、テスト語が食材に解決されると別物を測る
-
-検索入力は語ごとに食材条件かテキスト条件かに解決される（`src/lib/search/resolve-term.ts`）。
-**食材マスタに載っている語をテキスト検索の検証に使うと、食材ID一致の経路も同時に走る**ため、
-テキスト照合が壊れていても通ってしまう。「パスタ」はマスタにあるので使えない（#38）。
-
-語がどちらに解決されるかは、マスタを見ただけでは分からない（カテゴリ・部分一致・
-エイリアスを通るため）。迷ったら `resolveTerm()` に食わせて確かめる。
-
-また `ingredients.id` は `gen_random_uuid()` なので**ローカルと CI で値が違う**。
-テストに ID を直書きせず、名前から引くこと（`e2e/fixtures/db.ts` の `findIngredientIdByName`）。
-
-### テストが0本の間、E2E の fixtures は腐っても気付けなかった
-
-`e2e/fixtures/db.ts` は `users.onboarding_completed_at` と `onboarding_sessions` を触っていたが、
-どちらも `20260524000000_remove_onboarding.sql` で消えていた。テストが1本も無いので
-fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で修正）。
-
-> 教訓: 「基盤だけ先に入れてテストは後で」は、基盤が腐る速度に対して CI が無力になる。
-
 ### Node のバージョンは `.nvmrc` が正本。上げる前に Vercel の対応を確認する
 
 全ワークフローが `node-version-file: '.nvmrc'` を読む。**`node-version: '20'` のような直書きを足さない。**
@@ -132,17 +64,7 @@ fixtures は一度も実行されず、**CI も緑のまま**だった（#37 で
 **同じコミットの再実行（`gh run rerun <id> --failed`）で通る**（#232 で発生）。
 同じ PR の Vercel ビルドが通っていれば、まずこれを疑う。
 
-### `reuseExistingServer` は別プロジェクトのサーバーも黙って再利用する
-
-`playwright.config.ts` の `webServer.reuseExistingServer` はローカルで有効。
-**ポートが開いてさえいれば中身を確かめずに再利用する**ため、3000 番を別のアプリが
-使っていると、テストはそのアプリに対して走り全件 404 で落ちる（原因が極めて分かりにくい）。
-
-ぶつかったらポートを逃がす:
-
-```bash
-E2E_PORT=3100 npm run test:e2e
-```
+## フロントエンド（LIFF）
 
 ### iOS の WebKit はボタンを押してもフォーカスを与えない（Chromium では再現しない）
 
@@ -192,35 +114,3 @@ Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で
 **2 が要る理由:** 埋め込みのバッチは 402 でもリトライ回数を増やし、3 回（15 分）で諦める。
 増やさないと、放置中に cron が 5 分ごとに呼び続けて Disk IO Budget を消費するため（`docs/EDGE_FUNCTIONS.md` の `onlyIf`）。
 リセットで残高切れと関係なく失敗していたレシピも戻るが、もう 3 回試されるだけで害は無い。
-
-## ローカル環境
-
-### fnm の PATH
-
-ターミナル起動時に以下が必要:
-
-```bash
-eval "$(fnm env --use-on-cd --shell zsh)"
-```
-
-## 未処理の手動メモ
-
-Issue 化するか判断が必要な、コードだけからは分からない事項。
-
-（現在なし）
-
-## 主要な参照ポインタ（非自明なものだけ）
-
-- `docs/ARCHITECTURE.md` - アーキテクチャ全体像・API 構成（実装の正本）
-- `docs/DATABASE_DESIGN.md` - DB 設計
-- `docs/SCRAPING_POLICY.md` - スクレイピング方針・規約確認記録の正本
-- `src/lib/recipe/parse-recipe.ts` - 解析フロー（JSON-LD → `__NEXT_DATA__` → OGP → 空結果）
-- `src/lib/search/` - 検索ロジックの正本。LINE Bot と Web（`get-recipes` Edge Function）で共有
-- `src/lib/auth/verify-line-token.ts` / `src/lib/api/auth-guard.ts` - ID トークン検証・API 認証ガード
-- `supabase/migrations/20260702000000_clarify_rls_policies.sql` - RLS（service_role ベース・設計意図をコメント記載）
-- `scripts/setup-cron.ts` - cron ジョブ定義の正本
-- `.claude/skills/legal-check/SKILL.md` - 法的リスクチェック（Issue 一元化・線引き基準）
-
-## GitHub リポジトリ
-
-https://github.com/mktu/recipe-app
