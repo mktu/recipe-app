@@ -547,9 +547,10 @@ sequenceDiagram
 graph TB
     Start["URL Input"] --> Own{"アプリ自身の URL?\n(isOwnAppUrl)"}
     Own -->|Yes| Reject["登録せずに案内を返す"]
-    Own -->|No| Fetch["Fetch HTML"]
+    Own -->|No| Fetch{"Fetch HTML"}
+    Fetch -->|"Fail（DNS 解決不可・404・403・timeout 等）"| Unfetchable["登録せずに断る"]
 
-    Fetch --> Strategy1{"JSON-LD extract"}
+    Fetch -->|OK| Strategy1{"JSON-LD extract"}
     Strategy1 -->|Success| Result["Parse Result"]
     Strategy1 -->|Fail| Strategy2{"__NEXT_DATA__ extract"}
 
@@ -557,11 +558,10 @@ graph TB
     Strategy2 -->|Fail| Strategy3{"OGP extract（title/image/site_name）"}
 
     Strategy3 -->|Success| OgpResult["Parse Result（食材なし・手動入力）"]
-    Strategy3 -->|Fail| Empty["Empty Result（手動入力）"]
+    Strategy3 -->|"Fail（タイトル無し）"| Unfetchable
 
     Result --> Match["Ingredient Matching"]
     OgpResult --> Confirm
-    Empty --> Confirm
     Match --> Confirm["ユーザー確認\n(/recipes/add/confirm)"]
     Confirm --> Save["Save to DB\n(POST /api/recipes)"]
 ```
@@ -573,6 +573,9 @@ graph TB
 > 登録の入口で断る**（`src/lib/recipe/own-app-url.ts`、#230）。保護ページは認証をクライアント側でしか
 > 行っていないため、取得するとアプリ全体の OGP が返り、中身の無いレシピが登録されてしまうから。
 > 判定はホスト（`NEXT_PUBLIC_APP_URL` と `liff.line.me`）で行うので、Vercel の別名ホストはすり抜ける。
+>
+> **取得に失敗した URL・タイトルが取れない URL は、ボット拒否（403）や一時的な障害でも登録させない。
+> 手入力に倒さない**（#242）。全項目を手で埋めるなら URL を登録する意味が無いため。タイトルさえ取れれば登録する。
 
 ---
 
