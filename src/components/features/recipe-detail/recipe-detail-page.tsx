@@ -24,7 +24,7 @@ export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPagePr
     recipeId: recipe.id,
     initialMemo: recipe.memo,
   })
-  const { rescrape, isLoading: isRescraping, error: rescrapeError, result: rescrapeResult } = useRescrape()
+  const { rescrape, isLoading: isRescraping, result: rescrapeResult } = useRescrape()
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const handleRescrape = useCallback(async () => {
@@ -57,9 +57,7 @@ export function RecipeDetailPage({ recipe, onRecipeUpdated }: RecipeDetailPagePr
           url={recipe.url}
           isRescraping={isRescraping}
           onRescrape={handleRescrape}
-        />
-        {rescrapeError && <p role="alert" className="text-center text-sm text-destructive">{rescrapeError.message}</p>}
-      </div>
+        />      </div>
 
       {rescrapeResult && (
         <RescrapeDialog

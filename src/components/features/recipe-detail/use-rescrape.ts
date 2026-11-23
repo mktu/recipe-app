@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
 import { useAuthedFetch } from '@/hooks/use-authed-fetch'
 import type { ParsedRecipe } from '@/types/recipe'
@@ -30,7 +31,10 @@ export function useRescrape() {
       }
       setResult(await res.json())
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'))
+      const e = err instanceof Error ? err : new Error('Unknown error')
+      setError(e)
+      // ボタンは画面の下の方にあるので、その場に出すと気付けない（#242）
+      toast.error(e.message)
     } finally {
       setIsLoading(false)
     }
