@@ -166,6 +166,33 @@ npx playwright install webkit   # 初回のみ
 staging の LINE Webhook を通すため意図的に無効化している。有効化すると
 LINE からの POST が認証で弾かれて staging のボットが無反応になる。
 
+### Gemini のクレジットが足りなくなったとき
+
+Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で、**残高がそのまま上限**（#132）。
+キー（`GOOGLE_GENERATIVE_AI_API_KEY`）はローカル・staging・本番で共通なので、尽きると全環境の呼び出しが
+402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない。**
+
+**気付き方:** AI Studio の Billing で残高を見る。尽きていても登録や画面は普通に動くので、使っていて気付くのは難しい
+（LINE の検索で言い換え〔ベクトル検索〕が効かなくなる程度）。Edge Function のログ（`generate-embeddings`）に 402 が出る。
+
+**手順:**
+
+1. AI Studio の Billing でクレジットを買い足す（自動チャージは入れない。入れるなら「1 か月の費用の上限」も一緒に付ける。
+   残高が歯止めにならなくなるため）
+2. staging と本番の**両方**の SQL Editor で、埋め込みを諦めたレシピを数え、0 件でなければリセットする
+
+   ```sql
+   SELECT count(*) FROM recipes WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+   UPDATE recipes SET embedding_retry_count = 0 WHERE title_embedding IS NULL AND embedding_retry_count >= 3;
+   ```
+
+   5 分以内に `generate-embeddings` の cron が拾って埋める
+3. ほかは何もしなくてよい。検索は次の呼び出しから、`auto-alias` は翌日の実行で元に戻る
+
+**2 が要る理由:** 埋め込みのバッチは 402 でもリトライ回数を増やし、3 回（15 分）で諦める。
+増やさないと、放置中に cron が 5 分ごとに呼び続けて Disk IO Budget を消費するため（`docs/EDGE_FUNCTIONS.md` の `onlyIf`）。
+リセットで残高切れと関係なく失敗していたレシピも戻るが、もう 3 回試されるだけで害は無い。
+
 ## ローカル環境
 
 ### fnm の PATH
