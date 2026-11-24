@@ -37,6 +37,17 @@ const functions: FunctionConfig[] = [
     ],
   },
   {
+    // 生成の本体は src/lib/note-image が正本（#287）
+    name: 'generate-note-images',
+    sharedFiles: [
+      { src: 'src/lib/note-image/constants.ts', dest: 'constants.ts' },
+      { src: 'src/lib/note-image/prompt.ts', dest: 'prompt.ts' },
+      { src: 'src/lib/note-image/storage-url.ts', dest: 'storage-url.ts' },
+      { src: 'src/lib/note-image/gemini-image.ts', dest: 'gemini-image.ts' },
+      { src: 'src/lib/note-image/generate-note-images.ts', dest: 'generate-note-images.ts' },
+    ],
+  },
+  {
     // 検索ロジックは LINE Bot と共有（src/lib/search が正本）
     name: 'get-recipes',
     sharedFiles: [

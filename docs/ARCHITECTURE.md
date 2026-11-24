@@ -54,7 +54,8 @@
 │  │  - PostgreSQL       │  │  - get-recipes                  │   │
 │  │  - pgvector         │  │  - generate-embeddings          │   │
 │  │  - pg_cron          │  │  - auto-alias                   │   │
-│  │                     │  │  - audit-auto-generated         │   │
+│  │  - Storage          │  │  - audit-auto-generated         │   │
+│  │                     │  │  - generate-note-images         │   │
 │  └─────────────────────┘  └─────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -183,9 +184,11 @@ graph TB
             GenEmbed["generate-embeddings"]
             AutoAlias["auto-alias"]
             Audit["audit-auto-generated"]
+            GenImage["generate-note-images"]
         end
 
         Cron["pg_cron"]
+        Storage[("Storage（generated-images）")]
     end
 
     subgraph External["External Services"]
@@ -207,10 +210,16 @@ graph TB
     AutoAlias --> Gemini
     Audit --> DB
     Audit -->|push 通知| LINEApp
+    NoteAPI -->|登録後に after で| GenImage
+    WebhookAPI -->|登録後に after で| GenImage
+    GenImage --> DB
+    GenImage --> Gemini
+    GenImage --> Storage
 
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
     Cron -->|weekly| Audit
+    Cron -->|every 5min| GenImage
 ```
 
 ---
@@ -271,6 +280,7 @@ graph TB
         GenEmbed["generate-embeddings (5min)"]
         AutoAlias["auto-alias (daily)"]
         Audit["audit-auto-generated (weekly)"]
+        GenImage["generate-note-images (after / 5min)"]
     end
 
     subgraph Processing["Processing"]
@@ -282,11 +292,14 @@ graph TB
     Cron -->|every 5min| GenEmbed
     Cron -->|daily| AutoAlias
     Cron -->|weekly| Audit
+    API -->|登録後| GenImage
+    Cron -->|every 5min| GenImage
 
     GetRecipes --> Sync
     GenEmbed --> Sync
     AutoAlias --> Async
     Audit --> Sync
+    GenImage --> Sync
 ```
 
 ### Edge Function 詳細
@@ -297,6 +310,7 @@ graph TB
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
 | `audit-auto-generated` | pg_cron (毎週月曜) | 同期 | 自動追加食材を管理者へ LINE 通知（事後監査） |
+| `generate-note-images` | API Route（登録後の `after`）/ pg_cron (5分毎) | 同期 | マイレシピの AI 画像生成。cron は失敗の作り直し（#287） |
 
 > cron ジョブ定義の正本は `scripts/setup-cron.ts`（出力 SQL を SQL Editor で実行する運用）。
 
@@ -421,7 +435,7 @@ erDiagram
 | `/api/track/recipe/[id]` の GET | 以前に送ったトーク履歴上のノートのカードのため、相対パスは LIFF URL に 302 で振り替える（`toTrackRedirectUrl`）。LIFF_ID が空の dev ではリクエストのオリジンで解決する（`NextResponse.redirect` は絶対 URL しか受け付けない）。外部サイトの絶対 URL は素通り |
 | 一覧のカード | **対応済み（#226）。** `url` が相対パスならそのままリンク先にし、詳細画面を挟まずノートを開く（`recipe-card.tsx` の `toRecipeHref`）。get-recipes はノートを知らないので、判定は LINE のカードと同じく `url.startsWith('/')` |
 | 詳細画面（再取得ボタン・「レシピサイトに移動」） | **対応済み（#226）。** マイレシピで `/recipes/<id>` を開くと `noteId` を見てノートへ転送するので、詳細画面にノート用の出し分けは無い（再取得は相対パスが `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になり、外部リンクは `target="_blank"` だと LINE の内蔵ブラウザで LIFF の外に出て認証が通らない。どちらも転送で踏まなくなった） |
-| 画像（`recipes.image_url`） | **対応済み（#174）。** RPC がノートの `image_key` から相対パス `/placeholders/<key>.png` を書き込むので、一覧・詳細は素の `<img>` のまま動く。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
+| 画像（`recipes.image_url`） | **対応済み（#174, #287）。** RPC が「プリセット（`image_key` → 相対パス `/placeholders/<key>.png`）→ AI 画像（Storage の公開 URL）」の順で書き込むので、一覧・詳細は素の `<img>` のまま動く。空なら表示側が料理名の表紙（`/api/cover`）を出す。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う。
   詳細画面は `fetchRecipeById` が `recipe_notes(id)` を埋め込んで返す `noteId` でノートへ転送する

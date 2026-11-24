@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/db/client'
+import { removeUserNoteImages } from '@/lib/db/queries/note-image-files'
 import { apiServerError } from '@/lib/api/error-response'
 import { requireLineUser } from '@/lib/api/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
@@ -75,14 +76,18 @@ export async function DELETE(request: NextRequest) {
   }
 
   const supabase = createServerClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('users')
     .delete()
     .eq('line_user_id', lineUserId)
+    .select('id')
 
   if (error) {
     return apiServerError(error, 'delete-user')
   }
+
+  // CASCADE は Storage のファイルを消さない（プライバシーポリシーの「退会時に削除」）
+  for (const user of data ?? []) await removeUserNoteImages(supabase, user.id)
 
   return NextResponse.json({ success: true })
 }

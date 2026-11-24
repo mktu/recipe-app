@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/db/client'
 import { getUserIdByLineUserId } from '@/lib/db/queries/users'
+import { findNoteImagePath, removeNoteImageFiles } from '@/lib/db/queries/note-image-files'
 import type { Database, Json, TablesInsert, TablesUpdate } from '@/types/database'
 import type { RecipeDetail, RecipeIngredient, IngredientRaw, UpdateRecipeInput } from '@/types/recipe'
 
@@ -93,6 +94,7 @@ export async function deleteRecipe(
     const userId = await getUserIdByLineUserId(client, lineUserId)
     if (!userId) return { error: new Error('ユーザーが見つかりません') }
 
+    const imagePath = await findNoteImagePath(client, recipeId, userId)
     const { error } = await client
       .from('recipes')
       .delete()
@@ -100,6 +102,7 @@ export async function deleteRecipe(
       .eq('user_id', userId)
 
     if (error) throw error
+    if (imagePath) await removeNoteImageFiles(client, [imagePath])
     return { error: null }
   } catch (err) {
     return { error: err instanceof Error ? err : new Error('Unknown error') }

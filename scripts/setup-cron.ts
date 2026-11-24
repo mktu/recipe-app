@@ -64,6 +64,16 @@ const JOBS: Job[] = [
     description: '埋め込みベクトル生成（5分毎。未生成レシピがあるときだけ呼ぶ）',
   },
   {
+    name: 'generate-note-images',
+    schedule: '*/5 * * * *',
+    functionName: 'generate-note-images',
+    // 3 は NOTE_IMAGE_MAX_ATTEMPTS、10 分は claim_note_image_generations の「生成中のまま止まった」の判定と揃える。
+    // 判定に NULL を使わない（image_status で明示的に持つ）。列が NULL に戻っただけで全件の生成が走らないように
+    onlyIf:
+      "EXISTS (SELECT 1 FROM public.recipe_notes WHERE image_retry_count < 3 AND (image_status = 'pending' OR (image_status = 'generating' AND image_generation_started_at < now() - interval '10 minutes')))",
+    description: 'マイレシピの AI 画像の作り直し（5分毎。作る対象があるときだけ呼ぶ。登録直後の生成はアプリが呼ぶ）',
+  },
+  {
     name: 'auto-alias-daily',
     schedule: '0 18 * * *',
     functionName: 'auto-alias',
