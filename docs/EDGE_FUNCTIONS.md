@@ -105,7 +105,7 @@ supabase functions deploy
 
 **トリガー条件:**
 - `supabase/functions/**` の変更
-- `src/lib/batch/**` の変更
+- `src/lib/batch/**` / `src/lib/search/**` / `src/lib/note-image/**` の変更
 - `scripts/build-edge-functions.ts` の変更
 
 ### `supabase start` を使うワークフローには `npm run functions:build` を前段に入れる

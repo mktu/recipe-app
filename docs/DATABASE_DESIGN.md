@@ -85,7 +85,7 @@
 - `title`: String
 - `ingredients`: JSONB (材料。例: `[{"name": "なす", "amount": "2本"}]`)
 - `steps`: JSONB (調理手順の配列。例: `["なすを乱切りにする", "炒める"]`)
-- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ)
+- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ。新しくは選べない〔#287〕。既存の値は #292 で片付ける)
 - `servings`: String (「2人分」など。任意)
 - `generated_image_url`: String (AI で作った画像の公開 URL。#287)
 - `image_status`: String (`none` / `pending` / `generating` / `ready` / `failed`。既定 `none`)
