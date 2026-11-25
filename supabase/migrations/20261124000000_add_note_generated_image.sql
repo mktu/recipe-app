@@ -184,9 +184,12 @@ DECLARE
   v_recipe_id UUID;
   v_generated_image_url TEXT;
 BEGIN
+  -- FOR UPDATE: 生成の完了（complete_note_image_generation）と重なったとき、ロックなしで読むと
+  -- 完了前の NULL を読み、完了が書いた recipes.image_url を NULL で上書きしてしまう
   SELECT n.recipe_id, n.generated_image_url INTO v_recipe_id, v_generated_image_url
   FROM recipe_notes n
-  WHERE n.id = p_note_id AND n.user_id = p_user_id;
+  WHERE n.id = p_note_id AND n.user_id = p_user_id
+  FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'recipe note not found or not owned by user: %', p_note_id
@@ -279,6 +282,9 @@ BEGIN
     LIMIT p_limit
     FOR UPDATE SKIP LOCKED
   LOOP
+    -- 登録直後の呼び出しと cron が同時に同じユーザーの行を確保すると、どちらも古い数を読んで上限を超える
+    PERFORM pg_advisory_xact_lock(hashtext('note-image-quota:' || r.user_id::text));
+
     SELECT count(*) INTO v_used
     FROM image_generations g
     WHERE g.user_id = r.user_id AND g.created_at >= v_month_start;
@@ -315,8 +321,9 @@ COMMENT ON FUNCTION claim_note_image_generations(UUID, INTEGER, INTEGER, INTEGER
 -- 8. 生成の完了
 -- ===========================================
 -- 差し替え前の AI 画像の URL を返す（呼び出し側が Storage から消す）。
--- 生成中にノートが消された・確保し直された場合は no_data_found で失敗するので、
--- 呼び出し側は上げたばかりのファイルを消す
+-- 生成中にノートが消された場合は no_data_found で失敗するので、呼び出し側は上げたばかりのファイルを消す。
+-- 確保し直された（生成中のまま 10 分止まった）行は generating のままなので、古い側の完了も通る。
+-- Edge Function の実行時間の上限は 10 分より短いので、実際には古い側は先に止まっている
 CREATE OR REPLACE FUNCTION complete_note_image_generation(p_note_id UUID, p_image_url TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql

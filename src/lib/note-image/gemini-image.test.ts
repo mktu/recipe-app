@@ -32,6 +32,11 @@ describe('requestNoteImage', () => {
     await expect(requestNoteImage('prompt', 'key')).rejects.toMatchObject({ name: 'GeminiImageError', status: 402 })
   })
 
+  it('JPEG 以外が返ってきたらエラーにする（JPEG として保存しない）', async () => {
+    stubFetch(200, { steps: [{ type: 'model_output', content: [{ type: 'image', mime_type: 'image/png', data: btoa('png!') }] }] })
+    await expect(requestNoteImage('prompt', 'key')).rejects.toBeInstanceOf(GeminiImageError)
+  })
+
   it('画像が入っていなければエラーにする', async () => {
     stubFetch(200, { steps: [{ type: 'model_output', content: [{ type: 'text', text: 'sorry' }] }] })
     await expect(requestNoteImage('prompt', 'key')).rejects.toBeInstanceOf(GeminiImageError)

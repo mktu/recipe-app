@@ -299,7 +299,7 @@ graph TB
     GenEmbed --> Sync
     AutoAlias --> Async
     Audit --> Sync
-    GenImage --> Sync
+    GenImage --> Async
 ```
 
 ### Edge Function 詳細
@@ -310,7 +310,7 @@ graph TB
 | `generate-embeddings` | pg_cron (5分毎) | 同期 | 埋め込みベクトル生成 |
 | `auto-alias` | pg_cron (1日1回) | **非同期** | 食材エイリアス自動生成 |
 | `audit-auto-generated` | pg_cron (毎週月曜) | 同期 | 自動追加食材を管理者へ LINE 通知（事後監査） |
-| `generate-note-images` | API Route（登録後の `after`）/ pg_cron (5分毎) | 同期 | マイレシピの AI 画像生成。cron は失敗の作り直し（#287） |
+| `generate-note-images` | API Route（登録後の `after`）/ pg_cron (5分毎) | 登録後は同期・cron は**非同期** | マイレシピの AI 画像生成。cron は失敗の作り直し（#287） |
 
 > cron ジョブ定義の正本は `scripts/setup-cron.ts`（出力 SQL を SQL Editor で実行する運用）。
 

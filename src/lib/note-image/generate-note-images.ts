@@ -23,6 +23,8 @@ export interface GenerateNoteImagesOptions {
   /** ブラウザと LINE から取れる Supabase の URL。公開 URL の組み立てに使う */
   publicSupabaseUrl: string
   geminiApiKey: string
+  /** 保存前に縮める。失敗したら縮めずに保存する（生成をやり直すより安い） */
+  shrinkImage?: (image: Uint8Array) => Promise<Uint8Array>
 }
 
 export interface GenerateNoteImagesResult {
@@ -63,12 +65,14 @@ async function generateOne(
 ): Promise<boolean> {
   let uploadedPath: string | null = null
   try {
-    const image = await requestNoteImage(buildNoteImagePrompt(note.title, note.ingredients), options.geminiApiKey)
+    const generated = await requestNoteImage(buildNoteImagePrompt(note.title, note.ingredients), options.geminiApiKey)
+    const image = await shrink(generated, options.shrinkImage)
 
     const path = newNoteImagePath(note.user_id)
     const { error: uploadError } = await supabase.storage
       .from(NOTE_IMAGE_BUCKET)
-      .upload(path, image, { contentType: 'image/jpeg', cacheControl: '31536000' })
+      // 長くキャッシュさせると、削除・退会のあとも CDN に残る（プライバシーポリシーの「退会時に削除」）
+      .upload(path, image, { contentType: 'image/jpeg', cacheControl: '3600' })
     if (uploadError) throw uploadError
     uploadedPath = path
 
@@ -86,6 +90,16 @@ async function generateOne(
     await removeFile(supabase, uploadedPath)
     await releaseClaim(supabase, note)
     return false
+  }
+}
+
+async function shrink(image: Uint8Array, shrinkImage: GenerateNoteImagesOptions['shrinkImage']): Promise<Uint8Array> {
+  if (!shrinkImage) return image
+  try {
+    return await shrinkImage(image)
+  } catch (err) {
+    console.error('[generate-note-images] failed to shrink image, saving the original:', err)
+    return image
   }
 }
 

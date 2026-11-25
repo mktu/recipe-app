@@ -19,5 +19,8 @@ export const NOTE_IMAGE_MAX_ATTEMPTS = 3
 /** 1 ユーザーあたりの月の上限（JST の暦月）。`claim_note_image_generations` の既定値と揃える */
 export const NOTE_IMAGE_MONTHLY_LIMIT = 30
 
-/** 1 回の呼び出しで生成する最大件数。1 枚に十数秒かかるので、Edge Function の実行時間に収まる数にする */
-export const NOTE_IMAGE_BATCH_LIMIT = 5
+/**
+ * 1 回の呼び出しで生成する最大件数。Edge Function の CPU 時間の上限（1 リクエスト 2 秒）は
+ * 縮小（ローカルで 1 枚約 140ms）の合計にかかるので、まとめて処理しない。cron が拾うのは失敗の作り直しだけで数は少ない
+ */
+export const NOTE_IMAGE_BATCH_LIMIT = 1

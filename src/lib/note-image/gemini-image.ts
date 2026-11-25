@@ -19,9 +19,10 @@ interface InteractionResponse {
   steps?: { type?: string; content?: InteractionContent[] }[]
 }
 
+/** JPEG 以外は返さない（バケットは JPEG のみ受け付け、LINE は JPEG / PNG しか表示できない） */
 function findImageData(json: InteractionResponse): string | null {
   for (const step of json.steps ?? []) {
-    const image = step.content?.find((c) => c.type === 'image' && c.data)
+    const image = step.content?.find((c) => c.type === 'image' && c.mime_type === 'image/jpeg' && c.data)
     if (image?.data) return image.data
   }
   return null
@@ -37,8 +38,8 @@ function decodeBase64(data: string): Uint8Array {
 /**
  * Gemini（Interactions API）で JPEG の画像を 1 枚作る。
  *
- * 出力形式は `mime_type` で JPEG を指定できるので、変換（sharp）は要らない。
- * 1K の 1:1 で約 1MB。思考（thinking）は API からオフにできないため最小にする。
+ * 出力形式は `mime_type` で JPEG を指定できる。1K の 1:1 で約 1MB あるので、保存前に縮める（`shrinkImage`）。
+ * 思考（thinking）は API からオフにできないため最小にする。
  * 残高切れは 402 で返る（`docs/OPERATIONS.md`）。呼び出し側はステータスで分岐せず、試行回数として数える
  */
 export async function requestNoteImage(prompt: string, apiKey: string): Promise<Uint8Array> {
@@ -59,6 +60,6 @@ export async function requestNoteImage(prompt: string, apiKey: string): Promise<
   }
 
   const data = findImageData((await response.json()) as InteractionResponse)
-  if (!data) throw new GeminiImageError('Gemini image API returned no image', null)
+  if (!data) throw new GeminiImageError('Gemini image API returned no JPEG image', null)
   return decodeBase64(data)
 }
