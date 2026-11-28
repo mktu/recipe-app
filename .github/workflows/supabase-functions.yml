@@ -7,6 +7,7 @@ on:
       - 'supabase/functions/**'
       - 'src/lib/batch/**'
       - 'src/lib/search/**'
+      - 'src/lib/note-image/**'
       - 'scripts/build-edge-functions.ts'
 
 jobs:

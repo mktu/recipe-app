@@ -85,8 +85,12 @@
 - `title`: String
 - `ingredients`: JSONB (材料。例: `[{"name": "なす", "amount": "2本"}]`)
 - `steps`: JSONB (調理手順の配列。例: `["なすを乱切りにする", "炒める"]`)
-- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ)
+- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ。新しくは選べない〔#287〕。既存の値は #292 で片付ける)
 - `servings`: String (「2人分」など。任意)
+- `generated_image_url`: String (AI で作った画像の公開 URL。#287)
+- `image_status`: String (`none` / `pending` / `generating` / `ready` / `failed`。既定 `none`)
+- `image_retry_count`: Integer (画像の生成を試みた回数。確保した時点で数える)
+- `image_generation_started_at`: Timestamp (生成を確保した時刻)
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
 
@@ -109,8 +113,20 @@
 `note_placeholder_image_url(image_key)`（`/placeholders/<key>.png`）を `image_url` に書き込む
 （`supabase/migrations/20260923000000_set_note_image_url.sql`）。表示側は `image_url` だけを読むので、
 図鑑側はノートを知らないまま画像を出せる。アセットを差し替え・リネームするときは、
-`image_key` から `image_url` を作り直す migration を流す。規則はアプリ側の
-`src/lib/recipe/placeholder-images.ts` と二重に持っているので、変えるなら両方直すこと。
+`image_key` から `image_url` を作り直す migration を流す。
+
+**AI 画像（#287）は `generated_image_url` に持ち、RPC が `note_image_url()`（プリセット → AI 画像）で
+`image_url` を組み立てる。** `update_recipe_note` は保存のたびに `image_url` を作り直すので、
+`image_url` に直接書くと次の編集で消える。列にはパスでなく公開 URL を持つ（SQL は Supabase の URL を知らない）。
+
+**生成の対象は `image_status = 'pending'` で明示的に持つ。「NULL なら作る」にしない。**
+migration や手作業の SQL で列が NULL に戻っただけで、全件の生成（課金）が走るため。
+確保は `claim_note_image_generations`（SKIP LOCKED。登録直後の呼び出しと cron が重なっても片方だけが確保する）、
+月の上限もその中で `image_generations` を数えて見る。ノートの列で数えると作り直し（#293）で上書きされて少なく数える。
+
+**Storage の `generated-images` バケットに `storage.objects` の SELECT ポリシーを付けない。** 公開バケットなので
+URL を知っていれば取れるが、一覧は取れない。利用規約 第5条の「URL を知る第三者は閲覧できる場合がある」はこの前提で書いている。
+ファイルは DB の CASCADE では消えないので、レシピ削除（`deleteRecipe`）と退会（`delete-user`）で消している。
 
 ## ER図（概要）
 
@@ -247,6 +263,8 @@ PostgreSQL ストアドプロシージャ（Supabase RPC）として定義され
 | 関数名 | 説明 | 主な用途 |
 |--------|------|---------|
 | `get_frequent_ingredients(p_user_id, p_limit)` | ユーザーがよく使う食材を頻度順で取得 | レシピ一覧の食材フィルター候補表示 |
+| `claim_note_image_generations(p_note_id, p_limit, p_monthly_limit, p_max_attempts)` | AI 画像を作るノートを確保（月の上限超過は `none` に戻す） | `generate-note-images` |
+| `complete_note_image_generation(p_note_id, p_image_url)` | AI 画像の URL を保存して `image_url` を組み立て直す。差し替え前の URL を返す | `generate-note-images` |
 | `search_recipes_by_embedding(p_user_id, p_query_embedding, p_match_threshold, p_match_count)` | コサイン類似度によるベクトル検索 | セマンティック検索（pgvector `<=>` 演算子） |
 | `get_unmatched_ingredient_counts(limit_count)` | 未マッチ食材を頻度順で集計 | `auto-alias` バッチの優先処理対象選定 |
 | `get_recipes_few_ingredients(p_user_id, p_limit)` | 材料が少ないレシピ取得 | LINE Bot のカテゴリ検索 |

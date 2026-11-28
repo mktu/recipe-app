@@ -56,7 +56,7 @@ function createRecipeBubble(recipe: RecipeCardData): messagingApi.FlexBubble {
   return {
     type: 'bubble',
     size: 'kilo',
-    hero: createHeroImage(recipe.imageUrl),
+    hero: createHeroImage(recipe.imageUrl, recipe.title),
     body: { type: 'box', layout: 'vertical', contents: createBodyContents(recipe.title, recipe.sourceName, recipe.cookingTimeMinutes, recipe.ingredientCount) },
     footer: createFooterButton(recipe.url),
   }

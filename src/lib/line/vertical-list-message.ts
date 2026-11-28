@@ -59,7 +59,7 @@ function createListItemBox(recipe: RecipeCardData): messagingApi.FlexBox {
     paddingEnd: 'md',
     action: { type: 'uri', label: toActionLabel(recipe.title), uri: recipe.url },
     contents: [
-      ...createThumbnail(recipe.imageUrl),
+      ...createThumbnail(recipe.imageUrl, recipe.title),
       { type: 'box', layout: 'vertical', justifyContent: 'center', contents: textContents },
       ...(recipe.recipeId ? [createIngredientsButton(recipe.recipeId, recipe.title)] : []),
     ],

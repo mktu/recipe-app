@@ -51,6 +51,8 @@ public/rich-menu.png
 supabase/functions/auto-alias/alias-*.ts
 supabase/functions/audit-auto-generated/auto-generated-report.ts
 supabase/functions/get-recipes/search/
+supabase/functions/generate-note-images/*
+!supabase/functions/generate-note-images/index.ts
 
 # Claude Code worktrees (作業用の一時チェックアウト)
 .claude/worktrees/

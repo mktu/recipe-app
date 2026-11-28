@@ -3,7 +3,7 @@
 import { Clock, Pencil, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RecipeIngredients } from '@/components/features/recipe-detail'
-import { FALLBACK_IMAGE_PATH } from '@/lib/recipe/placeholder-images'
+import { recipeImageOrCover } from '@/lib/recipe/cover-image'
 import type { RecipeNoteDetail } from '@/types/recipe'
 import { NoteSteps } from './note-steps'
 
@@ -18,7 +18,7 @@ export function NoteView({ note, onEdit }: NoteViewProps) {
       <div className="space-y-4">
         <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={note.imageUrl ?? FALLBACK_IMAGE_PATH} alt="" className="h-full w-full object-cover" />
+          <img src={recipeImageOrCover(note.imageUrl, note.title)} alt="" className="h-full w-full object-cover" />
         </div>
         <h1 className="text-xl font-bold">{note.title}</h1>
         <NoteMeta servings={note.servings} cookingTimeMinutes={note.cookingTimeMinutes} />

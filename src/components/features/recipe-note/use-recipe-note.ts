@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { useAuthedFetch } from '@/hooks/use-authed-fetch'
-import { isPlaceholderImageKey, placeholderImagePath } from '@/lib/recipe/placeholder-images'
 import type { RecipeNoteDetail, RecipeNoteFields } from '@/types/recipe'
 
 /**
@@ -16,7 +15,6 @@ function applyFields(note: RecipeNoteDetail, fields: RecipeNoteFields): RecipeNo
     ...fields,
     ingredients: fields.ingredients.filter((i) => i.name.trim()),
     steps: fields.steps.filter((s) => s.trim()),
-    imageUrl: isPlaceholderImageKey(fields.imageKey) ? placeholderImagePath(fields.imageKey) : null,
   }
 }
 
