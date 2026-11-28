@@ -35,7 +35,6 @@ describe('parseRecipeMarkdown: 想定フォーマット', () => {
       title: '鶏むね肉のレモン蒸し',
       ingredients: EXPECTED_INGREDIENTS,
       steps: EXPECTED_STEPS,
-      imageKey: null,
       servings: '2人分',
       memo: '冷蔵で2日。調理時間20分',
       cookingTimeMinutes: 20,

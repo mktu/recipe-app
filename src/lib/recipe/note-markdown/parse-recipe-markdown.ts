@@ -37,7 +37,6 @@ function readRecipe(text: string): Omit<ParseRecipeMarkdownResult, 'registrable'
     title,
     ingredients,
     steps,
-    imageKey: null,
     servings: readServings(sections, metaTexts),
     memo: memo || null,
     cookingTimeMinutes: readCookingTime(metaTexts, warnings),

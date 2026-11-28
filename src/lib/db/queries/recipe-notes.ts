@@ -72,7 +72,6 @@ function buildNoteRpcArgs(input: NoteRpcArgsInput, userId: string) {
     p_steps: input.steps as unknown as Json,
     p_ingredient_ids: input.ingredientIds,
     p_unmatched: toUnmatchedJson(input.unmatchedIngredients),
-    p_image_key: input.imageKey ?? undefined,
     p_servings: input.servings ?? undefined,
     p_memo: input.memo ?? undefined,
     p_cooking_time_minutes: input.cookingTimeMinutes ?? undefined,
@@ -111,7 +110,7 @@ export async function createRecipeNote(
 
 type RecipeNoteRow = Pick<
   Tables<'recipe_notes'>,
-  'id' | 'recipe_id' | 'title' | 'ingredients' | 'steps' | 'image_key' | 'servings'
+  'id' | 'recipe_id' | 'title' | 'ingredients' | 'steps' | 'servings'
 > & {
   recipes: Pick<Tables<'recipes'>, 'image_url' | 'memo' | 'cooking_time_minutes'> | null
 }
@@ -123,7 +122,6 @@ function toRecipeNoteDetail(row: RecipeNoteRow): RecipeNoteDetail {
     title: row.title,
     ingredients: Array.isArray(row.ingredients) ? (row.ingredients as unknown as IngredientRaw[]) : [],
     steps: Array.isArray(row.steps) ? (row.steps as unknown as string[]) : [],
-    imageKey: row.image_key,
     imageUrl: row.recipes?.image_url ?? null,
     servings: row.servings,
     memo: row.recipes?.memo ?? null,
@@ -145,7 +143,7 @@ export async function fetchRecipeNoteById(
     // 不正な UUID もエラーで返るので、図鑑の詳細（fetchRecipeById）と同じく見つからない扱いにする
     const { data, error } = await client
       .from('recipe_notes')
-      .select('id, recipe_id, title, ingredients, steps, image_key, servings, recipes(image_url, memo, cooking_time_minutes)')
+      .select('id, recipe_id, title, ingredients, steps, servings, recipes(image_url, memo, cooking_time_minutes)')
       .eq('id', noteId)
       .eq('user_id', userId)
       .single()

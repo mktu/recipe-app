@@ -435,7 +435,7 @@ erDiagram
 | `/api/track/recipe/[id]` の GET | 以前に送ったトーク履歴上のノートのカードのため、相対パスは LIFF URL に 302 で振り替える（`toTrackRedirectUrl`）。LIFF_ID が空の dev ではリクエストのオリジンで解決する（`NextResponse.redirect` は絶対 URL しか受け付けない）。外部サイトの絶対 URL は素通り |
 | 一覧のカード | **対応済み（#226）。** `url` が相対パスならそのままリンク先にし、詳細画面を挟まずノートを開く（`recipe-card.tsx` の `toRecipeHref`）。get-recipes はノートを知らないので、判定は LINE のカードと同じく `url.startsWith('/')` |
 | 詳細画面（再取得ボタン・「レシピサイトに移動」） | **対応済み（#226）。** マイレシピで `/recipes/<id>` を開くと `noteId` を見てノートへ転送するので、詳細画面にノート用の出し分けは無い（再取得は相対パスが `POST /api/recipes/parse` の `new URL(url)` 検証で 400 になり、外部リンクは `target="_blank"` だと LINE の内蔵ブラウザで LIFF の外に出て認証が通らない。どちらも転送で踏まなくなった） |
-| 画像（`recipes.image_url`） | **対応済み（#174, #287）。** RPC が「プリセット（`image_key` → 相対パス `/placeholders/<key>.png`）→ AI 画像（Storage の公開 URL）」の順で書き込むので、一覧・詳細は素の `<img>` のまま動く。空なら表示側が料理名の表紙（`/api/cover`）を出す。LINE Flex の image は絶対 URL 必須のため、`src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
+| 画像（`recipes.image_url`） | **対応済み（#174, #287, #292）。** RPC が AI 画像（Storage の公開 URL）を書き込むので、一覧・詳細は素の `<img>` のまま動く。空なら表示側が料理名の表紙（`/api/cover`）を出す。LINE Flex の image は絶対 URL 必須のため、表紙の相対パスは `src/lib/line/flex-image.ts` で `NEXT_PUBLIC_APP_URL` と合成する |
 
 - 「このレシピはノートか」の判定は URL を見ず `recipe_notes.recipe_id` の外部キーで行う。
   詳細画面は `fetchRecipeById` が `recipe_notes(id)` を埋め込んで返す `noteId` でノートへ転送する

@@ -33,7 +33,6 @@ describe('readPastedMarkdown', () => {
         id: '',
         recipeId: null,
         imageUrl: null,
-        imageKey: null,
         title: '豚こまのしょうが焼き',
         ingredients: [
           { name: '豚こま切れ肉', amount: '200g' },
