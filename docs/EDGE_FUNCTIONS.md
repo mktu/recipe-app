@@ -105,7 +105,7 @@ supabase functions deploy
 
 **トリガー条件:**
 - `supabase/functions/**` の変更
-- `src/lib/batch/**` の変更
+- `src/lib/batch/**` / `src/lib/search/**` / `src/lib/note-image/**` の変更
 - `scripts/build-edge-functions.ts` の変更
 
 ### `supabase start` を使うワークフローには `npm run functions:build` を前段に入れる
@@ -169,6 +169,14 @@ Edge Function で使用する環境変数は Supabase Dashboard で設定:
 **auto-alias で必要な環境変数:**
 - `GOOGLE_GENERATIVE_AI_API_KEY` - Gemini API キー
 
+**generate-note-images で必要な環境変数:**
+- `GOOGLE_GENERATIVE_AI_API_KEY` - auto-alias と共通
+
+> **ローカルの `SUPABASE_URL` は Docker 内部の `http://kong:8000`。** これで公開 URL を組み立てると
+> ブラウザから開けない画像になるので、`NEXT_PUBLIC_SUPABASE_URL`（`functions:serve` が `.env.local` から渡す）を優先している。
+> 本番・staging では設定不要（`SUPABASE_URL` が公開 URL）。
+> ローカルで AI 画像を作るには `npm run functions:serve` が要る。起動していなければノートは `pending` のまま残る（ローカルに cron は無い）。
+
 **audit-auto-generated で必要な環境変数:**
 - `LINE_CHANNEL_ACCESS_TOKEN` - LINE push 通知用（Messaging API チャネル）。**既に設定済み**
 - `LINE_ADMIN_USER_ID` - 通知先。新規に設定が必要
@@ -212,6 +220,7 @@ npx tsx scripts/setup-cron.ts --env=production
 | `generate-embeddings` | `*/5 * * * *` | `generate-embeddings`（未生成レシピがあるときだけ呼ぶ） |
 | `auto-alias-daily` | `0 18 * * *`（JST 03:00） | `auto-alias` |
 | `audit-auto-generated-weekly` | `0 0 * * 1`（JST 月曜 09:00） | `audit-auto-generated` |
+| `generate-note-images` | `*/5 * * * *` | `generate-note-images`（作る対象があるときだけ呼ぶ。登録直後の生成はアプリが `after` で呼ぶ） |
 | `cleanup-cron-logs` | `0 0 * * *` | SQL 直実行（古い実行ログ削除） |
 
 **注意:**

@@ -34,6 +34,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      image_generations: {
+        Row: {
+          created_at: string
+          id: string
+          recipe_note_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipe_note_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipe_note_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_generations_recipe_note_id_fkey"
+            columns: ["recipe_note_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_aliases: {
         Row: {
           alias: string
@@ -137,8 +173,12 @@ export type Database = {
       recipe_notes: {
         Row: {
           created_at: string | null
+          generated_image_url: string | null
           id: string
+          image_generation_started_at: string | null
           image_key: string | null
+          image_retry_count: number
+          image_status: string
           ingredients: Json
           recipe_id: string | null
           servings: string | null
@@ -149,8 +189,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          generated_image_url?: string | null
           id?: string
+          image_generation_started_at?: string | null
           image_key?: string | null
+          image_retry_count?: number
+          image_status?: string
           ingredients?: Json
           recipe_id?: string | null
           servings?: string | null
@@ -161,8 +205,12 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          generated_image_url?: string | null
           id?: string
+          image_generation_started_at?: string | null
           image_key?: string | null
+          image_retry_count?: number
+          image_status?: string
           ingredients?: Json
           recipe_id?: string | null
           servings?: string | null
@@ -317,6 +365,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_note_image_generations: {
+        Args: {
+          p_limit?: number
+          p_max_attempts?: number
+          p_monthly_limit?: number
+          p_note_id?: string
+        }
+        Returns: {
+          attempt: number
+          ingredients: Json
+          note_id: string
+          title: string
+          user_id: string
+        }[]
+      }
+      complete_note_image_generation: {
+        Args: { p_image_url: string; p_note_id: string }
+        Returns: string
+      }
       create_recipe_note: {
         Args: {
           p_cooking_time_minutes?: number

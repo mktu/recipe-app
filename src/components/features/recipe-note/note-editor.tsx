@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { RecipeNoteDetail, RecipeNoteFields } from '@/types/recipe'
-import { PlaceholderImagePicker } from './placeholder-image-picker'
 import { NoteIngredientsEditor } from './note-ingredients-editor'
 import { NoteStepsEditor } from './note-steps-editor'
 import { NoteSelect } from './note-select'
@@ -62,7 +61,6 @@ export function NoteEditor({ heading, notice, note, ingredients, onSave, onCance
           <NoteSelect id="note-cooking-time" value={values.cookingTime} onChange={setters.setCookingTime} options={cookingTimeOptions(note?.cookingTimeMinutes?.toString() ?? '')} disabled={isSaving} />
         </Field>
       </div>
-      <PlaceholderImagePicker value={values.imageKey} onChange={setters.setImageKey} />
       <NoteIngredientsEditor rows={values.ingredients} onChange={setters.setIngredients} ingredients={ingredients} disabled={isSaving} />
       <NoteStepsEditor rows={values.steps} onChange={setters.setSteps} disabled={isSaving} />
       <Field label="メモ" htmlFor="note-memo">

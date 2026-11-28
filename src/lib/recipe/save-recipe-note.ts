@@ -1,5 +1,6 @@
 import { createRecipeNote, type RecipeNoteError, type RecipeNoteResult } from '@/lib/db/queries/recipe-notes'
 import { resolveIngredients } from '@/lib/recipe/match-ingredients'
+import { requestNoteImageGeneration } from '@/lib/recipe/request-note-image'
 import type { RecipeNoteFields } from '@/types/recipe'
 
 /**
@@ -14,10 +15,12 @@ export async function saveRecipeNote(
   fields: RecipeNoteFields
 ): Promise<{ data: RecipeNoteResult | null; error: RecipeNoteError | null }> {
   const { matched, unmatched } = await resolveIngredients(fields.ingredients.map((i) => i.name))
-  return createRecipeNote({
+  const result = await createRecipeNote({
     ...fields,
     lineUserId,
     ingredientIds: matched.map((m) => m.ingredientId),
     unmatchedIngredients: unmatched,
   })
+  if (result.data && !fields.imageKey) requestNoteImageGeneration(result.data.noteId)
+  return result
 }

@@ -122,7 +122,7 @@ npm run preview:flex -- --count=3  # 件数指定 (1〜5)
 出力された JSON を [LINE Flex Message Simulator](https://developers.line.biz/flex-simulator/) に貼り付けるとデプロイ前に見た目を確認できる。
 
 **ダミーデータに含まれるエッジケース:**
-- 画像なし（プレースホルダー表示の確認）
+- 画像なし（料理名の表紙の確認。APP_URL が https のときだけ出る）
 - ソース名なし（レイアウト崩れの確認）
 
 ## AI 用プロンプトの手確認

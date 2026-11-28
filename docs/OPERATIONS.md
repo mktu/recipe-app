@@ -95,7 +95,8 @@ Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で
 402（`Your prepayment credits are depleted`）で失敗する。**Google から残高の通知は来ない。**
 
 **気付き方:** AI Studio の Billing で残高を見る。尽きていても登録や画面は普通に動くので、使っていて気付くのは難しい
-（LINE の検索で言い換え〔ベクトル検索〕が効かなくなる程度）。Edge Function のログ（`generate-embeddings`）に 402 が出る。
+（LINE の検索で言い換え〔ベクトル検索〕が効かなくなる、マイレシピの画像が表紙のままになる程度）。
+Edge Function のログ（`generate-embeddings` / `generate-note-images`）に 402 が出る。
 
 **手順:**
 
@@ -109,6 +110,14 @@ Gemini API は有料 tier の前払い（Prepay、自動チャージなし）で
    ```
 
    5 分以内に `generate-embeddings` の cron が拾って埋める
+
+   マイレシピの AI 画像（#287）も同じく 3 回で諦める。諦めたものは表紙のまま残るので、作り直すなら戻す
+   （月の上限の数は戻らない。cron が 5 分以内に拾う）
+
+   ```sql
+   SELECT count(*) FROM recipe_notes WHERE image_status = 'failed';
+   UPDATE recipe_notes SET image_status = 'pending', image_retry_count = 0 WHERE image_status = 'failed';
+   ```
 3. ほかは何もしなくてよい。検索は次の呼び出しから、`auto-alias` は翌日の実行で元に戻る
 
 **2 が要る理由:** 埋め込みのバッチは 402 でもリトライ回数を増やし、3 回（15 分）で諦める。

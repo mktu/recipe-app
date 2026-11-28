@@ -131,12 +131,13 @@ catch 内のエラー通知もそこで失敗し、webhook が 500 になる。
 未設定だと LINE トーク上の規約・プライバシーリンクが機能しない。
 
 **Flex の画像もこれに依存する（#174）。** Flex の image は絶対 https URL しか受け付けないが、
-ノートのプレースホルダーと画像なしレシピの代替画像は自前アセットの相対パス（`/placeholders/...`）なので、
+ノートのプレースホルダー（`/placeholders/...`）と画像なしレシピの表紙（`/api/cover?title=...`。#287）は相対パスなので、
 `src/lib/line/flex-image.ts` がこの値と合成する。**未設定のときと、http のとき**
 （`.env.example` の `http://localhost:3000` のまま ngrok でローカルに繋いだ場合など）は Flex に渡せないため、
 不正な URL で reply 全体を 400 にしないよう **image を省いて送る**（カードに画像が出ない）。
 ローカルで画像まで確認したいときは、ngrok の https URL を APP_URL に入れる。
-外部サイトの画像が http の場合は NO IMAGE 画像に差し替える。
+画像が http の場合は表紙に差し替える。ローカルの Supabase Storage の AI 画像（`http://127.0.0.1:54321/...`）もこれに当たるので、
+ローカルの LINE では AI 画像ではなく表紙が出る。
 
 ### LINE から保護ページを開くときは LIFF URL を使う（#176）
 

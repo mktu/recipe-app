@@ -3,11 +3,10 @@
  *
  * 実体は `public/placeholders/<key>.png`（`npm run generate:placeholders` で生成。
  * 候補を足すときは `scripts/generate-placeholder-images.ts` にアイコンも描く）。ノートは `recipe_notes.image_key` に key を持ち、
- * 図鑑側の `recipes.image_url` には RPC がこのパスを書き込む（表示側は image_url だけを読む）。
+ * 図鑑側の `recipes.image_url` には RPC が `'/placeholders/' || image_key || '.png'` を書き込む
+ * （`note_placeholder_image_url`。表示側は image_url だけを読む）。ファイル名を変えるときは migration も要る。
  *
- * **パスの規則は SQL 側と二重に持っている。** `create_recipe_note` / `update_recipe_note` が
- * `'/placeholders/' || image_key || '.png'` を組み立てるので、規則を変えるときは migration も要る
- * （`supabase/migrations/20260923000000_set_note_image_url.sql`）。
+ * 新しく選ぶ画面は無い（#287 で AI 画像に置き換えた）。既に選んであるノートのために残している（#292 で片付ける）
  */
 export const PLACEHOLDER_IMAGES = [
   { key: 'japanese', label: '和食' },
@@ -20,17 +19,6 @@ export const PLACEHOLDER_IMAGES = [
 ] as const
 
 export type PlaceholderImageKey = (typeof PLACEHOLDER_IMAGES)[number]['key']
-
-/**
- * 画像を持たないレシピ用の「NO IMAGE」画像（お皿の線画）。LINE Flex は hero に画像 URL が必須なので、
- * その穴埋めに使う。無地だと読み込み失敗と区別がつかないため、画像が無いことが伝わる絵にしている。
- * ノートで選べる候補には含めない（料理ジャンルを誤解させないため）
- */
-export const FALLBACK_IMAGE_PATH = '/placeholders/default.png'
-
-export function placeholderImagePath(key: PlaceholderImageKey): string {
-  return `/placeholders/${key}.png`
-}
 
 export function isPlaceholderImageKey(value: unknown): value is PlaceholderImageKey {
   return PLACEHOLDER_IMAGES.some((image) => image.key === value)

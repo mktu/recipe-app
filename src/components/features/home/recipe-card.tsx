@@ -5,7 +5,7 @@ import { Clock, Utensils } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { RecipeWithIngredients } from '@/types/recipe'
-import { FALLBACK_IMAGE_PATH } from '@/lib/recipe/placeholder-images'
+import { recipeImageOrCover } from '@/lib/recipe/cover-image'
 
 interface RecipeCardProps {
   recipe: RecipeWithIngredients
@@ -39,7 +39,7 @@ function RecipeThumbnail({ imageUrl, title }: { imageUrl: string | null; title: 
   return (
     <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={imageUrl ?? FALLBACK_IMAGE_PATH} alt={imageUrl ? title : ''} className="h-full w-full object-cover" />
+      <img src={recipeImageOrCover(imageUrl, title)} alt={imageUrl ? title : ''} className="h-full w-full object-cover" />
     </div>
   )
 }
