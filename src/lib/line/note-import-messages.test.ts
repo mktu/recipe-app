@@ -15,7 +15,6 @@ const FIELDS: RecipeNoteFields = {
     { name: 'レモン', amount: '1/2個' },
   ],
   steps: ['そぎ切りにする', '蒸す'],
-  imageKey: null,
   servings: '2人分',
   memo: null,
   cookingTimeMinutes: 20,

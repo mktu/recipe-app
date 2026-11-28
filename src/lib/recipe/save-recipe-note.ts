@@ -21,6 +21,6 @@ export async function saveRecipeNote(
     ingredientIds: matched.map((m) => m.ingredientId),
     unmatchedIngredients: unmatched,
   })
-  if (result.data && !fields.imageKey) requestNoteImageGeneration(result.data.noteId)
+  if (result.data) requestNoteImageGeneration(result.data.noteId)
   return result
 }

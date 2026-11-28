@@ -10,7 +10,7 @@ export interface ParseWarning {
 }
 
 export interface ParseRecipeMarkdownResult {
-  /** 読めた分。`imageKey` は Markdown に無いので常に null */
+  /** 読めた分 */
   fields: RecipeNoteFields
   warnings: ParseWarning[]
   /**

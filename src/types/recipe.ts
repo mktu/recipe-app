@@ -100,7 +100,6 @@ export interface CreateRecipeNoteInput {
   steps: string[]
   ingredientIds: string[]
   unmatchedIngredients?: UnmatchedIngredient[]
-  imageKey?: string | null
   servings?: string | null
   memo?: string | null
   cookingTimeMinutes?: number | null
@@ -118,7 +117,6 @@ export interface RecipeNoteDetail {
   title: string
   ingredients: IngredientRaw[]
   steps: string[]
-  imageKey: string | null
   imageUrl: string | null
   servings: string | null
   memo: string | null
@@ -128,7 +126,7 @@ export interface RecipeNoteDetail {
 /** ノートの編集内容（API の入力）。材料の食材 ID はサーバー側で解決するので持たない */
 export type RecipeNoteFields = Pick<
   UpdateRecipeNoteInput,
-  'title' | 'ingredients' | 'steps' | 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'
+  'title' | 'ingredients' | 'steps' | 'servings' | 'memo' | 'cookingTimeMinutes'
 >
 
 /**
@@ -140,9 +138,8 @@ export type RecipeNoteFields = Pick<
  * 値を消したいときは `null` を渡す。
  */
 export interface UpdateRecipeNoteInput
-  extends Omit<CreateRecipeNoteInput, 'imageKey' | 'servings' | 'memo' | 'cookingTimeMinutes'> {
+  extends Omit<CreateRecipeNoteInput, 'servings' | 'memo' | 'cookingTimeMinutes'> {
   noteId: string
-  imageKey: string | null
   servings: string | null
   memo: string | null
   cookingTimeMinutes: number | null

@@ -30,8 +30,7 @@ function toHttpsUrl(url: string): string | null {
  *
  * **Flex の image は絶対 https URL しか受け付けず、1つでも不正だと reply 全体が 400 で落ちる。**
  * 失敗はユーザーには「既読のみで無反応」に見えて原因を追いにくい（#170）。
- * `recipes.image_url` には外部サイト・AI 画像（Storage）の絶対 URL と、ノートのプレースホルダー
- * （`/placeholders/<key>.png`）の相対パスが混在するため、ここで Flex に渡せる形に揃える。
+ * `recipes.image_url` には外部サイトの http の画像も入りうるため、ここで Flex に渡せる形に揃える。
  *
  * - 画像を持たないレシピ、画像が Flex に渡せない（http など）レシピには、料理名の表紙（`/api/cover`）を当てる
  * - その表紙も渡せない（APP_URL が未設定・http）ときは null を返し、呼び出し側は image を省く

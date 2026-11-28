@@ -29,7 +29,6 @@ const SEED_NOTES: SeedNote[] = [
       'フライパンで豚肉を炒め、色が変わったら玉ねぎを加える。',
       'しょうゆとみりんを回し入れ、汁気が少なくなるまで炒める。',
     ],
-    imageKey: 'japanese',
     servings: '2人分',
     memo: 'ご飯が進む。玉ねぎは厚めの方が食感が残る。',
     cookingTimeMinutes: 15,

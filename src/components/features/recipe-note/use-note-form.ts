@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { isPlaceholderImageKey } from '@/lib/recipe/placeholder-images'
 import type { RecipeNoteDetail, RecipeNoteFields } from '@/types/recipe'
 
 /** 行を削除しても入力欄の状態が別の行に移らないよう、index ではなく key で識別する */
@@ -32,7 +31,6 @@ const EMPTY_NOTE: RecipeNoteDetail = {
   title: '',
   ingredients: [],
   steps: [],
-  imageKey: null,
   imageUrl: null,
   servings: null,
   memo: null,
@@ -44,8 +42,6 @@ export function useNoteForm(note: RecipeNoteDetail = EMPTY_NOTE) {
   const [title, setTitle] = useState(note.title)
   const [servings, setServings] = useState(note.servings ?? '')
   const [cookingTime, setCookingTime] = useState(note.cookingTimeMinutes?.toString() ?? '')
-  // プリセットは新しく選ばせない（#287）。編集は全項目の置き換えなので、既存の値は送り返して残す
-  const imageKey = isPlaceholderImageKey(note.imageKey) ? note.imageKey : null
   const [memo, setMemo] = useState(note.memo ?? '')
   const [ingredients, setIngredients] = useState(() =>
     initialRows(note.ingredients, (i) => ({ key: newKey(), ...i }), emptyIngredient)
@@ -62,13 +58,12 @@ export function useNoteForm(note: RecipeNoteDetail = EMPTY_NOTE) {
         title: title.trim(),
         ingredients: ingredients.map(({ name, amount }) => ({ name, amount })),
         steps: steps.map((s) => s.text),
-        imageKey,
         servings: servings || null,
         memo: memo.trim() || null,
         cookingTimeMinutes: parseCookingTime(cookingTime),
       },
     }
-  }, [title, cookingTime, ingredients, steps, imageKey, servings, memo])
+  }, [title, cookingTime, ingredients, steps, servings, memo])
 
   return {
     values: { title, servings, cookingTime, memo, ingredients, steps },

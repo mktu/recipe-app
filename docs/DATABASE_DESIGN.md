@@ -85,7 +85,7 @@
 - `title`: String
 - `ingredients`: JSONB (材料。例: `[{"name": "なす", "amount": "2本"}]`)
 - `steps`: JSONB (調理手順の配列。例: `["なすを乱切りにする", "炒める"]`)
-- `image_key`: String (プレースホルダー画像の識別子。`public/placeholders/<key>.png`。英小文字・数字・ハイフンのみ。新しくは選べない〔#287〕。既存の値は #292 で片付ける)
+- `image_key`: String (旧プリセット画像の識別子。#292 で全行を NULL にし、アプリからは読み書きしない。列は削除待ち)
 - `servings`: String (「2人分」など。任意)
 - `generated_image_url`: String (AI で作った画像の公開 URL。#287)
 - `image_status`: String (`none` / `pending` / `generating` / `ready` / `failed`。既定 `none`)
@@ -109,14 +109,9 @@
 にまとめてある。PostgREST はリクエスト1本が1トランザクションのため、supabase-js を複数回呼ぶ形では
 原子性を張れない。削除は専用 RPC を持たず、対のレシピ行を消せば CASCADE でノートも消える。
 
-**画像は `image_key` が正本、`recipes.image_url` は表示用の写し。** RPC が
-`note_placeholder_image_url(image_key)`（`/placeholders/<key>.png`）を `image_url` に書き込む
-（`supabase/migrations/20260923000000_set_note_image_url.sql`）。表示側は `image_url` だけを読むので、
-図鑑側はノートを知らないまま画像を出せる。アセットを差し替え・リネームするときは、
-`image_key` から `image_url` を作り直す migration を流す。
-
-**AI 画像（#287）は `generated_image_url` に持ち、RPC が `note_image_url()`（プリセット → AI 画像）で
-`image_url` を組み立てる。** `update_recipe_note` は保存のたびに `image_url` を作り直すので、
+**AI 画像（#287）は `generated_image_url` に持ち、RPC が `note_image_url()` で
+`recipes.image_url`（表示用の写し）を組み立てる。** 表示側は `image_url` だけを読むので、
+図鑑側はノートを知らないまま画像を出せる。`update_recipe_note` は保存のたびに `image_url` を作り直すので、
 `image_url` に直接書くと次の編集で消える。列にはパスでなく公開 URL を持つ（SQL は Supabase の URL を知らない）。
 
 **生成の対象は `image_status = 'pending'` で明示的に持つ。「NULL なら作る」にしない。**
